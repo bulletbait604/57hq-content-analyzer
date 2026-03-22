@@ -26,7 +26,36 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
   useEffect(() => {
     // Check for existing session on mount
     checkExistingSession()
+    
+    // Check for auth callback
+    checkAuthCallback()
   }, [])
+
+  const checkAuthCallback = () => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const authStatus = urlParams.get('auth')
+    
+    if (authStatus === 'success') {
+      const authCode = sessionStorage.getItem('kickAuthCode')
+      if (authCode) {
+        const redirectUri = `${window.location.origin}/auth/kick/callback`
+        handleAuthSuccess(authCode, redirectUri)
+        // Clean up
+        sessionStorage.removeItem('kickAuthCode')
+        sessionStorage.removeItem('kickAuthReturn')
+        // Clear URL params
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    } else if (authStatus === 'error') {
+      const message = urlParams.get('message')
+      setError(message || 'Authentication failed')
+      setIsLoading(false)
+      // Clean up
+      sessionStorage.removeItem('kickAuthReturn')
+      // Clear URL params
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }
 
   const checkExistingSession = () => {
     try {
@@ -54,49 +83,12 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       const redirectUri = `${window.location.origin}/auth/kick/callback`
       const authUrl = kickAPI.getAuthURL(redirectUri)
       
-      // Open popup for OAuth
-      const popup = window.open(authUrl, 'kick-auth', 'width=500,height=600')
+      // Store current URL to return after auth
+      sessionStorage.setItem('kickAuthReturn', window.location.pathname)
       
-      if (!popup) {
-        setError('Please allow popups for this site')
-        setIsLoading(false)
-        return
-      }
-
-      // Listen for popup messages
-      const messageHandler = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return
-        
-        if (event.data.type === 'KICK_AUTH_SUCCESS') {
-          popup.close()
-          handleAuthSuccess(event.data.code, redirectUri)
-        } else if (event.data.type === 'KICK_AUTH_ERROR') {
-          popup.close()
-          setError(event.data.error || 'Authentication failed')
-          setIsLoading(false)
-        }
-      }
-
-      window.addEventListener('message', messageHandler)
+      // Redirect directly instead of popup (more reliable)
+      window.location.href = authUrl
       
-      // Check if popup was closed manually
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed)
-          window.removeEventListener('message', messageHandler)
-          setIsLoading(false)
-        }
-      }, 1000)
-
-      // Cleanup after 5 minutes
-      setTimeout(() => {
-        clearInterval(checkClosed)
-        window.removeEventListener('message', messageHandler)
-        if (!popup.closed) {
-          popup.close()
-          setIsLoading(false)
-        }
-      }, 300000)
     } catch (error) {
       console.error('Login error:', error)
       setError('Failed to start authentication')

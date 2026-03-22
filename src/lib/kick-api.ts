@@ -29,7 +29,8 @@ export class KickAPI {
       redirect_uri: redirectURI,
       response_type: 'code',
       scope: 'user:read channel:read',
-      state: Math.random().toString(36).substring(7)
+      state: Math.random().toString(36).substring(7),
+      prompt: 'consent' // Force authorization screen even if logged in
     })
 
     return `${this.baseURL}/oauth/authorize?${params.toString()}`

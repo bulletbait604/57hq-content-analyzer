@@ -8,23 +8,20 @@ export default function KickCallback() {
     const code = urlParams.get('code')
     const error = urlParams.get('error')
 
-    // Send message to parent window
-    if (window.opener) {
-      if (error) {
-        window.opener.postMessage({
-          type: 'KICK_AUTH_ERROR',
-          error: error || 'Authentication failed'
-        }, window.location.origin)
-      } else if (code) {
-        window.opener.postMessage({
-          type: 'KICK_AUTH_SUCCESS',
-          code: code
-        }, window.location.origin)
-      }
-    }
+    // Get the return URL from session storage
+    const returnUrl = sessionStorage.getItem('kickAuthReturn') || '/'
 
-    // Close the popup
-    window.close()
+    if (code) {
+      // Store the auth code and redirect to main page
+      sessionStorage.setItem('kickAuthCode', code)
+      window.location.href = returnUrl + '?auth=success'
+    } else if (error) {
+      // Handle error and redirect back
+      window.location.href = returnUrl + '?auth=error&message=' + encodeURIComponent(error)
+    } else {
+      // No code or error, redirect back
+      window.location.href = returnUrl + '?auth=error&message=no_code'
+    }
   }, [])
 
   return (
