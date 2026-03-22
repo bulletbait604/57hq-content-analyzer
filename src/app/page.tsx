@@ -17,20 +17,22 @@ export default function Home() {
 
   // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('kickUser')
-    const storedSubscription = localStorage.getItem('kickSubscription')
-    
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser)
-        setUser(userData)
-      } catch (error) {
-        console.error('Failed to parse stored user data:', error)
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('kickUser')
+      const storedSubscription = localStorage.getItem('kickSubscription')
+      
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          setUser(userData)
+        } catch (error) {
+          console.error('Failed to parse stored user data:', error)
+        }
       }
-    }
-    
-    if (storedSubscription) {
-      setIsSubscribed(storedSubscription === 'true')
+      
+      if (storedSubscription) {
+        setIsSubscribed(storedSubscription === 'true')
+      }
     }
   }, [])
 
@@ -106,9 +108,11 @@ export default function Home() {
                   )}
                   <button
                     onClick={() => {
-                      localStorage.removeItem('kickUser')
-                      localStorage.removeItem('kickAccessToken')
-                      localStorage.removeItem('kickSubscription')
+                      if (typeof window !== 'undefined') {
+                        localStorage.removeItem('kickUser')
+                        localStorage.removeItem('kickAccessToken')
+                        localStorage.removeItem('kickSubscription')
+                      }
                       setUser(null)
                       setIsSubscribed(false)
                     }}

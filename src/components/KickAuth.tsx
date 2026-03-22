@@ -12,7 +12,7 @@ interface KickAuthProps {
   onUserChange?: (user: KickUser | null) => void
 }
 
-export function KickAuthNew({ onSubscriptionChange, onUserChange }: KickAuthProps) {
+export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) {
   const [user, setUser] = useState<KickUser | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -29,23 +29,25 @@ export function KickAuthNew({ onSubscriptionChange, onUserChange }: KickAuthProp
 
   // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('kickUser')
-    const storedSubscription = localStorage.getItem('kickSubscription')
-    
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser)
-        setUser(userData)
-        onUserChange?.(userData)
-      } catch (error) {
-        console.error('Failed to parse stored user data:', error)
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('kickUser')
+      const storedSubscription = localStorage.getItem('kickSubscription')
+      
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          setUser(userData)
+          onUserChange?.(userData)
+        } catch (error) {
+          console.error('Failed to parse stored user data:', error)
+        }
       }
-    }
-    
-    if (storedSubscription) {
-      const subscribed = storedSubscription === 'true'
-      setIsSubscribed(subscribed)
-      onSubscriptionChange?.(subscribed)
+      
+      if (storedSubscription) {
+        const subscribed = storedSubscription === 'true'
+        setIsSubscribed(subscribed)
+        onSubscriptionChange?.(subscribed)
+      }
     }
   }, [])
 
@@ -54,11 +56,13 @@ export function KickAuthNew({ onSubscriptionChange, onUserChange }: KickAuthProp
       setIsLoading(true)
       setError(null)
       
-      const redirectURI = `${window.location.origin}/auth/kick/callback`
+      const redirectURI = typeof window !== 'undefined' ? `${window.location.origin}/auth/kick/callback` : 'https://sdhqcreatorcorner.vercel.app/auth/kick/callback'
       const authURL = await kickOAuth.getAuthURL(redirectURI)
       
       // Store return URL
-      sessionStorage.setItem('kickAuthReturn', window.location.pathname)
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('kickAuthReturn', window.location.pathname)
+      }
       
       // Redirect to Kick OAuth
       window.location.href = authURL
@@ -136,10 +140,12 @@ export function KickAuthNew({ onSubscriptionChange, onUserChange }: KickAuthProp
   }
 
   const handleLogout = () => {
-    // Clear session
-    localStorage.removeItem('kickUser')
-    localStorage.removeItem('kickAccessToken')
-    localStorage.removeItem('kickSubscription')
+    // Clear session (only runs on client side)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('kickUser')
+      localStorage.removeItem('kickAccessToken')
+      localStorage.removeItem('kickSubscription')
+    }
     
     // Update state
     setUser(null)
