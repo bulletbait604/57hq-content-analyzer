@@ -90,27 +90,7 @@ export class KickRapidAPI {
         console.log('❌ Direct subscription check failed:', error)
       }
 
-      // Method 2: Get user info and check subscription status
-      try {
-        const userInfo = await this.getUserInfo(username)
-        console.log('👤 Got user info:', userInfo)
-        
-        // Check if user info contains subscription data
-        if (userInfo.subscriptions) {
-          const isSubscribed = userInfo.subscriptions.some((sub: any) => 
-            sub.channel_name === channelName || 
-            sub.channel_slug === channelName ||
-            sub.channel_id === channelName
-          )
-          
-          console.log(`✅ User info subscription check result: ${isSubscribed}`)
-          return isSubscribed
-        }
-      } catch (error) {
-        console.log('❌ User info check failed:', error)
-      }
-
-      // Method 3: Get channel info and check subscriber list
+      // Method 2: Get channel info and check subscriber list
       try {
         const channelInfo = await this.getChannelInfo(channelName)
         console.log('📺 Got channel info:', channelInfo)
@@ -154,27 +134,6 @@ export class KickRapidAPI {
     } catch (error) {
       console.error('Alternative subscription check failed:', error)
       return false
-    }
-  }
-
-  async getUserInfo(username: string): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseURL}/user/${username}`, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': this.apiKey,
-          'X-RapidAPI-Host': 'kick-com-api.p.rapidapi.com'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error('Failed to get user info:', error)
-      throw error
     }
   }
 }
