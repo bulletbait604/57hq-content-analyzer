@@ -91,6 +91,77 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     }
   }
 
+  // Get user badges from chat API
+  const getUserBadges = async (username: string) => {
+    try {
+      const channelResponse = await fetch(`https://kick.com/api/v1/channels/bulletbait604`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('kickAccessToken')}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+          'Origin': 'https://kick.com',
+          'Referer': 'https://kick.com'
+        }
+      })
+
+      if (channelResponse.ok) {
+        const channelData = await channelResponse.json()
+        
+        if (channelData.data && channelData.data.chatroom) {
+          const chatroomId = channelData.data.chatroom.id
+          
+          // Get recent chat messages to find user's badges
+          const messagesResponse = await fetch(`https://kick.com/api/v1/chatrooms/${chatroomId}/messages`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('kickAccessToken')}`,
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+              'Origin': 'https://kick.com',
+              'Referer': 'https://kick.com'
+            }
+          })
+
+          if (messagesResponse.ok) {
+            const messagesData = await messagesResponse.json()
+            
+            if (messagesData.data && messagesData.data.messages) {
+              const userMessages = messagesData.data.messages.filter((message: any) => 
+                message.sender && 
+                message.sender.username && 
+                message.sender.username.toLowerCase() === username.toLowerCase()
+              )
+              
+              if (userMessages.length > 0) {
+                const latestMessage = userMessages[0]
+                return latestMessage.sender.badges || []
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get user badges:', error)
+    }
+    
+    return []
+  }
+
+  const [userBadges, setUserBadges] = useState<any[]>([])
+
+  // Load user badges when user logs in
+  useEffect(() => {
+    if (user) {
+      getUserBadges(user.username).then(badges => {
+        setUserBadges(badges)
+        console.log('🏅 User badges loaded:', badges)
+      })
+    }
+  }, [user])
+
   // Reset verification
   const resetVerification = () => {
     setKickAuth(undefined)
@@ -261,6 +332,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
           setIsSubscribed(storedSubscription === 'true')
           onUserChange?.(userData)
           onSubscriptionChange?.(storedSubscription === 'true')
+          console.log(`📱 Restored session for @${userData.username}`)
         } catch (error) {
           console.error('Failed to parse stored user data:', error)
           localStorage.removeItem('kickUser')
@@ -268,6 +340,25 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
           localStorage.removeItem('kickSubscription')
         }
       }
+    }
+
+    // Check for OAuth callback
+    const urlParams = new URLSearchParams(window.location.search)
+    const authStatus = urlParams.get('auth')
+    
+    if (authStatus === 'success') {
+      const authCode = urlParams.get('code') || localStorage.getItem('kickAuthCode')
+      if (authCode) {
+        const redirectUri = `${window.location.origin}/auth/kick/callback`
+        handleAuthSuccess(authCode, redirectUri)
+        localStorage.removeItem('kickAuthCode')
+        sessionStorage.removeItem('kickAuthReturn')
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    } else if (authStatus === 'error') {
+      const errorMsg = urlParams.get('error') || 'Authentication failed'
+      setError(errorMsg)
+      window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
 
@@ -376,6 +467,21 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
               <div className="text-cyan-300 font-medium">Logged in as</div>
               <div className="text-white font-semibold">{user.display_name}</div>
               <div className="text-gray-400 text-sm">@{user.username}</div>
+              
+              {/* User Badges */}
+              {userBadges && userBadges.length > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  {userBadges.map((badge: any, index: number) => (
+                    <div 
+                      key={index}
+                      className="px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs text-white font-semibold"
+                      title={badge.name || badge.type || 'Badge'}
+                    >
+                      {badge.name || badge.type || 'Badge'}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
