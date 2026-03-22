@@ -83,29 +83,76 @@ export class KickAPI {
       throw new Error('Code verifier not found')
     }
     
-    const response = await fetch(`${this.oauthServerURL}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-        code: code,
-        redirect_uri: redirectURI,
-        code_verifier: codeVerifier
-      })
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to exchange code for token')
-    }
-
-    // Clean up code verifier
-    sessionStorage.removeItem('kick_code_verifier')
+    console.log('Exchanging code for token...')
+    console.log('Code:', code.substring(0, 10) + '...')
+    console.log('Redirect URI:', redirectURI)
+    console.log('Code verifier:', codeVerifier.substring(0, 10) + '...')
     
-    return response.json()
+    // Try different token endpoints
+    const tokenEndpoints = [
+      `${this.oauthServerURL}/oauth/token`, // id.kick.com/oauth/token
+      `${this.baseURL}/oauth/token`,         // kick.com/oauth/token
+      `${this.baseURL}/api/oauth/token`      // kick.com/api/oauth/token
+    ]
+    
+    let lastError: Error | null = null
+    
+    for (const endpoint of tokenEndpoints) {
+      try {
+        console.log(`Trying token endpoint: ${endpoint}`)
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+            code: code,
+            redirect_uri: redirectURI,
+            code_verifier: codeVerifier
+          })
+        })
+        
+        console.log('Response status:', response.status)
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+        
+        if (response.ok) {
+          const text = await response.text()
+          console.log('Response text:', text)
+          
+          try {
+            const tokenData = JSON.parse(text)
+            console.log('Token exchange success!')
+            
+            // Clean up code verifier
+            sessionStorage.removeItem('kick_code_verifier')
+            
+            return tokenData
+          } catch (parseError) {
+            console.log('Failed to parse JSON from:', text)
+            lastError = new Error(`Invalid JSON response: ${text.substring(0, 200)}`)
+            continue
+          }
+        } else {
+          const errorText = await response.text()
+          console.log('Error response:', errorText)
+          lastError = new Error(`HTTP ${response.status}: ${errorText}`)
+          continue
+        }
+      } catch (error) {
+        console.log('Request failed:', error)
+        lastError = error as Error
+        continue
+      }
+    }
+    
+    // Clean up code verifier on failure
+    sessionStorage.removeItem('kick_code_verifier')
+    throw lastError || new Error('All token endpoints failed')
   }
 
   async getCurrentUser(accessToken: string): Promise<KickUser> {
