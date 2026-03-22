@@ -28,21 +28,12 @@ export class KickAPI {
       client_id: this.clientId,
       redirect_uri: redirectURI,
       response_type: 'code',
-      scope: 'user:read channel:read',
+      scope: 'user channel',
       state: Math.random().toString(36).substring(7)
     })
 
-    // Try different OAuth endpoints - Kick might use a different one
-    const endpoints = [
-      `${this.baseURL}/oauth/authorize`,
-      `${this.baseURL}/oauth/authorize/`,
-      `${this.baseURL}/oauth2/authorize`,
-      `${this.baseURL}/authorize`,
-      `${this.baseURL}/oauth/authorization`
-    ]
-    
-    // Start with the standard one, we can try others if needed
-    const baseUrl = endpoints[0]
+    // Use the standard OAuth endpoint
+    const baseUrl = `${this.baseURL}/oauth/authorize`
     return `${baseUrl}?${params.toString()}`
   }
 
