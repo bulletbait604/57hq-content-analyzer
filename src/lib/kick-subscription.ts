@@ -25,9 +25,9 @@ export class KickSubscriptionChecker {
     try {
       console.log(`🔍 Checking subscription via Official Kick API for ${username} to ${channelName}`)
       
-      // Method 1: Try Official Kick API for subscriber list
+      // Method 1: Try to get user's own subscriptions
       try {
-        console.log(`🚀 Trying Official Kick API: https://kick.com/api/v1/subscriptions/subscribers`)
+        console.log(`🚀 Trying Official Kick API: https://kick.com/api/v1/subscriptions`)
         
         const headers: Record<string, string> = {
           'Accept': 'application/json',
@@ -42,70 +42,68 @@ export class KickSubscriptionChecker {
           console.log('⚠️ No auth token available - making unauthenticated request')
         }
         
-        const subscribersResponse = await fetch(`https://kick.com/api/v1/subscriptions/subscribers`, {
+        const userSubsResponse = await fetch(`https://kick.com/api/v1/subscriptions`, {
           method: 'GET',
           headers
         })
 
-        console.log(`Official Kick API response: ${subscribersResponse.status}`)
+        console.log(`User subscriptions response: ${userSubsResponse.status}`)
         
-        if (subscribersResponse.ok) {
-          const subscribersData = await subscribersResponse.json()
-          console.log('📺 Got subscribers from Official Kick API:', subscribersData)
-          console.log('📋 RAW Response:', JSON.stringify(subscribersData, null, 2))
-          console.log('📋 Response structure:', Object.keys(subscribersData))
+        if (userSubsResponse.ok) {
+          const userSubsData = await userSubsResponse.json()
+          console.log('📺 Got user subscriptions from Official Kick API:', userSubsData)
+          console.log('📋 RAW Response:', JSON.stringify(userSubsData, null, 2))
+          console.log('📋 Response structure:', Object.keys(userSubsData))
           
-          // Check if we have subscriber data
-          if (subscribersData.data && Array.isArray(subscribersData.data)) {
-            console.log(`📋 Found ${subscribersData.data.length} subscribers via Official Kick API`)
-            console.log('📋 First subscriber:', JSON.stringify(subscribersData.data[0], null, 2))
+          // Check if user has subscription to target channel
+          if (userSubsData.data && Array.isArray(userSubsData.data)) {
+            console.log(`📋 Found ${userSubsData.data.length} subscriptions for user`)
             
-            const isSubscribed = subscribersData.data.some((subscriber: any) => {
-              const subscriberUsername = subscriber.username?.toLowerCase() || 
-                                              subscriber.name?.toLowerCase() || 
-                                              subscriber.user?.username?.toLowerCase() ||
-                                              subscriber.display_name?.toLowerCase()
-              const loggedInUsername = username.toLowerCase()
-              console.log(`🔍 Checking subscriber "${subscriberUsername}" vs logged-in user "${loggedInUsername}"`)
-              return subscriberUsername === loggedInUsername
+            const isSubscribed = userSubsData.data.some((subscription: any) => {
+              const subscribedChannel = subscription.channel?.name?.toLowerCase() || 
+                                     subscription.broadcaster?.name?.toLowerCase() ||
+                                     subscription.username?.toLowerCase()
+              const targetChannel = channelName.toLowerCase()
+              console.log(`🔍 Checking if user is subscribed to "${subscribedChannel}" vs target "${targetChannel}"`)
+              return subscribedChannel === targetChannel
             })
             
-            console.log(`✅ Official Kick API check result: ${isSubscribed}`)
+            console.log(`✅ User subscriptions check result: ${isSubscribed}`)
             
             if (isSubscribed) {
-              console.log(`🎉 FOUND "${username.toLowerCase()}" in Kick's subscriber list!`)
+              console.log(`🎉 FOUND subscription from ${username} to ${channelName}!`)
               return { 
                 isSubscribed: true, 
-                method: 'official_kick_api_subscribers',
+                method: 'user_subscriptions_check',
                 data: {
-                  subscribersData: subscribersData.data,
-                  subscriberFound: subscribersData.data.find((sub: any) => 
-                    sub.username?.toLowerCase() === username.toLowerCase() || 
-                    sub.name?.toLowerCase() === username.toLowerCase() ||
-                    sub.user?.username?.toLowerCase() === username.toLowerCase()
+                  userSubscriptions: userSubsData.data,
+                  subscriptionFound: userSubsData.data.find((sub: any) => 
+                    (sub.channel?.name?.toLowerCase() === channelName.toLowerCase()) ||
+                     (sub.broadcaster?.name?.toLowerCase() === channelName.toLowerCase()) ||
+                     (sub.username?.toLowerCase() === channelName.toLowerCase())
                   ),
-                  totalSubscribers: subscribersData.data.length
+                  totalSubscriptions: userSubsData.data.length
                 }
               }
             } else {
-              console.log(`❌ "${username.toLowerCase()}" NOT found in Kick's subscriber list`)
+              console.log(`❌ "${username}" has no subscription to ${channelName}`)
             }
           } else {
-            console.log('❌ No subscriber array found in official API response')
-            console.log('❌ Available keys:', Object.keys(subscribersData))
-            console.log('❌ Data content:', subscribersData)
+            console.log('❌ No subscription array found in user subscriptions API response')
+            console.log('❌ Available keys:', Object.keys(userSubsData))
+            console.log('❌ Data content:', userSubsData)
           }
         } else {
-          const errorText = await subscribersResponse.text()
-          console.log(`❌ Official Kick API failed (${subscribersResponse.status}):`, errorText)
+          const errorText = await userSubsResponse.text()
+          console.log(`❌ User subscriptions API failed (${userSubsResponse.status}):`, errorText)
         }
-      } catch (officialApiError) {
-        console.log('❌ Official Kick API request failed:', officialApiError)
+      } catch (userSubsError) {
+        console.log('❌ User subscriptions request failed:', userSubsError)
       }
 
-      // Method 2: Fallback to channel-specific subscribers
+      // Method 2: Fallback to check if user follows channel
       try {
-        console.log(`🔄 Trying channel-specific subscribers endpoint`)
+        console.log(`🔄 Trying fallback: check if ${username} follows ${channelName}`)
         
         const headers: Record<string, string> = {
           'Accept': 'application/json',
@@ -117,33 +115,33 @@ export class KickSubscriptionChecker {
           headers['Authorization'] = `Bearer ${this.authToken}`
         }
         
-        const channelSubsResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/subscribers`, {
+        const followResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/followers`, {
           method: 'GET',
           headers
         })
 
-        console.log(`Channel subscribers response: ${channelSubsResponse.status}`)
+        console.log(`Followers response: ${followResponse.status}`)
         
-        if (channelSubsResponse.ok) {
-          const channelSubsData = await channelSubsResponse.json()
-          console.log('� Got channel subscribers:', channelSubsData)
+        if (followResponse.ok) {
+          const followData = await followResponse.json()
+          console.log('👥 Got followers data:', followData)
           
-          if (channelSubsData.data && Array.isArray(channelSubsData.data)) {
-            const isSubscribed = channelSubsData.data.some((subscriber: any) => 
-              subscriber.username?.toLowerCase() === username.toLowerCase()
+          if (followData.data && followData.data.followers) {
+            const isFollowing = followData.data.followers.some((follower: any) => 
+              follower.username?.toLowerCase() === username.toLowerCase()
             )
             
-            console.log(`✅ Channel subscribers check result: ${isSubscribed}`)
+            console.log(`✅ Follow check result: ${isFollowing}`)
             
             return { 
-              isSubscribed: isSubscribed, 
-              method: 'channel_subscribers_fallback',
-              data: channelSubsData.data
+              isSubscribed: isFollowing, 
+              method: 'follow_check_fallback',
+              data: followData.data
             }
           }
         }
-      } catch (channelError) {
-        console.log('❌ Channel subscribers check failed:', channelError)
+      } catch (followError) {
+        console.log('❌ Follow check failed:', followError)
       }
 
       console.log(`❌ Could not verify subscription for ${username} - all methods failed`)
