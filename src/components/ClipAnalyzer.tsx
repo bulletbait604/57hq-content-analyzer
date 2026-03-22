@@ -316,7 +316,7 @@ export function ClipAnalyzer() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <Zap className="h-5 w-5 text-cyan-400" />
-                57 HQ Recommendations
+                SDHQ Recommendations
               </CardTitle>
             </CardHeader>
             <CardContent>
