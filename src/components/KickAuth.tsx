@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { User, LogIn, LogOut, CheckCircle, XCircle, Crown } from 'lucide-react'
 import { KickOAuth, KickUser } from '@/lib/kick-oauth'
-import { RapidAPIKickSubscription } from '@/lib/rapidapi'
+import { KickSubscriptionChecker } from '@/lib/kick-subscription'
 
 interface KickAuthProps {
   onSubscriptionChange?: (subscribed: boolean) => void
@@ -23,9 +23,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     process.env.NEXT_PUBLIC_KICK_CLIENT_SECRET || ''
   )
 
-  const rapidAPI = new RapidAPIKickSubscription(
-    process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || ''
-  )
+  const kickSubscriptionChecker = new KickSubscriptionChecker()
 
   // Check for existing session on mount
   useEffect(() => {
@@ -137,21 +135,20 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
         console.log('👤 Using provided username:', userData)
       }
       
-      // Check subscription using RapidAPI
+      // Check subscription using official Kick API
       console.log(`🔍 Checking subscription for @${userData.username} to bulletbait604`)
-      console.log(`🔑 Using RapidAPI key: ${process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY ? 'Key exists' : 'No key found'}`)
       
       let isSub = false
       
       try {
-        console.log(`🚀 Calling RapidAPI subscription check...`)
-        const subscriptionResult = await rapidAPI.checkSubscription(userData.username)
+        console.log(`🚀 Calling official Kick API subscription check...`)
+        const subscriptionResult = await kickSubscriptionChecker.checkSubscription(userData.username)
         isSub = subscriptionResult.isSubscribed
-        console.log(`📊 RapidAPI result: ${isSub} via ${subscriptionResult.method}`)
+        console.log(`📊 Official Kick API result: ${isSub} via ${subscriptionResult.method}`)
         console.log(`📊 Full result data:`, subscriptionResult)
         
         if (subscriptionResult.error) {
-          console.log(`⚠️ RapidAPI returned error: ${subscriptionResult.error}`)
+          console.log(`⚠️ Official Kick API returned error: ${subscriptionResult.error}`)
         }
         
       } catch (subError) {
@@ -204,10 +201,9 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     }
 
     console.log(`🔍 Manual subscription check for @${user.username}`)
-    console.log(`🔑 Using RapidAPI key: ${process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY ? 'Key exists' : 'No key found'}`)
     
     try {
-      const subscriptionResult = await rapidAPI.checkSubscription(user.username)
+      const subscriptionResult = await kickSubscriptionChecker.checkSubscription(user.username)
       const isSub = subscriptionResult.isSubscribed
       
       console.log(`📊 Manual check result: ${isSub} via ${subscriptionResult.method}`)
@@ -218,7 +214,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       localStorage.setItem('kickSubscription', isSub.toString())
       onSubscriptionChange?.(isSub)
       
-      alert(`Subscription check complete: ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}`)
+      alert(`Subscription check complete: ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}\nMethod: ${subscriptionResult.method}`)
       
     } catch (error) {
       console.error('❌ Manual subscription check failed:', error)

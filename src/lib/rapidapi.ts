@@ -9,11 +9,10 @@ export interface RapidAPIResponse {
 
 export class RapidAPIKickSubscription {
   private apiKey: string
-  private baseURL: string
+  private baseURL: string = 'https://kick-com-api.p.rapidapi.com'
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
-    this.baseURL = 'https://kick-com-api.p.rapidapi.com'
   }
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<RapidAPIResponse> {
@@ -23,6 +22,24 @@ export class RapidAPIKickSubscription {
       if (!this.apiKey || this.apiKey === 'your-rapidapi-kick-api-key-here') {
         console.log('❌ RapidAPI Kick API key not configured')
         return { isSubscribed: false, method: 'rapidapi', error: 'RapidAPI Kick API key not configured' }
+      }
+
+      // Check if user is checking their own subscription to bulletbait604
+      const isCheckingOwnSubscription = username.toLowerCase() === channelName.toLowerCase()
+      
+      if (isCheckingOwnSubscription) {
+        console.log(`✅ User ${username} is checking their own subscription to ${channelName}`)
+        console.log(`🎯 Since this is the channel owner, they are automatically considered subscribed`)
+        return { 
+          isSubscribed: true, 
+          method: 'owner_check',
+          data: { 
+            isOwner: true, 
+            username: username, 
+            channel: channelName,
+            message: 'Channel owner is automatically subscribed'
+          }
+        }
       }
 
       // Method 1: Try channel subscribers endpoint (most reliable)
@@ -64,7 +81,25 @@ export class RapidAPIKickSubscription {
           return { isSubscribed, method: 'rapidapi', data: subscribers }
         } else {
           const errorText = await response.text()
-          console.log(`❌ RapidAPI Kick API channel subscribers failed (${response.status}):`, errorText.substring(0, 100))
+          console.log(`❌ RapidAPI Kick API channel subscribers failed (${response.status}):`, errorText)
+          
+          // Check for specific errors
+          if (response.status === 403) {
+            console.log(`❌ RapidAPI subscription issue: You need to subscribe to the Kick API on RapidAPI`)
+            return { 
+              isSubscribed: false, 
+              method: 'rapidapi', 
+              error: 'API subscription required: Subscribe to Kick API on RapidAPI' 
+            }
+          }
+          if (response.status === 429) {
+            console.log(`❌ RapidAPI rate limit: Too many requests`)
+            return { 
+              isSubscribed: false, 
+              method: 'rapidapi', 
+              error: 'Rate limit exceeded: Too many requests to RapidAPI' 
+            }
+          }
         }
       } catch (error) {
         console.log('❌ RapidAPI Kick API channel subscribers request failed:', error)
