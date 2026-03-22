@@ -354,11 +354,6 @@ export default function Home() {
                   )
                   
                   if (verificationMessage) {
-                    console.log('✅ Verification code found in chat!')
-                    
-                    // Get user's badges from that message
-                    const badges = verificationMessage.sender.badges || []
-                    setUserBadges(badges)
                 }
               } else {
                 console.log('❌ messagesData.data is not an array:', messagesData.data)
@@ -366,21 +361,21 @@ export default function Home() {
                 setTimeout(checkVerificationStatus, 3000)
               }
             } catch (jsonError) {
-              console.log('❌ Failed to parse messages JSON:', jsonError)
-              setVerificationStatus('❌ API Error - Failed to parse chat messages')
-              setTimeout(checkVerificationStatus, 3000)
+              console.log('❌ Failed to parse messages JSON:', jsonError);
+              setVerificationStatus('❌ API Error - Failed to parse chat messages');
+              setTimeout(checkVerificationStatus, 3000);
             }
           } else {
             console.log(`❌ Messages API failed: ${messagesResponse.status}`)
-            setVerificationStatus('❌ API Error - Could not fetch chat messages')
+            setVerificationStatus('❌ API Error - Could not fetch chat messages');
           }
         } catch (jsonError) {
-          console.log('❌ Failed to parse channel JSON:', jsonError)
-          setVerificationStatus('❌ API Error - Failed to parse channel data')
+          console.log('❌ Failed to parse channel JSON:', jsonError);
+          setVerificationStatus('❌ API Error - Failed to parse channel data');
         }
       } else {
-        console.log(`❌ Channel API failed: ${channelResponse.status}`)
-        setVerificationStatus('❌ API Error - Could not fetch channel info')
+        console.log(`❌ Channel API failed: ${channelResponse.status}`);
+        setVerificationStatus('❌ API Error - Could not fetch channel info');
       }
     } catch (error) {
       console.error('❌ Verification check failed:', error)
