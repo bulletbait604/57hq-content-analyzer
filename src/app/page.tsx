@@ -16,7 +16,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [userBadges, setUserBadges] = useState<any[]>([])
 
-  // Get user badges from bulletbait604 using multiple API approaches
+  // Get user badges from bulletbait604 using KickLogz approach
   const getUserBadges = async (username: string) => {
     console.log(`🔍 Looking for badges for @${username} in bulletbait604`)
     
@@ -92,63 +92,55 @@ export default function Home() {
       console.error('❌ Official API failed:', error)
     }
     
-    // Method 2: Try RapidAPI as fallback
+    // Method 2: Try KickLogz approach (simulate their structure)
     try {
-      console.log('🔄 Trying RapidAPI as fallback...')
-      const rapidResponse = await fetch(`https://kick-api2.p.rapidapi.com/v2/channels/bulletbait604`, {
+      console.log('🔄 Trying KickLogz-style approach...')
+      
+      // Get current date for log file path
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      
+      // Try to access logs in the format they use
+      const logUrl = `https://kicklogz.com/logs/users/${username}/668/${year}/${month}/logs.txt`
+      
+      const logResponse = await fetch(logUrl, {
         method: 'GET',
         headers: {
-          'X-RapidAPI-Key': process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Accept': 'text/plain',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59'
         }
       })
 
-      console.log(`📡 RapidAPI response status: ${rapidResponse.status}`)
+      console.log(`📡 KickLogz response status: ${logResponse.status}`)
       
-      if (rapidResponse.ok) {
-        const rapidData = await rapidResponse.json()
-        console.log('📺 RapidAPI data:', rapidData)
+      if (logResponse.ok) {
+        const logText = await logResponse.text()
+        console.log('📋 KickLogz raw data:', logText.substring(0, 500)) // First 500 chars
         
-        if (rapidData.data && rapidData.data.chatroom) {
-          const chatroomId = rapidData.data.chatroom.id
-          console.log(`💬 Found RapidAPI chatroom ID: ${chatroomId}`)
-          
-          // Get recent chat messages from RapidAPI
-          const messagesResponse = await fetch(`https://kick-api2.p.rapidapi.com/v2/chatrooms/${chatroomId}/messages`, {
-            method: 'GET',
-            headers: {
-              'X-RapidAPI-Key': process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          })
-
-          if (messagesResponse.ok) {
-            const messagesData = await messagesResponse.json()
-            console.log('📋 RapidAPI messages data:', messagesData)
-            
-            if (messagesData.data && Array.isArray(messagesData.data)) {
-              const userMessages = messagesData.data.filter((message: any) => 
-                message.sender && 
-                message.sender.username && 
-                message.sender.username.toLowerCase() === username.toLowerCase()
-              )
-              
-              console.log(`📋 Found ${userMessages.length} messages from ${username} via RapidAPI`)
-              
-              if (userMessages.length > 0) {
-                const latestMessage = userMessages[0]
-                const badges = latestMessage.sender.badges || []
-                console.log(`🏅 User badges found via RapidAPI:`, badges)
+        // Parse their tab-separated format: date\tmessage\tbadges\tusernameColor
+        const lines = logText.split('\n').filter(line => line.trim())
+        
+        for (const line of lines) {
+          const parts = line.split('\t')
+          if (parts.length >= 3) {
+            const badgesStr = parts[2] // badges are in 3rd position
+            if (badgesStr && badgesStr.trim() !== '') {
+              try {
+                const badges = JSON.parse(badgesStr)
+                console.log(`🏅 Found badges from KickLogz:`, badges)
                 return badges
+              } catch (parseError) {
+                console.log('📋 Could not parse badges JSON:', badgesStr)
               }
             }
           }
         }
+      } else {
+        console.log(`❌ KickLogz failed: ${logResponse.status}`)
       }
-    } catch (rapidError) {
-      console.error('❌ RapidAPI failed:', rapidError)
+    } catch (logError) {
+      console.error('❌ KickLogz approach failed:', logError)
     }
     
     console.log('🏅 No badges found, returning empty array')
