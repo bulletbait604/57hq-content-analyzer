@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { generateTagsWithDeepSeek } from '@/lib/deepseek'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Hash, Copy, CheckCircle, TrendingUp, Brain, Loader2 } from 'lucide-react'
 
