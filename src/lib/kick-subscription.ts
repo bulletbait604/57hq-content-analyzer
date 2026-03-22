@@ -59,10 +59,10 @@ export class KickSubscriptionChecker {
             console.log(`📋 Found ${rapidApiData.data.length} subscribers via RapidAPI`)
             
             const isSubscribed = rapidApiData.data.some((subscriber: any) => {
-              const subUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
-              const targetUsername = username.toLowerCase()
-              console.log(`🔍 Checking subscriber: ${subUsername} vs target: ${targetUsername}`)
-              return subUsername === targetUsername
+              const subscriberUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
+              const loggedInUsername = username.toLowerCase()
+              console.log(`🔍 Checking if subscriber "${subscriberUsername}" matches logged-in user "${loggedInUsername}"`)
+              return subscriberUsername === loggedInUsername
             })
             
             console.log(`✅ RapidAPI cross-reference check result: ${isSubscribed}`)
