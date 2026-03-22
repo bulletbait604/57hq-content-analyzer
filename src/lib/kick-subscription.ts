@@ -1,6 +1,4 @@
-// Official Kick API Subscription Checker
-// Uses official Kick API endpoints to check subscription status
-
+// Uses RapidAPI endpoints to check subscription status
 export interface SubscriptionResponse {
   isSubscribed: boolean
   method: string
@@ -42,9 +40,9 @@ export class KickSubscriptionChecker {
             
             const isSubscribed = rapidApiData.data.some((subscriber: any) => {
               const subscriberUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
-              const targetUsername = username.toLowerCase()
-              console.log(`🔍 Checking if subscriber "${subscriberUsername}" matches logged-in user "${targetUsername}"`)
-              return subscriberUsername === targetUsername
+              const loggedInUsername = username.toLowerCase()
+              console.log(`🔍 Checking if subscriber "${subscriberUsername}" matches logged-in user "${loggedInUsername}"`)
+              return subscriberUsername === loggedInUsername
             })
             
             console.log(`✅ RapidAPI cross-reference check result: ${isSubscribed}`)
@@ -80,6 +78,7 @@ export class KickSubscriptionChecker {
               error: 'API subscription required: Subscribe to Kick API on RapidAPI'
             }
           }
+          
           if (rapidApiResponse.status === 429) {
             return { 
               isSubscribed: false, 
@@ -94,37 +93,7 @@ export class KickSubscriptionChecker {
 
       // Method 2: Fallback to follow status check
       try {
-        console.log(`� Checking if ${username} follows ${channelName} as fallback`)
-              console.log(`🎉 FOUND "${username.toLowerCase()}" in ${channelName}'s subscriber list!`)
-              return { 
-                isSubscribed: true, 
-                method: 'official_api_subscriber_list',
-                data: {
-                  channelData: channelData.data,
-                  subscriberFound: channelData.data.subscribers.find((sub: any) => 
-                    sub.username?.toLowerCase() === username.toLowerCase() || 
-                    sub.name?.toLowerCase() === username.toLowerCase()
-                  ),
-                  totalSubscribers: channelData.data.subscribers.length
-                }
-              }
-            } else {
-              console.log(`❌ "${username.toLowerCase()}" NOT found in ${channelName}'s subscriber list`)
-            }
-          } else {
-            console.log('❌ No subscriber data found in official API channel info')
-          }
-        } else {
-          const errorText = await channelResponse.text()
-          console.log(`❌ Official Kick API channel failed (${channelResponse.status}):`, errorText)
-        }
-      } catch (error) {
-        console.log('❌ Official Kick API channel request failed:', error)
-      }
-
-      // Method 3: Fallback to follow status check
-      try {
-        console.log(`� Checking if ${username} follows ${channelName} as fallback`)
+        console.log(`🔄 Checking if ${username} follows ${channelName} as fallback`)
         const followResponse = await fetch(`${this.baseURL}/public/v1/channels/${channelName}/followers`, {
           method: 'GET',
           headers: {
@@ -155,111 +124,19 @@ export class KickSubscriptionChecker {
         console.log('❌ Follow check failed:', followError)
       }
 
-      console.log(`❌ Could not verify subscription for ${username} - all official Kick API methods failed`)
+      console.log(`❌ Could not verify subscription for ${username} - all methods failed`)
       return { 
         isSubscribed: false, 
-        method: 'official_api',
-        error: 'All official Kick API methods failed - user may not be subscribed'
+        method: 'rapidapi',
+        error: 'All methods failed - user may not be subscribed'
       }
     } catch (error) {
-      console.error('Official Kick API check failed:', error)
+      console.error('RapidAPI subscription check failed:', error)
       return { 
         isSubscribed: false, 
-        method: 'official_api',
+        method: 'rapidapi',
         error: error instanceof Error ? error.message : 'Unknown error'
       }
-    }
-  }
-
-  private async checkSubscriberList(username: string, channelName: string): Promise<SubscriptionResponse> {
-    try {
-      console.log(`🔍 Checking subscriber list for ${channelName} to find ${username}`)
-      
-      // Try to get subscribers (this endpoint might not be publicly available)
-      const subscribersResponse = await fetch(`${this.baseURL}/public/v1/channels/${channelName}/subscribers`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      })
-
-      console.log(`Subscribers endpoint response: ${subscribersResponse.status}`)
-      
-      if (subscribersResponse.ok) {
-        const subscribersData = await subscribersResponse.json()
-        console.log('📋 Got subscribers list:', subscribersData)
-        
-        if (subscribersData.data && subscribersData.data.subscribers) {
-          const isSubscribed = subscribersData.data.subscribers.some((sub: any) => 
-            sub.username?.toLowerCase() === username.toLowerCase()
-          )
-          
-          console.log(`✅ Found user in subscriber list: ${isSubscribed}`)
-          return { 
-            isSubscribed, 
-            method: 'subscriber_list',
-            data: subscribersData 
-          }
-        }
-      } else {
-        const errorText = await subscribersResponse.text()
-        console.log(`❌ Subscribers endpoint failed (${subscribersResponse.status}):`, errorText)
-        
-        // If subscribers endpoint is not available, fall back to follow check
-        if (subscribersResponse.status === 404 || subscribersResponse.status === 403) {
-          console.log(`🔄 Subscribers endpoint not available, falling back to follow check`)
-          return await this.checkFollowStatus(username, channelName)
-        }
-      }
-    } catch (error) {
-      console.log('❌ Subscriber list check failed:', error)
-    }
-
-    return { 
-      isSubscribed: false, 
-      method: 'subscriber_list',
-      error: 'Could not access subscriber list'
-    }
-  }
-
-  private async checkFollowStatus(username: string, channelName: string): Promise<SubscriptionResponse> {
-    try {
-      console.log(`🔄 Checking if ${username} follows ${channelName}`)
-      
-      const followResponse = await fetch(`${this.baseURL}/public/v1/channels/${channelName}/followers`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (followResponse.ok) {
-        const followData = await followResponse.json()
-        console.log('👥 Got followers list:', followData)
-        
-        if (followData.data && followData.data.followers) {
-          const isFollowing = followData.data.followers.some((follower: any) => 
-            follower.username?.toLowerCase() === username.toLowerCase()
-          )
-          
-          console.log(`✅ User following status: ${isFollowing}`)
-          return { 
-            isSubscribed: isFollowing, 
-            method: 'follow_check',
-            data: followData 
-          }
-        }
-      }
-    } catch (error) {
-      console.log('❌ Follow status check failed:', error)
-    }
-
-    return { 
-      isSubscribed: false, 
-      method: 'follow_check',
-      error: 'Could not check follow status'
     }
   }
 }
