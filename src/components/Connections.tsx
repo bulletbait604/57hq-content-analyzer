@@ -231,55 +231,6 @@ export function Connections() {
           </Card>
         </div>
       )}
-
-      {/* API Setup Instructions */}
-      <Card className="bg-black border border-cyan-500/20">
-        <CardHeader>
-          <CardTitle className="text-cyan-400">API Setup Instructions</CardTitle>
-          <CardDescription className="text-gray-400">
-            Follow these steps to get API keys for each platform
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div className="border-l-4 border-pink-500 pl-4">
-              <h4 className="text-pink-400 font-medium mb-2">Instagram Basic Display API</h4>
-              <ol className="text-gray-400 text-sm space-y-1 list-decimal list-inside">
-                <li>Go to <a href="https://developers.facebook.com" className="text-cyan-400 underline" target="_blank">Facebook Developers</a></li>
-                <li>Create a new app with "Business" type</li>
-                <li>Add "Instagram Basic Display" product</li>
-                <li>Configure OAuth redirect URI: {typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com'}/auth/instagram/callback</li>
-                <li>Generate App ID and App Secret</li>
-                <li>Use App Secret as API key</li>
-              </ol>
-            </div>
-
-            <div className="border-l-4 border-red-500 pl-4">
-              <h4 className="text-red-400 font-medium mb-2">YouTube Data API v3</h4>
-              <ol className="text-gray-400 text-sm space-y-1 list-decimal list-inside">
-                <li>Go to <a href="https://console.developers.google.com" className="text-cyan-400 underline" target="_blank">Google Cloud Console</a></li>
-                <li>Create a new project or select existing</li>
-                <li>Enable "YouTube Data API v3"</li>
-                <li>Go to "Credentials" → "Create Credentials"</li>
-                <li>Select "API key" and create</li>
-                <li>Restrict key to YouTube API only</li>
-              </ol>
-            </div>
-
-            <div className="border-l-4 border-gray-800 pl-4">
-              <h4 className="text-gray-300 font-medium mb-2">TikTok API</h4>
-              <ol className="text-gray-400 text-sm space-y-1 list-decimal list-inside">
-                <li>Go to <a href="https://developers.tiktok.com" className="text-cyan-400 underline" target="_blank">TikTok Developers</a></li>
-                <li>Create a new app</li>
-                <li>Select "Research API" or "Business API"</li>
-                <li>Configure your app details and redirect URI</li>
-                <li>Get your Client Key and Client Secret</li>
-                <li>Use Client Secret as API key</li>
-              </ol>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

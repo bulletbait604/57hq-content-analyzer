@@ -7,7 +7,7 @@ import { ContentAnalyzerEnhanced } from '@/components/ContentAnalyzerEnhanced'
 import { PlatformOptimizer } from '@/components/PlatformOptimizer'
 import { ClipAnalyzerEnhanced } from '@/components/ClipAnalyzerEnhanced'
 import { Connections } from '@/components/Connections'
-import { AlgorithmInfo } from '@/components/AlgorithmInfo'
+import { AlgorithmInfoEnhanced } from '@/components/AlgorithmInfoEnhanced'
 import { TagGenerator } from '@/components/TagGenerator'
 import { AIContentOptimizer } from '@/components/AIContentOptimizer'
 import { KickAuth } from '@/components/KickAuth'
@@ -145,7 +145,7 @@ export default function Home() {
           </TabsList>
 
           <TabsContent value="algorithm-info" className="mt-6">
-            <AlgorithmInfo />
+            <AlgorithmInfoEnhanced />
           </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
@@ -202,14 +202,6 @@ export default function Home() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="optimizer" className="mt-6">
-            <PlatformOptimizer />
-          </TabsContent>
-
-          <TabsContent value="algorithm-info" className="mt-6">
-            <AlgorithmInfo />
           </TabsContent>
         </Tabs>
       </div>
