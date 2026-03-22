@@ -15,6 +15,9 @@ import { KickAuth } from '@/components/KickAuth'
 export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [userBadges, setUserBadges] = useState<any[]>([])
+  const [verificationCode, setVerificationCode] = useState<string>('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationStatus, setVerificationStatus] = useState<string>('')
 
   // Get user badges and subscription status from bulletbait604 using multiple approaches
   const getUserBadges = async (username: string) => {
@@ -254,6 +257,144 @@ export default function Home() {
     return []
   }
 
+  // Generate random 4-digit code
+  const generateVerificationCode = () => {
+    const code = Math.floor(1000 + Math.random() * 9000).toString().substring(1)
+    setVerificationCode(code)
+    return code
+  }
+
+  // Copy code to clipboard
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      console.log('📋 Code copied to clipboard')
+      return true
+    } catch (err) {
+      console.error('❌ Failed to copy to clipboard:', err)
+      return false
+    }
+  }
+
+  // Start verification process
+  const startVerification = () => {
+    const code = generateVerificationCode()
+    setVerificationStatus('🔄 Verification started - paste code in chat')
+    setIsVerifying(true)
+  }
+
+  // Check verification status by monitoring chat
+  const checkVerificationStatus = async () => {
+    if (!verificationCode || !user) return
+    
+    try {
+      // Get recent chat messages to find the verification code
+      const channelResponse = await fetch(`https://kick.com/api/v2/channels/bulletbait604`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+          'Origin': 'https://kick.com',
+          'Referer': 'https://kick.com'
+        }
+      })
+
+      if (channelResponse.ok) {
+        const responseText = await channelResponse.text()
+        
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+          console.log('❌ Channel API returned HTML instead of JSON')
+          setVerificationStatus('❌ API Error - Could not check verification status')
+          return
+        }
+        
+        try {
+          const channelData = JSON.parse(responseText)
+          
+          if (channelData.chatroom) {
+            const chatroomId = channelData.chatroom.id
+            
+            // Get recent chat messages
+            const messagesResponse = await fetch(`https://kick.com/api/v2/chatrooms/${chatroomId}/messages`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+                'Origin': 'https://kick.com',
+                'Referer': 'https://kick.com'
+              }
+            })
+
+            if (messagesResponse.ok) {
+              const messagesResponseText = await messagesResponse.text()
+              
+              if (messagesResponseText.includes('<!DOCTYPE') || messagesResponseText.includes('<html')) {
+                console.log('❌ Messages API returned HTML instead of JSON')
+                setVerificationStatus('❌ API Error - Could not check verification status')
+                return
+              }
+              
+              try {
+                const messagesData = JSON.parse(messagesResponseText)
+                
+                if (messagesData.data && Array.isArray(messagesData.data)) {
+                  // Find messages from the current user
+                  const userMessages = messagesData.data.filter((message: any) => 
+                    message.sender && 
+                    message.sender.username && 
+                    message.sender.username.toLowerCase() === user.username.toLowerCase()
+                  )
+                  
+                  // Look for verification code in user's messages
+                  const verificationMessage = userMessages.find((message: any) => 
+                    message.content && 
+                    message.content.includes(verificationCode)
+                  )
+                  
+                  if (verificationMessage) {
+                    console.log('✅ Verification code found in chat!')
+                    
+                    // Get user's badges from that message
+                    const badges = verificationMessage.sender.badges || []
+                    setUserBadges(badges)
+                    setVerificationStatus('✅ Verification successful! Badges loaded.')
+                    setIsVerifying(false)
+                    
+                    console.log('🏅 User badges from verification:', badges)
+                  } else {
+                    console.log('⏳ Verification code not found yet, checking again...')
+                    // Check again after 3 seconds
+                    setTimeout(checkVerificationStatus, 3000)
+                  }
+                }
+              } else {
+                console.log('❌ messagesData.data is not an array:', messagesData.data)
+                setVerificationStatus('❌ API Error - Invalid message data format')
+              }
+            } catch (jsonError) {
+              console.log('❌ Failed to parse messages JSON:', jsonError)
+              setVerificationStatus('❌ API Error - Failed to parse chat messages')
+            }
+          } else {
+            console.log(`❌ Messages API failed: ${messagesResponse.status}`)
+            setVerificationStatus('❌ API Error - Could not fetch chat messages')
+          }
+        } catch (jsonError) {
+          console.log('❌ Failed to parse channel JSON:', jsonError)
+          setVerificationStatus('❌ API Error - Failed to parse channel data')
+        }
+      } else {
+        console.log(`❌ Channel API failed: ${channelResponse.status}`)
+        setVerificationStatus('❌ API Error - Could not fetch channel info')
+      }
+    } catch (error) {
+      console.error('❌ Verification check failed:', error)
+      setVerificationStatus('❌ Verification Error - Network error')
+    }
+  }
+
   // Load user badges when user logs in
   useEffect(() => {
     if (user) {
@@ -346,18 +487,78 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      localStorage.removeItem('kickUser')
-                      localStorage.removeItem('kickAccessToken')
-                    }
-                    setUser(null)
-                  }}
-                  className="text-xs text-gray-400 hover:text-cyan-300 transition-colors"
-                >
-                  Logout
-                </button>
+                <div className="text-right">
+                  {/* Verification Section */}
+                  {!hasSubscriberBadge && (
+                    <div className="mb-3">
+                      <div className="text-cyan-300 text-sm mb-2">Verify Badges</div>
+                      <div className="bg-black border border-cyan-500 rounded p-3 mb-3">
+                        <div className="text-center mb-3">
+                          <div className="text-cyan-300 font-mono text-lg mb-2">{verificationCode}</div>
+                          <div className="text-gray-300 text-sm mb-3">
+                            Copy this code and paste it into Bulletbait604's chat to verify your badges.
+                          </div>
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => copyToClipboard(verificationCode)}
+                              className="bg-cyan-500 hover:bg-cyan-600 text-black px-3 py-1 text-sm rounded"
+                            >
+                              📋 Copy Code
+                            </button>
+                            <a
+                              href="https://kick.com/bulletbait604"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 text-sm rounded"
+                            >
+                              🚀 Go to Channel
+                            </a>
+                          </div>
+                        </div>
+                        {verificationStatus && (
+                          <div className="text-center text-xs text-gray-400 mt-2">
+                            {verificationStatus}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <Button
+                      onClick={startVerification}
+                      disabled={isVerifying}
+                      className="w-full bg-cyan-500 hover:bg-cyan-600 text-black text-sm"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-black border-t-cyan-500 rounded-full animate-spin mr-2" />
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <div className="text-cyan-300">Verify Badges</div>
+                          </div>
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        localStorage.removeItem('kickUser')
+                        localStorage.removeItem('kickAccessToken')
+                      }
+                      setUser(null)
+                      setVerificationCode('')
+                      setVerificationStatus('')
+                      setIsVerifying(false)
+                    }}
+                    className="text-xs text-gray-400 hover:text-cyan-300 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             </div>
           </div>
