@@ -105,6 +105,17 @@ export default function Home() {
     }
   }, [user])
 
+  // Check if user has subscriber badge
+  const hasSubscriberBadge = userBadges.some((badge: any) => 
+    badge.type === 'subscriber' || 
+    badge.type === 'subscription' ||
+    badge.badge === 'subscriber' ||
+    badge.badge === 'subscription' ||
+    badge.name?.toLowerCase().includes('sub')
+  )
+
+  console.log(`🔐 Subscriber access: ${hasSubscriberBadge ? '✅ Granted' : '❌ Denied'}`)
+
   // Check for existing session on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -194,12 +205,42 @@ export default function Home() {
         <Tabs defaultValue="algorithm-info" className="w-full">
           <TabsList className="grid w-full grid-cols-7 bg-black border border-cyan-500">
             <TabsTrigger value="algorithm-info" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Algorithm Info</TabsTrigger>
-            <TabsTrigger value="content-analysis" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Content Analysis</TabsTrigger>
-            <TabsTrigger value="clip-analysis" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Clip Analysis</TabsTrigger>
-            <TabsTrigger value="optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Platform Optimizer</TabsTrigger>
+            <TabsTrigger 
+              value="content-analysis" 
+              className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300"
+              disabled={!hasSubscriberBadge}
+            >
+              Content Analysis {hasSubscriberBadge ? '' : '🔒'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="clip-analysis" 
+              className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300"
+              disabled={!hasSubscriberBadge}
+            >
+              Clip Analysis {hasSubscriberBadge ? '' : '🔒'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="optimizer" 
+              className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300"
+              disabled={!hasSubscriberBadge}
+            >
+              Platform Optimizer {hasSubscriberBadge ? '' : '🔒'}
+            </TabsTrigger>
             <TabsTrigger value="connections" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Connections</TabsTrigger>
-            <TabsTrigger value="tag-generator" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Tag Generator</TabsTrigger>
-            <TabsTrigger value="ai-optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">AI Optimizer</TabsTrigger>
+            <TabsTrigger 
+              value="tag-generator" 
+              className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300"
+              disabled={!hasSubscriberBadge}
+            >
+              Tag Generator {hasSubscriberBadge ? '' : '🔒'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ai-optimizer" 
+              className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300"
+              disabled={!hasSubscriberBadge}
+            >
+              AI Optimizer {hasSubscriberBadge ? '' : '🔒'}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="algorithm-info" className="mt-6">
@@ -207,15 +248,57 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
-            <ContentAnalyzerEnhanced />
+            {hasSubscriberBadge ? (
+              <ContentAnalyzerEnhanced />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
+                  <p className="text-gray-300 mb-4">
+                    Content Analysis requires a subscription to bulletbait604
+                  </p>
+                  <p className="text-cyan-300 text-sm">
+                    Subscribe to unlock AI-powered content analysis features
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="clip-analysis" className="mt-6">
-            <ClipAnalyzerEnhanced />
+            {hasSubscriberBadge ? (
+              <ClipAnalyzerEnhanced />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
+                  <p className="text-gray-300 mb-4">
+                    Clip Analysis requires a subscription to bulletbait604
+                  </p>
+                  <p className="text-cyan-300 text-sm">
+                    Subscribe to unlock AI-powered clip analysis features
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="optimizer" className="mt-6">
-            <PlatformOptimizer />
+            {hasSubscriberBadge ? (
+              <PlatformOptimizer />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
+                  <p className="text-gray-300 mb-4">
+                    Platform Optimizer requires a subscription to bulletbait604
+                  </p>
+                  <p className="text-cyan-300 text-sm">
+                    Subscribe to unlock AI-powered optimization features
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="connections" className="mt-6">
@@ -223,11 +306,39 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="tag-generator" className="mt-6">
-            <TagGenerator />
+            {hasSubscriberBadge ? (
+              <TagGenerator />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
+                  <p className="text-gray-300 mb-4">
+                    Tag Generator requires a subscription to bulletbait604
+                  </p>
+                  <p className="text-cyan-300 text-sm">
+                    Subscribe to unlock AI-powered tag generation features
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="ai-optimizer" className="mt-6">
-            <AIContentOptimizer />
+            {hasSubscriberBadge ? (
+              <AIContentOptimizer />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
+                  <p className="text-gray-300 mb-4">
+                    AI Content Optimizer requires a subscription to bulletbait604
+                  </p>
+                  <p className="text-cyan-300 text-sm">
+                    Subscribe to unlock AI-powered content optimization features
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
