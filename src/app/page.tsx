@@ -20,7 +20,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-4" style={{ textShadow: '0 0 10px #00ffff' }}>
-            57 HQ Content Analyzer
+            SDHQ Content Analyzer
           </h1>
           <p className="text-lg text-cyan-300 max-w-2xl mx-auto">
             AI-powered multi-platform content optimization based on 2026 algorithm parameters
