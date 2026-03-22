@@ -310,4 +310,6 @@ export class KickSubscriptionChecker {
 }
 
 // Export singleton instance
-export const kickSubscriptionChecker = new KickSubscriptionChecker()
+export const kickSubscriptionChecker = new KickSubscriptionChecker(
+  process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || ''
+)
