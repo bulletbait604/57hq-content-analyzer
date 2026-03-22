@@ -127,33 +127,41 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="content-analysis" className="w-full">
+        <Tabs defaultValue="algorithm-info" className="w-full">
           <TabsList className="grid w-full grid-cols-7 bg-black border border-cyan-500">
+            <TabsTrigger value="algorithm-info" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Algorithm Info</TabsTrigger>
             <TabsTrigger value="content-analysis" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Content Analysis</TabsTrigger>
-            <TabsTrigger value="connections" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Connections</TabsTrigger>
             <TabsTrigger value="clip-analysis" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Clip Analysis</TabsTrigger>
-            <TabsTrigger value="ai-optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">
-              AI Optimizer
-              {!isSubscribed && <span className="ml-1 text-xs">🔒</span>}
-            </TabsTrigger>
+            <TabsTrigger value="optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Platform Optimizer</TabsTrigger>
+            <TabsTrigger value="connections" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Connections</TabsTrigger>
             <TabsTrigger value="tags" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">
               Tag Generator
               {!isSubscribed && <span className="ml-1 text-xs">🔒</span>}
             </TabsTrigger>
-            <TabsTrigger value="optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Platform Optimizer</TabsTrigger>
-            <TabsTrigger value="algorithm-info" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Algorithm Info</TabsTrigger>
+            <TabsTrigger value="ai-optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">
+              AI Optimizer
+              {!isSubscribed && <span className="ml-1 text-xs">🔒</span>}
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="algorithm-info" className="mt-6">
+            <AlgorithmInfo />
+          </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
             <ContentAnalyzerEnhanced />
           </TabsContent>
 
-          <TabsContent value="connections" className="mt-6">
-            <Connections />
-          </TabsContent>
-
           <TabsContent value="clip-analysis" className="mt-6">
             <ClipAnalyzerEnhanced />
+          </TabsContent>
+
+          <TabsContent value="optimizer" className="mt-6">
+            <PlatformOptimizer />
+          </TabsContent>
+
+          <TabsContent value="connections" className="mt-6">
+            <Connections />
           </TabsContent>
 
           <TabsContent value="ai-optimizer" className="mt-6">

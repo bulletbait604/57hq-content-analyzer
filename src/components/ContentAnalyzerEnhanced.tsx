@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input-proper'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
+import { TikTokAPI, TikTokVideo } from '@/lib/tiktok-api'
 import { 
   Search, 
   ExternalLink, 
@@ -29,7 +30,7 @@ interface ContentUpload {
   views: number
   likes: number
   comments: number
-  engagement: number
+  engagement: string
 }
 
 export function ContentAnalyzerEnhanced() {
@@ -55,7 +56,7 @@ export function ContentAnalyzerEnhanced() {
       views: 15420,
       likes: 892,
       comments: 124,
-      engagement: 6.7
+      engagement: '6.7'
     },
     {
       id: '2',
@@ -67,7 +68,7 @@ export function ContentAnalyzerEnhanced() {
       views: 8234,
       likes: 567,
       comments: 89,
-      engagement: 7.9
+      engagement: '7.9'
     },
     {
       id: '3',
@@ -79,31 +80,7 @@ export function ContentAnalyzerEnhanced() {
       views: 12450,
       likes: 445,
       comments: 67,
-      engagement: 4.1
-    },
-    {
-      id: '4',
-      platform: 'TikTok',
-      title: 'Quick hack that changed everything! 💡',
-      thumbnail: 'https://via.placeholder.com/300x400/000000/ffffff?text=TikTok+Short',
-      url: 'https://tiktok.com/@user/video/2',
-      uploadTime: '12 hours ago',
-      views: 28900,
-      likes: 2100,
-      comments: 234,
-      engagement: 8.2
-    },
-    {
-      id: '5',
-      platform: 'Instagram',
-      title: 'Day in the life of a content creator 📹',
-      thumbnail: 'https://via.placeholder.com/300x400/000000/ffffff?text=Instagram+Story',
-      url: 'https://instagram.com/p/def456',
-      uploadTime: '18 hours ago',
-      views: 6780,
-      likes: 423,
-      comments: 56,
-      engagement: 7.1
+      engagement: '4.1'
     }
   ]
 
@@ -112,11 +89,39 @@ export function ContentAnalyzerEnhanced() {
     
     setIsSearching(true)
     
-    // Simulate API call to fetch 24hr uploads
-    setTimeout(() => {
+    try {
+      // Initialize TikTok API
+      const tiktokAPI = new TikTokAPI(process.env.NEXT_PUBLIC_RAPIDAPI_TIKTOK_API_KEY || '')
+      
+      // Get recent videos from TikTok
+      const tiktokVideos = await tiktokAPI.getUserRecentVideos(username.replace('@', ''))
+      
+      // Transform to match our interface
+      const transformedUploads = tiktokVideos.map((video, index) => ({
+        id: video.id,
+        platform: 'TikTok',
+        title: video.title,
+        thumbnail: video.thumbnail,
+        url: video.url,
+        uploadTime: `${Math.floor((Date.now() - video.createTime * 1000) / (1000 * 60 * 60))} hours ago`,
+        views: video.stats.playCount,
+        likes: video.stats.likeCount,
+        comments: video.stats.commentCount,
+        engagement: video.stats.playCount > 0 ? 
+          ((video.stats.likeCount + video.stats.commentCount) / video.stats.playCount * 100).toFixed(1).toString() : 
+          '0'
+      }))
+      
+      setUploads(transformedUploads)
+      console.log(`✅ Fetched ${transformedUploads.length} TikTok videos for @${username}`)
+      
+    } catch (error) {
+      console.error('❌ Error fetching TikTok videos:', error)
+      // Show mock data as fallback
       setUploads(mockUploads)
+    } finally {
       setIsSearching(false)
-    }, 2000)
+    }
   }
 
   const getPlatformIcon = (platform: string) => {
