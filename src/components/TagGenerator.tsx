@@ -22,7 +22,7 @@ export function TagGenerator() {
       
       if (useAI) {
         // Use AI to generate tags
-        tags = await generateTagsWithAI(clipTitle, selectedPlatform, contentType)
+        tags = await generateTagsWithDeepSeek(clipTitle, selectedPlatform, contentType)
       } else {
         // Fallback to basic tag generation
         tags = generateBasicTags()
@@ -110,10 +110,10 @@ export function TagGenerator() {
                   onChange={(e) => setUseAI(e.target.checked)}
                   className="w-4 h-4 text-cyan-600 bg-black border border-cyan-500 rounded focus:ring-cyan-400"
                 />
-                <span className="text-white font-medium">Enable AI Analysis</span>
+                <span className="text-white font-medium">Enable DeepSeek Analysis</span>
               </label>
               <span className="text-xs text-cyan-300">
-                {useAI ? 'Advanced AI-powered tag generation' : 'Basic algorithm-based tags'}
+                {useAI ? 'Advanced DeepSeek-powered tag generation' : 'Basic algorithm-based tags'}
               </span>
             </div>
 
@@ -167,11 +167,11 @@ export function TagGenerator() {
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {useAI ? 'AI Analyzing...' : 'Generating Tags...'}
+                  {useAI ? 'DeepSeek Analyzing...' : 'Generating Tags...'}
                 </>
               ) : (
                 <>
-                  {useAI ? 'Generate AI Tags' : 'Generate Basic Tags'}
+                  {useAI ? 'Generate DeepSeek Tags' : 'Generate Basic Tags'}
                 </>
               )}
             </button>
@@ -187,7 +187,7 @@ export function TagGenerator() {
                 <TrendingUp className="h-5 w-5 text-cyan-400" />
                 Generated Tags ({generatedTags.length})
                 {useAI && (
-                  <span className="px-2 py-1 bg-lime-500 text-black text-xs rounded-full">AI-Powered</span>
+                  <span className="px-2 py-1 bg-lime-500 text-black text-xs rounded-full">DeepSeek-Powered</span>
                 )}
               </span>
               <button

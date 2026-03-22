@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Brain, Loader2, Copy, CheckCircle, TrendingUp, Target, Zap } from 'lucide-react'
+import { analyzeContentWithDeepSeek } from '@/lib/deepseek'
 
 export function AIContentOptimizer() {
   const [contentType, setContentType] = useState('title')
@@ -20,18 +21,14 @@ export function AIContentOptimizer() {
 
     setIsLoading(true)
     try {
-      if (useAI) {
-        const result = await analyzeContentWithAI(
-          contentType,
-          platform,
-          inputTitle,
-          inputDescription,
-          additionalContext
-        )
-        setAnalysis(result)
-      } else {
-        setAnalysis(generateBasicOptimization())
-      }
+      const result = await analyzeContentWithDeepSeek(
+        contentType,
+        platform,
+        inputTitle,
+        inputDescription,
+        additionalContext
+      )
+      setAnalysis(result)
     } catch (error) {
       console.error('Analysis error:', error)
       setAnalysis(generateBasicOptimization())
@@ -137,10 +134,10 @@ export function AIContentOptimizer() {
                 onChange={(e) => setUseAI(e.target.checked)}
                 className="w-4 h-4 text-cyan-600 bg-black border border-cyan-500 rounded focus:ring-cyan-400"
               />
-              <span className="text-white font-medium">Enable AI Analysis</span>
+              <span className="text-white font-medium">Enable DeepSeek Analysis</span>
             </label>
             <span className="text-xs text-cyan-300">
-              {useAI ? 'GPT-4 powered analysis' : 'Basic optimization'}
+              {useAI ? 'DeepSeek AI-powered analysis' : 'Basic optimization'}
             </span>
           </div>
 
@@ -214,16 +211,16 @@ export function AIContentOptimizer() {
               style={{ boxShadow: '0 0 15px rgba(0, 255, 255, 0.3)' }}
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {useAI ? 'AI Analyzing...' : 'Optimizing...'}
-                </>
-              ) : (
-                <>
-                  <Target className="h-4 w-4" />
-                  {useAI ? 'AI Analysis' : 'Basic Optimization'}
-                </>
-              )}
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {useAI ? 'DeepSeek Analyzing...' : 'Optimizing...'}
+                  </>
+                ) : (
+                  <>
+                    <Target className="h-4 w-4" />
+                    {useAI ? 'DeepSeek Analysis' : 'Basic Optimization'}
+                  </>
+                )}
             </button>
           </div>
         </CardContent>
@@ -238,7 +235,7 @@ export function AIContentOptimizer() {
                   <TrendingUp className="h-5 w-5 text-cyan-400" />
                   Algorithm Score
                   {useAI && (
-                    <span className="px-2 py-1 bg-lime-500 text-black text-xs rounded-full">AI-Powered</span>
+                    <span className="px-2 py-1 bg-lime-500 text-black text-xs rounded-full">DeepSeek-Powered</span>
                   )}
                 </span>
                 <span className={`text-2xl font-bold ${getScoreColor(analysis.algorithmScore)}`}>
