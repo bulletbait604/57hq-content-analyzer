@@ -315,11 +315,31 @@ export function ClipAnalyzer() {
           <Card className="bg-black border border-cyan-500">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
+                <Zap className="h-5 w-5 text-cyan-400" />
+                57 HQ Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
                 <h4 className="font-semibold text-cyan-400 mb-3">Platform-Specific Optimizations</h4>
                 <div className="space-y-2 text-sm text-cyan-300">
                   {selectedClipData.recommendations.map((rec, index) => (
                     <div key={index} className="flex items-start gap-3 p-3 bg-black border border-cyan-600 rounded-lg">
                       <Clock className="h-4 w-4 text-cyan-500 mt-0.5 flex-shrink-0" />
+                      <span>{rec}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 p-4 bg-black border border-cyan-600 rounded-lg">
+                  <h4 className="font-semibold text-cyan-400 mb-3">Algorithm Insights</h4>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm text-cyan-300">
+                    <div>
+                      <h5 className="font-medium text-white mb-2">YouTube Algorithm</h5>
+                      <p>Focus on session contribution and completion rate. Add interactive elements like polls to boost engagement.</p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-white mb-2">TikTok Algorithm</h5>
                       <p>Pattern interrupts every 3 seconds. Use high-contrast text and trending sounds for maximum reach.</p>
                     </div>
                     <div>
@@ -328,7 +348,8 @@ export function ClipAnalyzer() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
+              </div>
+            </CardContent>
           </Card>
         </div>
       )}
