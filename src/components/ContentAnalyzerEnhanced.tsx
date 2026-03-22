@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input-proper'
-import { Label } from '@/components/ui/simple-label'
-import { Badge } from '@/components/ui/simple-badge'
+import { Label } from '@/components/ui/label-simple'
+import { Badge } from '@/components/ui/badge'
 import { 
   Search, 
   ExternalLink, 
