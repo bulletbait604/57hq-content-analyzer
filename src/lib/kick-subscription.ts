@@ -33,7 +33,79 @@ export class KickSubscriptionChecker {
         }
       }
 
-      // Method 1: Get channel information including subscriber list
+      // Method 1: Try RapidAPI for subscriber list (more likely to work)
+      try {
+        console.log(`🚀 Trying RapidAPI for subscriber list: https://kick-com-api.p.rapidapi.com/channel/${channelName}/subscribers`)
+        const rapidApiResponse = await fetch(`https://kick-com-api.p.rapidapi.com/channel/${channelName}/subscribers`, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': this.apiKey,
+            'X-RapidAPI-Host': 'kick-com-api.p.rapidapi.com'
+          }
+        })
+
+        console.log(`RapidAPI subscribers response: ${rapidApiResponse.status}`)
+        
+        if (rapidApiResponse.ok) {
+          const rapidApiData = await rapidApiResponse.json()
+          console.log('� Got subscriber list from RapidAPI:', rapidApiData)
+          
+          if (rapidApiData.data && Array.isArray(rapidApiData.data)) {
+            console.log(`📋 Found ${rapidApiData.data.length} subscribers via RapidAPI`)
+            
+            const isSubscribed = rapidApiData.data.some((subscriber: any) => {
+              const subUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
+              const targetUsername = username.toLowerCase()
+              console.log(`🔍 Checking subscriber: ${subUsername} vs target: ${targetUsername}`)
+              return subUsername === targetUsername
+            })
+            
+            console.log(`✅ RapidAPI cross-reference check result: ${isSubscribed}`)
+            
+            if (isSubscribed) {
+              console.log(`🎉 FOUND "${username.toLowerCase()}" in ${channelName}'s RapidAPI subscriber list!`)
+              return { 
+                isSubscribed: true, 
+                method: 'rapidapi_subscriber_list',
+                data: {
+                  rapidApiData: rapidApiData.data,
+                  subscriberFound: rapidApiData.data.find((sub: any) => 
+                    sub.username?.toLowerCase() === username.toLowerCase() || 
+                    sub.name?.toLowerCase() === username.toLowerCase()
+                  ),
+                  totalSubscribers: rapidApiData.data.length
+                }
+              }
+            } else {
+              console.log(`❌ "${username.toLowerCase()}" NOT found in ${channelName}'s RapidAPI subscriber list`)
+            }
+          } else {
+            console.log('❌ No subscriber data found in RapidAPI response')
+          }
+        } else {
+          const rapidApiError = await rapidApiResponse.text()
+          console.log(`❌ RapidAPI subscribers failed (${rapidApiResponse.status}):`, rapidApiError)
+          
+          if (rapidApiResponse.status === 403) {
+            return { 
+              isSubscribed: false, 
+              method: 'rapidapi',
+              error: 'API subscription required: Subscribe to Kick API on RapidAPI'
+            }
+          }
+          if (rapidApiResponse.status === 429) {
+            return { 
+              isSubscribed: false, 
+              method: 'rapidapi',
+              error: 'Rate limit exceeded: Too many requests to RapidAPI'
+            }
+          }
+        }
+      } catch (rapidApiError) {
+        console.log('❌ RapidAPI subscriber list request failed:', rapidApiError)
+      }
+
+      // Method 2: Fallback to official Kick API channel info
       try {
         console.log(`🚀 Trying official Kick API channel endpoint: ${this.baseURL}/public/v1/channels/${channelName}`)
         const channelResponse = await fetch(`${this.baseURL}/public/v1/channels/${channelName}`, {
@@ -48,27 +120,25 @@ export class KickSubscriptionChecker {
         
         if (channelResponse.ok) {
           const channelData = await channelResponse.json()
-          console.log('📺 Got channel info from official Kick API:', channelData)
+          console.log('� Got channel info from official Kick API:', channelData)
           
-          // Method 1A: Check if channel has subscriber data
+          // Check if channel has subscriber data
           if (channelData.data && channelData.data.subscribers && Array.isArray(channelData.data.subscribers)) {
-            console.log(`� Found ${channelData.data.subscribers.length} subscribers in channel data`)
+            console.log(`📋 Found ${channelData.data.subscribers.length} subscribers in channel data`)
             
             const isSubscribed = channelData.data.subscribers.some((subscriber: any) => {
               const subUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
               const targetUsername = username.toLowerCase()
-              console.log(`🔍 Checking subscriber: ${subUsername} vs target: ${targetUsername}`)
               return subUsername === targetUsername
             })
             
-            console.log(`✅ Cross-reference check result: ${isSubscribed}`)
-            console.log(`🔍 Looking for username "${username.toLowerCase()}" in subscriber list`)
+            console.log(`✅ Official API cross-reference check result: ${isSubscribed}`)
             
             if (isSubscribed) {
               console.log(`🎉 FOUND "${username.toLowerCase()}" in ${channelName}'s subscriber list!`)
               return { 
                 isSubscribed: true, 
-                method: 'subscriber_list_cross_reference',
+                method: 'official_api_subscriber_list',
                 data: {
                   channelData: channelData.data,
                   subscriberFound: channelData.data.subscribers.find((sub: any) => 
@@ -80,60 +150,9 @@ export class KickSubscriptionChecker {
               }
             } else {
               console.log(`❌ "${username.toLowerCase()}" NOT found in ${channelName}'s subscriber list`)
-              
-              // Method 2: Try user subscriptions endpoint
-              try {
-                console.log(`🚀 Trying official Kick API user subscriptions endpoint: ${this.baseURL}/public/v1/users/${username}/subscriptions`)
-                const userSubResponse = await fetch(`${this.baseURL}/public/v1/users/${username}/subscriptions`, {
-                  method: 'GET',
-                  headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                  }
-                })
-
-                console.log(`Official Kick API user subscriptions response: ${userSubResponse.status}`)
-                
-                if (userSubResponse.ok) {
-                  const subData = await userSubResponse.json()
-                  console.log('📋 Got user subscriptions from official Kick API:', subData)
-                  
-                  if (subData.data && subData.data.subscriptions) {
-                    const isSubscribedToChannel = subData.data.subscriptions.some((sub: any) => 
-                      sub.channel_name?.toLowerCase() === channelName.toLowerCase() ||
-                      sub.channel_slug?.toLowerCase() === channelName.toLowerCase() ||
-                      sub.name?.toLowerCase() === channelName.toLowerCase()
-                    )
-                    
-                    console.log(`✅ User subscription check result: ${isSubscribedToChannel}`)
-                    
-                    if (isSubscribedToChannel) {
-                      console.log(`🎉 FOUND ${channelName} in ${username}'s subscriptions!`)
-                      return { 
-                        isSubscribed: true, 
-                        method: 'user_subscriptions_cross_reference',
-                        data: {
-                          userData: subData.data,
-                          subscriptionFound: subData.data.subscriptions.find((sub: any) => 
-                            sub.channel_name?.toLowerCase() === channelName.toLowerCase() ||
-                            sub.channel_slug?.toLowerCase() === channelName.toLowerCase() ||
-                            sub.name?.toLowerCase() === channelName.toLowerCase()
-                          )
-                        }
-                      }
-                    }
-                  }
-                }
-                
-                if (!isSubscribedToChannel) {
-                  console.log(`❌ ${channelName} NOT found in ${username}'s subscriptions`)
-                }
-              } catch (subError) {
-                console.log('❌ Official Kick API user subscriptions request failed:', subError)
-              }
             }
           } else {
-            console.log('❌ No subscriber data found in channel info')
+            console.log('❌ No subscriber data found in official API channel info')
           }
         } else {
           const errorText = await channelResponse.text()
