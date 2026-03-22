@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { User, LogIn, LogOut, CheckCircle, XCircle, Crown } from 'lucide-react'
 import { KickAPI, KickUser } from '@/lib/kick-api'
+import { KickSimpleOAuth } from '@/lib/kick-simple'
 
 interface KickAuthProps {
   onSubscriptionChange?: (subscribed: boolean) => void
@@ -75,29 +76,24 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     }
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setIsLoading(true)
     setError(null)
 
     try {
       const redirectUri = `https://sdhq-content-analyzer.vercel.app/auth/kick/callback`
-      const authUrl = kickAPI.getAuthURL(redirectUri)
+      const authUrl = await kickAPI.getAuthURL(redirectUri)
       
       // Debug: Log the URL to console
       console.log('Kick OAuth URL:', authUrl)
       console.log('Client ID:', process.env.NEXT_PUBLIC_KICK_CLIENT_ID)
       console.log('Redirect URI:', redirectUri)
-      console.log('Base URL:', kickAPI['baseURL'])
       
-      // Test different endpoints manually
-      const clientId = process.env.NEXT_PUBLIC_KICK_CLIENT_ID
-      const testUrls = [
-        `https://kick.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=user channel&state=test`,
-        `https://kick.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=user channel&state=test`,
-        `https://kick.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=user channel&state=test`,
-      ]
+      // Also generate test URLs for manual testing
+      const simpleOAuth = new KickSimpleOAuth(process.env.NEXT_PUBLIC_KICK_CLIENT_ID || '')
+      const testUrls = simpleOAuth.getTestURLs(redirectUri)
       
-      console.log('Test URLs:')
+      console.log('=== Alternative Test URLs ===')
       testUrls.forEach((url, index) => {
         console.log(`Test ${index + 1}: ${url}`)
       })

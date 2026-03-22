@@ -14,31 +14,76 @@ export interface KickAuthResponse {
 
 export class KickAPI {
   private baseURL: string
+  private oauthServerURL: string
   private clientId: string
   private clientSecret: string
 
   constructor(baseURL: string, clientId: string, clientSecret: string) {
     this.baseURL = baseURL
+    this.oauthServerURL = 'https://id.kick.com' // Kick OAuth server is different from API server
     this.clientId = clientId
     this.clientSecret = clientSecret
   }
 
-  getAuthURL(redirectURI: string): string {
+  // Generate PKCE code challenge
+  private async generatePKCE() {
+    const codeVerifier = this.generateRandomString(128)
+    const hashBuffer = await this.sha256(codeVerifier)
+    const codeChallenge = this.base64UrlEncode(hashBuffer)
+    return { codeVerifier, codeChallenge }
+  }
+
+  private generateRandomString(length: number): string {
+    const array = new Uint8Array(length)
+    crypto.getRandomValues(array)
+    return Array.from(array, byte => String.fromCharCode(byte)).join('')
+  }
+
+  private async sha256(message: string): Promise<ArrayBuffer> {
+    const msgBuffer = new TextEncoder().encode(message)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+    return hashBuffer
+  }
+
+  private base64UrlEncode(arrayBuffer: ArrayBuffer): string {
+    const byteArray = new Uint8Array(arrayBuffer)
+    let base64 = ''
+    for (let i = 0; i < byteArray.length; i++) {
+      base64 += String.fromCharCode(byteArray[i])
+    }
+    return btoa(base64).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+  }
+
+  async getAuthURL(redirectURI: string): Promise<string> {
+    const { codeVerifier, codeChallenge } = await this.generatePKCE()
+    
+    // Store code verifier for token exchange
+    sessionStorage.setItem('kick_code_verifier', codeVerifier)
+    
+    // Try different scope formats based on Kick's API documentation
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: redirectURI,
       response_type: 'code',
-      scope: 'user channel',
-      state: Math.random().toString(36).substring(7)
+      scope: 'chat:read user:read', // Try Kick's actual scope format
+      state: Math.random().toString(36).substring(7),
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256'
     })
 
-    // Use the standard OAuth endpoint
-    const baseUrl = `${this.baseURL}/oauth/authorize`
+    // Use Kick's OAuth server: https://id.kick.com
+    const baseUrl = `${this.oauthServerURL}/oauth/authorize`
     return `${baseUrl}?${params.toString()}`
   }
 
   async exchangeCodeForToken(code: string, redirectURI: string): Promise<KickAuthResponse> {
-    const response = await fetch(`${this.baseURL}/oauth/token`, {
+    const codeVerifier = sessionStorage.getItem('kick_code_verifier')
+    
+    if (!codeVerifier) {
+      throw new Error('Code verifier not found')
+    }
+    
+    const response = await fetch(`${this.oauthServerURL}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -48,7 +93,8 @@ export class KickAPI {
         client_id: this.clientId,
         client_secret: this.clientSecret,
         code: code,
-        redirect_uri: redirectURI
+        redirect_uri: redirectURI,
+        code_verifier: codeVerifier
       })
     })
 
@@ -56,6 +102,9 @@ export class KickAPI {
       throw new Error('Failed to exchange code for token')
     }
 
+    // Clean up code verifier
+    sessionStorage.removeItem('kick_code_verifier')
+    
     return response.json()
   }
 
