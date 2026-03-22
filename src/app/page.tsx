@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ContentAnalyzer } from '@/components/ContentAnalyzer'
+import { ContentAnalyzerEnhanced } from '@/components/ContentAnalyzerEnhanced'
 import { PlatformOptimizer } from '@/components/PlatformOptimizer'
-import { ClipAnalyzer } from '@/components/ClipAnalyzer'
-import { ImprovementTips } from '@/components/ImprovementTips'
+import { ClipAnalyzerEnhanced } from '@/components/ClipAnalyzerEnhanced'
+import { Connections } from '@/components/Connections'
+import { AlgorithmInfo } from '@/components/AlgorithmInfo'
 import { TagGenerator } from '@/components/TagGenerator'
 import { AIContentOptimizer } from '@/components/AIContentOptimizer'
 import { KickAuth } from '@/components/KickAuth'
@@ -126,9 +127,11 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="analyzer" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-black border border-cyan-500">
-            <TabsTrigger value="analyzer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Content Analysis</TabsTrigger>
+        <Tabs defaultValue="content-analysis" className="w-full">
+          <TabsList className="grid w-full grid-cols-7 bg-black border border-cyan-500">
+            <TabsTrigger value="content-analysis" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Content Analysis</TabsTrigger>
+            <TabsTrigger value="connections" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Connections</TabsTrigger>
+            <TabsTrigger value="clip-analysis" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Clip Analysis</TabsTrigger>
             <TabsTrigger value="ai-optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">
               AI Optimizer
               {!isSubscribed && <span className="ml-1 text-xs">🔒</span>}
@@ -138,12 +141,19 @@ export default function Home() {
               {!isSubscribed && <span className="ml-1 text-xs">🔒</span>}
             </TabsTrigger>
             <TabsTrigger value="optimizer" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Platform Optimizer</TabsTrigger>
-            <TabsTrigger value="clip" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Clip Analysis</TabsTrigger>
-            <TabsTrigger value="tips" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Improvement Tips</TabsTrigger>
+            <TabsTrigger value="algorithm-info" className="text-white hover:bg-cyan-900 hover:text-cyan-400 data-[state=active]:bg-cyan-800 data-[state=active]:text-cyan-300">Algorithm Info</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="analyzer" className="mt-6">
-            <ContentAnalyzer />
+          <TabsContent value="content-analysis" className="mt-6">
+            <ContentAnalyzerEnhanced />
+          </TabsContent>
+
+          <TabsContent value="connections" className="mt-6">
+            <Connections />
+          </TabsContent>
+
+          <TabsContent value="clip-analysis" className="mt-6">
+            <ClipAnalyzerEnhanced />
           </TabsContent>
 
           <TabsContent value="ai-optimizer" className="mt-6">
@@ -190,12 +200,8 @@ export default function Home() {
             <PlatformOptimizer />
           </TabsContent>
 
-          <TabsContent value="clip" className="mt-6">
-            <ClipAnalyzer />
-          </TabsContent>
-
-          <TabsContent value="tips" className="mt-6">
-            <ImprovementTips />
+          <TabsContent value="algorithm-info" className="mt-6">
+            <AlgorithmInfo />
           </TabsContent>
         </Tabs>
       </div>
