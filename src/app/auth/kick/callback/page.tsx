@@ -8,19 +8,17 @@ export default function KickCallback() {
     const code = urlParams.get('code')
     const error = urlParams.get('error')
 
-    // Get the return URL from session storage
-    const returnUrl = sessionStorage.getItem('kickAuthReturn') || '/'
+    // Simple redirect to main page with auth info
+    const mainAppUrl = 'https://sdhq-content-analyzer.vercel.app'
 
     if (code) {
-      // Store the auth code and redirect to main page
-      sessionStorage.setItem('kickAuthCode', code)
-      window.location.href = returnUrl + '?auth=success'
+      // Store the auth code in localStorage (more reliable than sessionStorage)
+      localStorage.setItem('kickAuthCode', code)
+      window.location.href = `${mainAppUrl}?auth=success&code=${code}`
     } else if (error) {
-      // Handle error and redirect back
-      window.location.href = returnUrl + '?auth=error&message=' + encodeURIComponent(error)
+      window.location.href = `${mainAppUrl}?auth=error&message=${encodeURIComponent(error)}`
     } else {
-      // No code or error, redirect back
-      window.location.href = returnUrl + '?auth=error&message=no_code'
+      window.location.href = `${mainAppUrl}?auth=error&message=no_code`
     }
   }, [])
 
@@ -29,6 +27,7 @@ export default function KickCallback() {
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-cyan-400">Processing authentication...</p>
+        <p className="text-cyan-300 text-sm mt-2">You will be redirected shortly.</p>
       </div>
     </div>
   )

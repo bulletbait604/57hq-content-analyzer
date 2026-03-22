@@ -37,12 +37,12 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     const authStatus = urlParams.get('auth')
     
     if (authStatus === 'success') {
-      const authCode = sessionStorage.getItem('kickAuthCode')
+      const authCode = urlParams.get('code') || localStorage.getItem('kickAuthCode')
       if (authCode) {
         const redirectUri = `https://sdhq-content-analyzer.vercel.app/auth/kick/callback`
         handleAuthSuccess(authCode, redirectUri)
         // Clean up
-        sessionStorage.removeItem('kickAuthCode')
+        localStorage.removeItem('kickAuthCode')
         sessionStorage.removeItem('kickAuthReturn')
         // Clear URL params
         window.history.replaceState({}, '', window.location.pathname)
@@ -53,6 +53,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       setIsLoading(false)
       // Clean up
       sessionStorage.removeItem('kickAuthReturn')
+      localStorage.removeItem('kickAuthCode')
       // Clear URL params
       window.history.replaceState({}, '', window.location.pathname)
     }
