@@ -233,7 +233,7 @@ export function ContentAnalyzerEnhanced() {
                   </div>
                   <div className="absolute top-2 right-2">
                     <Badge variant="outline" className="text-cyan-400 border-cyan-400 text-xs">
-                      {upload.engagement.toFixed(1)}% engagement
+                      {upload.engagement}% engagement
                     </Badge>
                   </div>
                 </div>
