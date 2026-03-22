@@ -8,7 +8,6 @@ export interface SubscriptionResponse {
 
 export class KickSubscriptionChecker {
   private apiKey: string
-  private baseURL: string = 'https://kick.com/api/v1'
   private authToken: string = ''
 
   constructor(apiKey: string) {
@@ -29,22 +28,16 @@ export class KickSubscriptionChecker {
       try {
         console.log(`🚀 Trying Unofficial Kick API: https://kick.com/api/v1/user/subscriptions`)
         
-        const headers: Record<string, string> = {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-        
-        // Add auth token if available
-        if (this.authToken) {
-          headers['Authorization'] = `Bearer ${this.authToken}`
-          console.log('🔐 Using auth token for API request')
-        } else {
-          console.log('⚠️ No auth token available - making unauthenticated request')
-        }
-        
         const userSubsResponse = await fetch(`https://kick.com/api/v1/user/subscriptions`, {
           method: 'GET',
-          headers
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.authToken}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+            'Origin': 'https://kick.com',
+            'Referer': 'https://kick.com'
+          }
         })
 
         console.log(`User subscriptions response: ${userSubsResponse.status}`)
@@ -105,19 +98,16 @@ export class KickSubscriptionChecker {
       try {
         console.log(`🔄 Trying channel subscribers endpoint: https://kick.com/api/v1/channels/${channelName}/subscribers`)
         
-        const headers: Record<string, string> = {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-        
-        // Add auth token if available
-        if (this.authToken) {
-          headers['Authorization'] = `Bearer ${this.authToken}`
-        }
-        
         const channelSubsResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/subscribers`, {
           method: 'GET',
-          headers
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.authToken}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+            'Origin': 'https://kick.com',
+            'Referer': 'https://kick.com'
+          }
         })
 
         console.log(`Channel subscribers response: ${channelSubsResponse.status}`)
@@ -148,19 +138,16 @@ export class KickSubscriptionChecker {
       try {
         console.log(`🔄 Trying fallback: check if ${username} follows ${channelName}`)
         
-        const headers: Record<string, string> = {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-        
-        // Add auth token if available
-        if (this.authToken) {
-          headers['Authorization'] = `Bearer ${this.authToken}`
-        }
-        
         const followResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/followers`, {
           method: 'GET',
-          headers
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.authToken}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+            'Origin': 'https://kick.com',
+            'Referer': 'https://kick.com'
+          }
         })
 
         console.log(`Followers response: ${followResponse.status}`)
