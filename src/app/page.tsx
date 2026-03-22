@@ -359,23 +359,16 @@ export default function Home() {
                     // Get user's badges from that message
                     const badges = verificationMessage.sender.badges || []
                     setUserBadges(badges)
-                    setVerificationStatus('✅ Verification successful! Badges loaded.')
-                    setIsVerifying(false)
-                    
-                    console.log('🏅 User badges from verification:', badges)
-                  } else {
-                    console.log('⏳ Verification code not found yet, checking again...')
-                    // Check again after 3 seconds
-                    setTimeout(checkVerificationStatus, 3000)
-                  }
                 }
               } else {
                 console.log('❌ messagesData.data is not an array:', messagesData.data)
                 setVerificationStatus('❌ API Error - Invalid message data format')
+                setTimeout(checkVerificationStatus, 3000)
               }
             } catch (jsonError) {
               console.log('❌ Failed to parse messages JSON:', jsonError)
               setVerificationStatus('❌ API Error - Failed to parse chat messages')
+              setTimeout(checkVerificationStatus, 3000)
             }
           } else {
             console.log(`❌ Messages API failed: ${messagesResponse.status}`)
