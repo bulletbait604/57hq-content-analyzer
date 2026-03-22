@@ -15,6 +15,11 @@ interface KickAuthProps {
 export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) {
   const [user, setUser] = useState<KickUser | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
+  const [kickAuth, setKickAuth] = useState<{
+    verificationCode?: string
+    isVerifying?: boolean
+    verificationStep?: 'generate' | 'send' | 'check' | 'complete'
+  } | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -140,47 +145,62 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       // Set auth token for subscription checker
       kickSubscriptionChecker.setAuthToken(tokenResponse.access_token)
       
-      // Check subscription using official Kick API
-      console.log(`🔍 Checking subscription for @${userData.username} to bulletbait604`)
+      // Generate verification code
+  const generateVerificationCode = () => {
+    const code = kickSubscriptionChecker.generateVerificationCode()
+    setKickAuth({
+      verificationCode: code,
+      isVerifying: false,
+      verificationStep: 'generate'
+    })
+  }
+
+  // Start verification process
+  const startVerification = async () => {
+    if (!kickAuth?.verificationCode) {
+      setError('Please generate a verification code first')
+      return
+    }
+
+    setKickAuth(prev => ({ ...prev, isVerifying: true, verificationStep: 'send' }))
+    
+    try {
+      const subscriptionResult = await kickSubscriptionChecker.verifySubscriptionWithCode(
+        user!.username,
+        kickAuth.verificationCode
+      )
       
-      let isSub = false
+      setIsSubscribed(subscriptionResult.isSubscribed)
+      localStorage.setItem('kickSubscription', subscriptionResult.isSubscribed.toString())
       
-      try {
-        console.log(`🚀 Calling official Kick API subscription check...`)
-        const subscriptionResult = await kickSubscriptionChecker.checkSubscription(userData.username)
-        isSub = subscriptionResult.isSubscribed
-        console.log(`📊 Official Kick API result: ${isSub} via ${subscriptionResult.method}`)
-        console.log(`📊 Full result data:`, subscriptionResult)
-        
-        if (subscriptionResult.error) {
-          console.log(`⚠️ Official Kick API returned error: ${subscriptionResult.error}`)
-        }
-        
-      } catch (subError) {
-        console.error('❌ Subscription check failed:', subError)
-        console.log('❌ Error details:', subError)
-        isSub = false
+      setKickAuth({
+        verificationCode: kickAuth.verificationCode,
+        isVerifying: false,
+        verificationStep: 'complete'
+      })
+      
+      console.log(`📊 Verification result: ${subscriptionResult.isSubscribed} via ${subscriptionResult.method}`)
+      
+      if (subscriptionResult.error) {
+        console.log(`⚠️ Verification error: ${subscriptionResult.error}`)
+        setError(subscriptionResult.error)
+      } else {
+        setError(null)
       }
       
-      // Store session
-      localStorage.setItem('kickUser', JSON.stringify(userData))
-      localStorage.setItem('kickAccessToken', tokenResponse.access_token)
-      localStorage.setItem('kickSubscription', isSub.toString())
-      
-      // Update state
-      setUser(userData)
-      setIsSubscribed(isSub)
-      onUserChange?.(userData)
-      onSubscriptionChange?.(isSub)
-      
-      console.log(`🎉 Login complete! @${userData.username} is ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}`)
+      onSubscriptionChange?.(subscriptionResult.isSubscribed)
       
     } catch (error) {
-      console.error('❌ Authentication failed:', error)
-      setError(error instanceof Error ? error.message : 'Failed to complete authentication')
-    } finally {
-      setIsLoading(false)
+      console.error('❌ Verification failed:', error)
+      setError(error instanceof Error ? error.message : 'Verification failed')
+      setKickAuth(prev => ({ ...prev, isVerifying: false, verificationStep: 'generate' }))
     }
+  }
+
+  // Reset verification
+  const resetVerification = () => {
+    setKickAuth(undefined)
+    setError(null)
   }
 
   const handleLogout = () => {
@@ -303,22 +323,22 @@ Check browser console for detailed debugging info.`
             )}
           </div>
 
-          <Button
-            onClick={handleLogout}
-            className="w-full bg-red-500 hover:bg-red-600"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-
-          <Button
-            onClick={handleManualSubscriptionCheck}
-            variant="outline"
-            className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Recheck Subscription
-          </Button>
+          <div className="flex gap-2 mb-4">
+            <Button
+              onClick={handleManualSubscriptionCheck}
+              className="flex-1 bg-blue-500 hover:bg-blue-600"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Verify Subscription
+            </Button>
+            <Button
+              onClick={handleLogout}
+              className="flex-1 bg-red-500 hover:bg-red-600"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )

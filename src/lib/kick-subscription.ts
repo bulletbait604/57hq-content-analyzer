@@ -20,171 +20,226 @@ export class KickSubscriptionChecker {
     console.log('🔐 Auth token set for Kick API requests')
   }
 
-  async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
+  // Generate a random verification code
+  generateVerificationCode(): string {
+    return Math.random().toString(36).substring(2, 8).toUpperCase()
+  }
+
+  // Send a verification message to chat
+  async sendVerificationMessage(username: string, verificationCode: string, channelName: string = 'bulletbait604'): Promise<boolean> {
     try {
-      console.log(`🔍 Checking subscription via Unofficial Kick API for ${username} to ${channelName}`)
+      console.log(`📤 Sending verification message from ${username} to ${channelName} chat`)
+      console.log(`🔢 Verification code: ${verificationCode}`)
       
-      // Method 1: Try to get user's own subscriptions using unofficial API
-      try {
-        console.log(`🚀 Trying Unofficial Kick API: https://kick.com/api/v1/user/subscriptions`)
-        
-        const userSubsResponse = await fetch(`https://kick.com/api/v1/user/subscriptions`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.authToken}`,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
-            'Origin': 'https://kick.com',
-            'Referer': 'https://kick.com'
-          }
-        })
+      // Get channel info first to get chatroom ID
+      const channelResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.authToken}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+          'Origin': 'https://kick.com',
+          'Referer': 'https://kick.com'
+        }
+      })
 
-        console.log(`User subscriptions response: ${userSubsResponse.status}`)
+      if (channelResponse.ok) {
+        const channelData = await channelResponse.json()
+        console.log('📺 Got channel info:', channelData)
         
-        if (userSubsResponse.ok) {
-          const userSubsData = await userSubsResponse.json()
-          console.log('📺 Got user subscriptions from Unofficial Kick API:', userSubsData)
-          console.log('📋 RAW Response:', JSON.stringify(userSubsData, null, 2))
-          console.log('📋 Response structure:', Object.keys(userSubsData))
+        if (channelData.data && channelData.data.chatroom) {
+          const chatroomId = channelData.data.chatroom.id
+          console.log(`💬 Found chatroom ID: ${chatroomId}`)
           
-          // Check if user has subscription to target channel
-          if (userSubsData.data && Array.isArray(userSubsData.data)) {
-            console.log(`📋 Found ${userSubsData.data.length} subscriptions for user`)
-            
-            const isSubscribed = userSubsData.data.some((subscription: any) => {
-              const subscribedChannel = subscription.channel?.name?.toLowerCase() || 
-                                     subscription.broadcaster?.name?.toLowerCase() ||
-                                     subscription.username?.toLowerCase()
-              const targetChannel = channelName.toLowerCase()
-              console.log(`🔍 Checking if user is subscribed to "${subscribedChannel}" vs target "${targetChannel}"`)
-              return subscribedChannel === targetChannel
+          // Send verification message with the code
+          const verificationMessage = `🔐 SUB VERIFICATION: ${verificationCode}`
+          console.log(`📤 Sending verification message: ${verificationMessage}`)
+          
+          const messageResponse = await fetch(`https://kick.com/api/v1/chatrooms/${chatroomId}/messages`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.authToken}`,
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+              'Origin': 'https://kick.com',
+              'Referer': 'https://kick.com'
+            },
+            body: JSON.stringify({
+              content: verificationMessage,
+              type: 'message'
             })
-            
-            console.log(`✅ User subscriptions check result: ${isSubscribed}`)
-            
-            if (isSubscribed) {
-              console.log(`🎉 FOUND subscription from ${username} to ${channelName}!`)
-              return { 
-                isSubscribed: true, 
-                method: 'unofficial_user_subscriptions',
-                data: {
-                  userSubscriptions: userSubsData.data,
-                  subscriptionFound: userSubsData.data.find((sub: any) => 
-                    (sub.channel?.name?.toLowerCase() === channelName.toLowerCase()) ||
-                     (sub.broadcaster?.name?.toLowerCase() === channelName.toLowerCase()) ||
-                     (sub.username?.toLowerCase() === channelName.toLowerCase())
-                  ),
-                  totalSubscriptions: userSubsData.data.length
-                }
-              }
-            } else {
-              console.log(`❌ "${username}" has no subscription to ${channelName}`)
-            }
+          })
+
+          if (messageResponse.ok) {
+            console.log('✅ Verification message sent successfully!')
+            return true
           } else {
-            console.log('❌ No subscription array found in user subscriptions API response')
-            console.log('❌ Available keys:', Object.keys(userSubsData))
-            console.log('❌ Data content:', userSubsData)
-          }
-        } else {
-          const errorText = await userSubsResponse.text()
-          console.log(`❌ User subscriptions API failed (${userSubsResponse.status}):`, errorText)
-        }
-      } catch (userSubsError) {
-        console.log('❌ User subscriptions request failed:', userSubsError)
-      }
-
-      // Method 2: Try to get channel subscribers using unofficial API
-      try {
-        console.log(`🔄 Trying channel subscribers endpoint: https://kick.com/api/v1/channels/${channelName}/subscribers`)
-        
-        const channelSubsResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/subscribers`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.authToken}`,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
-            'Origin': 'https://kick.com',
-            'Referer': 'https://kick.com'
-          }
-        })
-
-        console.log(`Channel subscribers response: ${channelSubsResponse.status}`)
-        
-        if (channelSubsResponse.ok) {
-          const channelSubsData = await channelSubsResponse.json()
-          console.log('📺 Got channel subscribers from Unofficial Kick API:', channelSubsData)
-          
-          if (channelSubsData.data && Array.isArray(channelSubsData.data)) {
-            const isSubscribed = channelSubsData.data.some((subscriber: any) => 
-              subscriber.username?.toLowerCase() === username.toLowerCase()
-            )
-            
-            console.log(`✅ Channel subscribers check result: ${isSubscribed}`)
-            
-            return { 
-              isSubscribed: isSubscribed, 
-              method: 'unofficial_channel_subscribers',
-              data: channelSubsData.data
-            }
+            const errorText = await messageResponse.text()
+            console.log(`❌ Failed to send message (${messageResponse.status}):`, errorText)
+            return false
           }
         }
-      } catch (channelError) {
-        console.log('❌ Channel subscribers check failed:', channelError)
-      }
-
-      // Method 3: Fallback to check if user follows channel
-      try {
-        console.log(`🔄 Trying fallback: check if ${username} follows ${channelName}`)
-        
-        const followResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/followers`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.authToken}`,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
-            'Origin': 'https://kick.com',
-            'Referer': 'https://kick.com'
-          }
-        })
-
-        console.log(`Followers response: ${followResponse.status}`)
-        
-        if (followResponse.ok) {
-          const followData = await followResponse.json()
-          console.log('👥 Got followers data:', followData)
-          
-          if (followData.data && followData.data.followers) {
-            const isFollowing = followData.data.followers.some((follower: any) => 
-              follower.username?.toLowerCase() === username.toLowerCase()
-            )
-            
-            console.log(`✅ Follow check result: ${isFollowing}`)
-            
-            return { 
-              isSubscribed: isFollowing, 
-              method: 'follow_check_fallback',
-              data: followData.data
-            }
-          }
-        }
-      } catch (followError) {
-        console.log('❌ Follow check failed:', followError)
-      }
-
-      console.log(`❌ Could not verify subscription for ${username} - all methods failed`)
-      return { 
-        isSubscribed: false, 
-        method: 'unofficial_kick_api',
-        error: 'All methods failed - user may not be subscribed'
       }
     } catch (error) {
-      console.error('Unofficial Kick API subscription check failed:', error)
+      console.error('❌ Error sending verification message:', error)
+      return false
+    }
+    
+    return false
+  }
+
+  // Check recent chat messages for user's verification message and badges
+  async checkVerificationMessage(username: string, verificationCode: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
+    try {
+      console.log(`🔍 Checking verification message for ${username} in ${channelName}`)
+      console.log(`🔢 Looking for code: ${verificationCode}`)
+      
+      // Get channel info first to get chatroom ID
+      const channelResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.authToken}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+          'Origin': 'https://kick.com',
+          'Referer': 'https://kick.com'
+        }
+      })
+
+      if (channelResponse.ok) {
+        const channelData = await channelResponse.json()
+        
+        if (channelData.data && channelData.data.chatroom) {
+          const chatroomId = channelData.data.chatroom.id
+          console.log(`💬 Checking messages in chatroom: ${chatroomId}`)
+          
+          // Get recent chat messages
+          const messagesResponse = await fetch(`https://kick.com/api/v1/chatrooms/${chatroomId}/messages`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.authToken}`,
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+              'Origin': 'https://kick.com',
+              'Referer': 'https://kick.com'
+            }
+          })
+
+          if (messagesResponse.ok) {
+            const messagesData = await messagesResponse.json()
+            console.log('📋 Got chat messages:', messagesData)
+            console.log('📋 RAW Response:', JSON.stringify(messagesData, null, 2))
+            
+            if (messagesData.data && messagesData.data.messages) {
+              console.log(`📋 Found ${messagesData.data.messages.length} recent messages`)
+              
+              // Look for user's verification message with the correct code
+              const userMessages = messagesData.data.messages.filter((message: any) => 
+                message.sender && 
+                message.sender.username && 
+                message.sender.username.toLowerCase() === username.toLowerCase() &&
+                message.content && 
+                message.content.includes(verificationCode) &&
+                message.content.includes('🔐 SUB VERIFICATION:')
+              )
+              
+              console.log(`📋 Found ${userMessages.length} verification messages from ${username}`)
+              
+              if (userMessages.length > 0) {
+                // Get the most recent verification message
+                const latestMessage = userMessages[0]
+                console.log('📋 Latest verification message:', latestMessage)
+                
+                // Check for subscriber badge
+                const badges = latestMessage.sender.badges || []
+                console.log(`🏅 User badges:`, badges)
+                
+                const hasSubscriberBadge = badges.some((badge: any) => 
+                  badge.type === 'subscriber' || 
+                  badge.type === 'subscription' ||
+                  badge.badge === 'subscriber' ||
+                  badge.badge === 'subscription' ||
+                  badge.name?.toLowerCase().includes('sub')
+                )
+                
+                console.log(`🏅 Has subscriber badge: ${hasSubscriberBadge}`)
+                
+                return { 
+                  isSubscribed: hasSubscriberBadge,
+                  method: 'chat_badge_verification',
+                  data: {
+                    verificationMessage: latestMessage,
+                    userBadges: badges,
+                    hasSubscriberBadge: hasSubscriberBadge,
+                    verificationCode: verificationCode,
+                    messageContent: latestMessage.content
+                  }
+                }
+              } else {
+                console.log(`❌ No verification messages found from ${username}`)
+              }
+            }
+          } else {
+            const errorText = await messagesResponse.text()
+            console.log(`❌ Failed to get messages (${messagesResponse.status}):`, errorText)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error checking verification message:', error)
+    }
+    
+    return { 
+      isSubscribed: false, 
+      method: 'chat_badge_verification',
+      error: 'Could not verify subscription via chat badge'
+    }
+  }
+
+  async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
+    // This method is now used for the verification process
+    // The actual verification is handled by verifySubscriptionWithCode method
+    return { 
+      isSubscribed: false, 
+      method: 'chat_badge_verification',
+      error: 'Use verifySubscriptionWithCode method instead'
+    }
+  }
+
+  // New method for the complete verification process
+  async verifySubscriptionWithCode(username: string, verificationCode: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
+    try {
+      console.log(`🔍 Starting subscription verification for ${username} to ${channelName}`)
+      console.log(`🔢 Verification code: ${verificationCode}`)
+      
+      // Step 1: Send verification message
+      const messageSent = await this.sendVerificationMessage(username, verificationCode, channelName)
+      
+      if (!messageSent) {
+        console.log('❌ Failed to send verification message')
+        return { 
+          isSubscribed: false, 
+          method: 'chat_badge_verification',
+          error: 'Failed to send verification message'
+        }
+      }
+      
+      // Step 2: Wait a moment for message to appear
+      console.log('⏳ Waiting for message to appear in chat...')
+      await new Promise(resolve => setTimeout(resolve, 3000)) // Wait 3 seconds
+      
+      // Step 3: Check chat messages for verification and badges
+      return await this.checkVerificationMessage(username, verificationCode, channelName)
+      
+    } catch (error) {
+      console.error('Chat badge verification failed:', error)
       return { 
         isSubscribed: false, 
-        method: 'unofficial_kick_api',
+        method: 'chat_badge_verification',
         error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
