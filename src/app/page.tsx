@@ -33,6 +33,8 @@ export default function Home() {
         }
       })
 
+      console.log(`📡 Channel API response status: ${channelResponse.status}`)
+      
       if (channelResponse.ok) {
         const channelData = await channelResponse.json()
         console.log('📺 Channel data:', channelData)
@@ -53,6 +55,8 @@ export default function Home() {
             }
           })
 
+          console.log(`📡 Messages API response status: ${messagesResponse.status}`)
+          
           if (messagesResponse.ok) {
             const messagesData = await messagesResponse.json()
             console.log('📋 Chat messages data:', messagesData)
@@ -72,14 +76,20 @@ export default function Home() {
                 console.log(`🏅 User badges found:`, badges)
                 return badges
               }
+            } else {
+              console.log('❌ messagesData.data is not an array:', messagesData.data)
             }
+          } else {
+            console.log(`❌ Messages API failed: ${messagesResponse.status}`)
           }
+        } else {
+          console.log('❌ No chatroom found in channel data:', channelData)
         }
       } else {
         console.log(`❌ Channel API failed: ${channelResponse.status}`)
       }
     } catch (error) {
-      console.error('Failed to get user badges from Kick API:', error)
+      console.error('❌ Failed to get user badges from Kick API:', error)
     }
     
     console.log('🏅 No badges found, returning empty array')
@@ -88,8 +98,11 @@ export default function Home() {
 
   // Load user badges when user logs in
   useEffect(() => {
+    console.log('🔍 Badge useEffect triggered, user:', user)
     if (user) {
+      console.log(`🚀 Starting badge fetch for @${user.username}`)
       getUserBadges(user.username).then(badges => {
+        console.log('📊 getUserBadges returned:', badges)
         // If API fails, show test badges for demonstration
         if (badges.length === 0) {
           console.log('🏅 API returned no badges, showing test badges for demo')
@@ -101,7 +114,11 @@ export default function Home() {
           setUserBadges(badges)
         }
         console.log('🏅 User badges from bulletbait604:', badges)
+      }).catch(error => {
+        console.error('❌ Badge fetch error:', error)
       })
+    } else {
+      console.log('🔍 No user, skipping badge fetch')
     }
   }, [user])
 
