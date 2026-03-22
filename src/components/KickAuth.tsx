@@ -201,6 +201,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     }
 
     console.log(`🔍 Manual subscription check for @${user.username}`)
+    console.log(`🔑 Current stored subscription: ${localStorage.getItem('kickSubscription')}`)
     
     try {
       const subscriptionResult = await kickSubscriptionChecker.checkSubscription(user.username)
@@ -209,12 +210,34 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       console.log(`📊 Manual check result: ${isSub} via ${subscriptionResult.method}`)
       console.log(`📊 Full result data:`, subscriptionResult)
       
+      // Additional debugging info
+      console.log(`🔍 User checking: ${user.username}`)
+      console.log(`🔍 Target channel: bulletbait604`)
+      console.log(`🔍 Is owner check: ${user.username.toLowerCase() === 'bulletbait604'}`)
+      
+      if (subscriptionResult.error) {
+        console.log(`⚠️ API Error: ${subscriptionResult.error}`)
+      }
+      
       // Update subscription status
       setIsSubscribed(isSub)
       localStorage.setItem('kickSubscription', isSub.toString())
       onSubscriptionChange?.(isSub)
       
-      alert(`Subscription check complete: ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}\nMethod: ${subscriptionResult.method}`)
+      // Show detailed alert
+      const alertMessage = `Subscription Check Complete:
+      
+Status: ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}
+Method: ${subscriptionResult.method}
+Username: ${user.username}
+Target: bulletbait604
+Owner: ${user.username.toLowerCase() === 'bulletbait604' ? 'Yes' : 'No'}
+Error: ${subscriptionResult.error || 'None'}
+Data: ${JSON.stringify(subscriptionResult.data || {}, null, 2)}
+
+Check browser console for detailed debugging info.`
+      
+      alert(alertMessage)
       
     } catch (error) {
       console.error('❌ Manual subscription check failed:', error)
