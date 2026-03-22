@@ -1,4 +1,5 @@
-// RapidAPI integration for Kick subscription verification
+// RapidAPI Kick API Integration for Subscription Verification
+// This handles subscription verification using kick-com-api.p.rapidapi.com
 export interface RapidAPIResponse {
   isSubscribed: boolean
   method: string
@@ -6,7 +7,7 @@ export interface RapidAPIResponse {
   error?: string
 }
 
-export class RapidAPI {
+export class RapidAPIKickSubscription {
   private apiKey: string
   private baseURL: string
 
@@ -17,16 +18,16 @@ export class RapidAPI {
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<RapidAPIResponse> {
     try {
-      console.log(`🔍 Checking subscription for ${username} to ${channelName}`)
+      console.log(`🔍 Checking subscription via RapidAPI Kick API for ${username} to ${channelName}`)
       
       if (!this.apiKey || this.apiKey === 'your-rapidapi-kick-api-key-here') {
-        console.log('❌ RapidAPI key not configured')
-        return { isSubscribed: false, method: 'rapidapi', error: 'RapidAPI key not configured' }
+        console.log('❌ RapidAPI Kick API key not configured')
+        return { isSubscribed: false, method: 'rapidapi', error: 'RapidAPI Kick API key not configured' }
       }
 
       // Method 1: Try direct subscription endpoint
       try {
-        console.log(`🚀 Trying subscription endpoint: ${this.baseURL}/user/${username}/subscriptions`)
+        console.log(`🚀 Trying RapidAPI Kick API subscription endpoint: ${this.baseURL}/user/${username}/subscriptions`)
         const response = await fetch(`${this.baseURL}/user/${username}/subscriptions`, {
           method: 'GET',
           headers: {
@@ -35,11 +36,11 @@ export class RapidAPI {
           }
         })
 
-        console.log(`Subscription endpoint response: ${response.status}`)
+        console.log(`RapidAPI Kick API subscription endpoint response: ${response.status}`)
         
         if (response.ok) {
           const subscriptions = await response.json()
-          console.log('📋 Got user subscriptions:', subscriptions)
+          console.log('📋 Got user subscriptions from RapidAPI Kick API:', subscriptions)
           
           const isSubscribed = subscriptions.some((sub: any) => 
             sub.channel_name === channelName || 
@@ -47,19 +48,19 @@ export class RapidAPI {
             sub.name === channelName
           )
           
-          console.log(`✅ Subscription check result: ${isSubscribed}`)
+          console.log(`✅ RapidAPI Kick API subscription check result: ${isSubscribed}`)
           return { isSubscribed, method: 'rapidapi', data: subscriptions }
         } else {
           const errorText = await response.text()
-          console.log(`❌ Subscription endpoint failed (${response.status}):`, errorText.substring(0, 100))
+          console.log(`❌ RapidAPI Kick API subscription endpoint failed (${response.status}):`, errorText.substring(0, 100))
         }
       } catch (error) {
-        console.log('❌ Subscription endpoint request failed:', error)
+        console.log('❌ RapidAPI Kick API subscription endpoint request failed:', error)
       }
 
       // Method 2: Try channel info (with rate limiting delay)
       try {
-        console.log(`🚀 Trying channel endpoint: ${this.baseURL}/channel/${channelName}`)
+        console.log(`🚀 Trying RapidAPI Kick API channel endpoint: ${this.baseURL}/channel/${channelName}`)
         const channelResponse = await fetch(`${this.baseURL}/channel/${channelName}`, {
           method: 'GET',
           headers: {
@@ -68,11 +69,11 @@ export class RapidAPI {
           }
         })
 
-        console.log(`Channel endpoint response: ${channelResponse.status}`)
+        console.log(`RapidAPI Kick API channel endpoint response: ${channelResponse.status}`)
         
         if (channelResponse.ok) {
           const channelData = await channelResponse.json()
-          console.log('📺 Got channel info:', channelData)
+          console.log('📺 Got channel info from RapidAPI Kick API:', channelData)
           
           // Check if channel has subscriber data
           if (channelData.subscribers && Array.isArray(channelData.subscribers)) {
@@ -80,27 +81,27 @@ export class RapidAPI {
               sub.username === username || sub.name === username
             )
             
-            console.log(`✅ Channel subscriber check result: ${isSubscribed}`)
+            console.log(`✅ RapidAPI Kick API channel subscriber check result: ${isSubscribed}`)
             return { isSubscribed, method: 'rapidapi', data: channelData }
           } else {
-            console.log('❌ No subscriber data found in channel info')
+            console.log('❌ No subscriber data found in RapidAPI Kick API channel info')
           }
         } else {
           const errorText = await channelResponse.text()
-          console.log(`❌ Channel endpoint failed (${channelResponse.status}):`, errorText.substring(0, 100))
+          console.log(`❌ RapidAPI Kick API channel endpoint failed (${channelResponse.status}):`, errorText.substring(0, 100))
         }
       } catch (error) {
-        console.log('❌ Channel endpoint request failed:', error)
+        console.log('❌ RapidAPI Kick API channel endpoint request failed:', error)
       }
 
-      console.log(`❌ Could not verify subscription for ${username} - all methods failed`)
+      console.log(`❌ Could not verify subscription for ${username} - all RapidAPI Kick API methods failed`)
       return { 
         isSubscribed: false, 
         method: 'rapidapi', 
-        error: 'All RapidAPI methods failed - check API key and rate limits' 
+        error: 'All RapidAPI Kick API methods failed - check API key and rate limits' 
       }
     } catch (error) {
-      console.error('RapidAPI check failed:', error)
+      console.error('RapidAPI Kick API check failed:', error)
       return { 
         isSubscribed: false, 
         method: 'rapidapi', 

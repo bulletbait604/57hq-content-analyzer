@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { User, LogIn, LogOut, CheckCircle, XCircle, Crown } from 'lucide-react'
 import { KickOAuth, KickUser } from '@/lib/kick-oauth'
-import { RapidAPI } from '@/lib/rapidapi'
+import { RapidAPIKickSubscription } from '@/lib/rapidapi'
 
 interface KickAuthProps {
   onSubscriptionChange?: (subscribed: boolean) => void
@@ -23,7 +23,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     process.env.NEXT_PUBLIC_KICK_CLIENT_SECRET || ''
   )
 
-  const rapidAPI = new RapidAPI(
+  const rapidAPI = new RapidAPIKickSubscription(
     process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || ''
   )
 
