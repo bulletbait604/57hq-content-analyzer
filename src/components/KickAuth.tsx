@@ -1,11 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { User, LogIn, LogOut, CheckCircle, XCircle, Crown } from 'lucide-react'
-import { KickOAuth, KickUser } from '@/lib/kick-oauth'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Crown, XCircle, CheckCircle, LogIn, LogOut } from 'lucide-react'
+import { KickOAuth } from '@/lib/kick-oauth'
 import { KickSubscriptionChecker } from '@/lib/kick-subscription'
+
+interface KickUser {
+  id: string
+  username: string
+  display_name: string
+  profile_image_url: string
+}
 
 interface KickAuthProps {
   onSubscriptionChange?: (subscribed: boolean) => void
@@ -32,50 +39,72 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || ''
   )
 
-  // Check for existing session on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('kickUser')
-      const storedSubscription = localStorage.getItem('kickSubscription')
-      
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser)
-          setUser(userData)
-          onUserChange?.(userData)
-        } catch (error) {
-          console.error('Failed to parse stored user data:', error)
-        }
-      }
-      
-      if (storedSubscription) {
-        const subscribed = storedSubscription === 'true'
-        setIsSubscribed(subscribed)
-        onSubscriptionChange?.(subscribed)
-      }
+  // Generate verification code
+  const generateVerificationCode = () => {
+    const code = kickSubscriptionChecker.generateVerificationCode()
+    setKickAuth({
+      verificationCode: code,
+      isVerifying: false,
+      verificationStep: 'generate'
+    })
+  }
+
+  // Start verification process
+  const startVerification = async () => {
+    if (!kickAuth?.verificationCode) {
+      setError('Please generate a verification code first')
+      return
     }
-  }, [])
+
+    setKickAuth(prev => ({ ...prev, isVerifying: true, verificationStep: 'send' }))
+    
+    try {
+      const subscriptionResult = await kickSubscriptionChecker.verifySubscriptionWithCode(
+        user!.username,
+        kickAuth.verificationCode
+      )
+      
+      setIsSubscribed(subscriptionResult.isSubscribed)
+      localStorage.setItem('kickSubscription', subscriptionResult.isSubscribed.toString())
+      
+      setKickAuth({
+        verificationCode: kickAuth.verificationCode,
+        isVerifying: false,
+        verificationStep: 'complete'
+      })
+      
+      console.log(`📊 Verification result: ${subscriptionResult.isSubscribed} via ${subscriptionResult.method}`)
+      
+      if (subscriptionResult.error) {
+        console.log(`⚠️ Verification error: ${subscriptionResult.error}`)
+        setError(subscriptionResult.error)
+      } else {
+        setError(null)
+      }
+      
+      onSubscriptionChange?.(subscriptionResult.isSubscribed)
+      
+    } catch (error) {
+      console.error('❌ Verification failed:', error)
+      setError(error instanceof Error ? error.message : 'Verification failed')
+      setKickAuth(prev => ({ ...prev, isVerifying: false, verificationStep: 'generate' }))
+    }
+  }
+
+  // Reset verification
+  const resetVerification = () => {
+    setKickAuth(undefined)
+    setError(null)
+  }
 
   const handleLogin = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const redirectURI = typeof window !== 'undefined' ? `${window.location.origin}/auth/kick/callback` : 'https://sdhqcreatorcorner.vercel.app/auth/kick/callback'
-      const authURL = await kickOAuth.getAuthURL(redirectURI)
-      
-      // Store return URL
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('kickAuthReturn', window.location.pathname)
-      }
-      
-      // Redirect to Kick OAuth
-      window.location.href = authURL
-    } catch (error) {
-      console.error('Login error:', error)
-      setError('Failed to start authentication')
-      setIsLoading(false)
-    }
+    setIsLoading(true)
+    setError(null)
+    const authURL = await kickOAuth.getAuthURL(`${window.location.origin}/auth/kick/callback`)
+    
+    // Store return URL for OAuth callback
+    sessionStorage.setItem('kickAuthReturn', window.location.pathname)
+    window.location.href = authURL
   }
 
   const handleAuthCallback = async () => {
@@ -145,62 +174,25 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       // Set auth token for subscription checker
       kickSubscriptionChecker.setAuthToken(tokenResponse.access_token)
       
-      // Generate verification code
-  const generateVerificationCode = () => {
-    const code = kickSubscriptionChecker.generateVerificationCode()
-    setKickAuth({
-      verificationCode: code,
-      isVerifying: false,
-      verificationStep: 'generate'
-    })
-  }
-
-  // Start verification process
-  const startVerification = async () => {
-    if (!kickAuth?.verificationCode) {
-      setError('Please generate a verification code first')
-      return
-    }
-
-    setKickAuth(prev => ({ ...prev, isVerifying: true, verificationStep: 'send' }))
-    
-    try {
-      const subscriptionResult = await kickSubscriptionChecker.verifySubscriptionWithCode(
-        user!.username,
-        kickAuth.verificationCode
-      )
+      // Store session
+      localStorage.setItem('kickUser', JSON.stringify(userData))
+      localStorage.setItem('kickAccessToken', tokenResponse.access_token)
+      localStorage.setItem('kickSubscription', 'false')
       
-      setIsSubscribed(subscriptionResult.isSubscribed)
-      localStorage.setItem('kickSubscription', subscriptionResult.isSubscribed.toString())
+      // Update state
+      setUser(userData)
+      setIsSubscribed(false)
+      onUserChange?.(userData)
+      onSubscriptionChange?.(false)
       
-      setKickAuth({
-        verificationCode: kickAuth.verificationCode,
-        isVerifying: false,
-        verificationStep: 'complete'
-      })
-      
-      console.log(`📊 Verification result: ${subscriptionResult.isSubscribed} via ${subscriptionResult.method}`)
-      
-      if (subscriptionResult.error) {
-        console.log(`⚠️ Verification error: ${subscriptionResult.error}`)
-        setError(subscriptionResult.error)
-      } else {
-        setError(null)
-      }
-      
-      onSubscriptionChange?.(subscriptionResult.isSubscribed)
+      console.log(`🎉 Login complete! @${userData.username} is NOT SUBSCRIBED ❌`)
       
     } catch (error) {
-      console.error('❌ Verification failed:', error)
-      setError(error instanceof Error ? error.message : 'Verification failed')
-      setKickAuth(prev => ({ ...prev, isVerifying: false, verificationStep: 'generate' }))
+      console.error('❌ Authentication failed:', error)
+      setError(error instanceof Error ? error.message : 'Failed to complete authentication')
+    } finally {
+      setIsLoading(false)
     }
-  }
-
-  // Reset verification
-  const resetVerification = () => {
-    setKickAuth(undefined)
-    setError(null)
   }
 
   const handleLogout = () => {
@@ -217,6 +209,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     onUserChange?.(null)
     onSubscriptionChange?.(false)
     setError(null)
+    resetVerification()
   }
 
   const handleManualSubscriptionCheck = async () => {
@@ -224,7 +217,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       setError('Please log in first to check subscription')
       return
     }
-
+    
     console.log(`🔍 Manual subscription check for @${user.username}`)
     console.log(`🔑 Current stored subscription: ${localStorage.getItem('kickSubscription')}`)
     
@@ -247,59 +240,138 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       // Update subscription status
       setIsSubscribed(isSub)
       localStorage.setItem('kickSubscription', isSub.toString())
-      onSubscriptionChange?.(isSub)
       
-      // Show detailed alert
-      const alertMessage = `Subscription Check Complete:
-      
-Status: ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}
-Method: ${subscriptionResult.method}
-Username: ${user.username}
-Target: bulletbait604
-Owner: ${user.username.toLowerCase() === 'bulletbait604' ? 'Yes' : 'No'}
-Error: ${subscriptionResult.error || 'None'}
-Data: ${JSON.stringify(subscriptionResult.data || {}, null, 2)}
-
-Check browser console for detailed debugging info.`
-      
-      alert(alertMessage)
-      
-    } catch (error) {
-      console.error('❌ Manual subscription check failed:', error)
-      setError(`Subscription check failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch (subError) {
+      console.error('❌ Subscription check failed:', subError)
+      setError(subError instanceof Error ? subError.message : 'Subscription check failed')
     }
   }
 
-  // Check for auth callback on mount
   useEffect(() => {
-    handleAuthCallback()
+    // Check for stored session on mount
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('kickUser')
+      const storedToken = localStorage.getItem('kickAccessToken')
+      const storedSubscription = localStorage.getItem('kickSubscription')
+      
+      if (storedUser && storedToken) {
+        try {
+          const userData = JSON.parse(storedUser)
+          setUser(userData)
+          setIsSubscribed(storedSubscription === 'true')
+          onUserChange?.(userData)
+          onSubscriptionChange?.(storedSubscription === 'true')
+        } catch (error) {
+          console.error('Failed to parse stored user data:', error)
+          localStorage.removeItem('kickUser')
+          localStorage.removeItem('kickAccessToken')
+          localStorage.removeItem('kickSubscription')
+        }
+      }
+    }
   }, [])
 
-  if (user) {
+  // If user is logged in but not subscribed, show verification UI
+  if (user && !isSubscribed) {
     return (
-      <Card className="bg-black border border-cyan-500/20">
+      <Card className="bg-black border border-cyan-500">
         <CardHeader>
-          <CardTitle className="text-cyan-400 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5" />
-            Logged In
+          <CardTitle className="flex items-center gap-2 text-white">
+            <CheckCircle className="h-5 w-5 text-cyan-400" />
+            Verify Your Subscription
           </CardTitle>
-          <CardDescription className="text-gray-400">
-            Welcome to SDHQ Content Analyzer
+          <CardDescription className="text-cyan-300">
+            To access AI features, please verify you are subscribed to bulletbait604
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            {user.profile_image_url ? (
-              <img 
-                src={user.profile_image_url} 
-                alt={user.display_name}
-                className="w-12 h-12 rounded-full"
-              />
+        <CardContent>
+          <div className="space-y-4">
+            {/* Instructions */}
+            <div className="text-cyan-300 text-sm space-y-2">
+              <h3 className="font-semibold text-white mb-2">How to verify your subscription:</h3>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Click the "Generate Verification Code" button below</li>
+                <li>Copy the generated code</li>
+                <li>Go to <strong>kick.com/bulletbait604</strong></li>
+                <li>Type the following message in chat: <code className="bg-gray-800 px-2 py-1 rounded">🔐 SUB VERIFICATION: [YOUR_CODE]</code></li>
+                <li>Click the "Verify Subscription" button</li>
+              </ol>
+            </div>
+
+            {/* Verification Code Display */}
+            {!kickAuth?.verificationCode ? (
+              <div className="text-center">
+                <Button
+                  onClick={generateVerificationCode}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-black"
+                  disabled={kickAuth?.isVerifying}
+                >
+                  {kickAuth?.isVerifying ? 'Generating...' : 'Generate Verification Code'}
+                </Button>
+              </div>
             ) : (
-              <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-cyan-400" />
+              <div className="space-y-3">
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-300 mb-2">Your verification code:</div>
+                    <div className="text-2xl font-mono text-cyan-400 mb-3">
+                      {kickAuth?.verificationCode}
+                    </div>
+                    <div className="text-xs text-gray-400">This code will expire in 10 minutes</div>
+                  </div>
+                </div>
+                <Button
+                  onClick={startVerification}
+                  className="w-full bg-blue-500 hover:bg-blue-600"
+                  disabled={kickAuth?.isVerifying}
+                >
+                  {kickAuth?.isVerifying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Verify Subscription
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={resetVerification}
+                  variant="outline"
+                  className="w-full border-gray-500 text-gray-400 hover:bg-gray-500"
+                >
+                  Cancel
+                </Button>
               </div>
             )}
+
+            {/* Error Display */}
+            {error && (
+              <div className="p-3 bg-red-900 border border-red-500 rounded-lg">
+                <p className="text-sm text-red-300">{error}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // If user is logged in and subscribed, show premium content
+  if (user && isSubscribed) {
+    return (
+      <Card className="bg-black border border-cyan-500">
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <div className="text-center">
+              <img 
+                src={user.profile_image_url || 'https://via.placeholder.com/40'} 
+                alt={user.display_name}
+                className="w-12 h-12 rounded-full mr-3"
+              />
+            </div>
             <div>
               <div className="text-cyan-300 font-medium">Logged in as</div>
               <div className="text-white font-semibold">{user.display_name}</div>
@@ -328,8 +400,7 @@ Check browser console for detailed debugging info.`
               onClick={handleManualSubscriptionCheck}
               className="flex-1 bg-blue-500 hover:bg-blue-600"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Verify Subscription
+              Recheck Subscription
             </Button>
             <Button
               onClick={handleLogout}
@@ -344,6 +415,7 @@ Check browser console for detailed debugging info.`
     )
   }
 
+  // Default login UI
   return (
     <Card className="bg-black border border-cyan-500">
       <CardHeader>
