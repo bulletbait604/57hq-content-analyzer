@@ -137,6 +137,9 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
         console.log('👤 Using provided username:', userData)
       }
       
+      // Set auth token for subscription checker
+      kickSubscriptionChecker.setAuthToken(tokenResponse.access_token)
+      
       // Check subscription using official Kick API
       console.log(`🔍 Checking subscription for @${userData.username} to bulletbait604`)
       

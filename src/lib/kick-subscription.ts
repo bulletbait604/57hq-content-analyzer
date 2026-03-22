@@ -9,9 +9,16 @@ export interface SubscriptionResponse {
 export class KickSubscriptionChecker {
   private apiKey: string
   private baseURL: string = 'https://api.kick.com'
+  private authToken: string = ''
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
+  }
+
+  // Set the auth token after successful OAuth
+  setAuthToken(token: string) {
+    this.authToken = token
+    console.log('🔐 Auth token set for Kick API requests')
   }
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
@@ -21,19 +28,30 @@ export class KickSubscriptionChecker {
       // Method 1: Try Official Kick API for subscriber list
       try {
         console.log(`🚀 Trying Official Kick API: https://api.kick.com/public/v1/channels/${channelName}`)
+        
+        const headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+        
+        // Add auth token if available
+        if (this.authToken) {
+          headers['Authorization'] = `Bearer ${this.authToken}`
+          console.log('🔐 Using auth token for API request')
+        } else {
+          console.log('⚠️ No auth token available - making unauthenticated request')
+        }
+        
         const channelResponse = await fetch(`https://api.kick.com/public/v1/channels/${channelName}`, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+          headers
         })
 
         console.log(`Official Kick API response: ${channelResponse.status}`)
         
         if (channelResponse.ok) {
           const channelData = await channelResponse.json()
-          console.log('� Got channel info from Official Kick API:', channelData)
+          console.log('📺 Got channel info from Official Kick API:', channelData)
           console.log('📋 RAW Response:', JSON.stringify(channelData, null, 2))
           console.log('📋 Response structure:', Object.keys(channelData))
           
@@ -102,12 +120,20 @@ export class KickSubscriptionChecker {
       // Method 2: Fallback to follow status check
       try {
         console.log(`🔄 Checking if ${username} follows ${channelName} as fallback`)
+        
+        const headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+        
+        // Add auth token if available
+        if (this.authToken) {
+          headers['Authorization'] = `Bearer ${this.authToken}`
+        }
+        
         const followResponse = await fetch(`${this.baseURL}/public/v1/channels/${channelName}/followers`, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
+          headers
         })
 
         if (followResponse.ok) {
