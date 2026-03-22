@@ -88,33 +88,79 @@ export class KickAPI {
     console.log('Redirect URI:', redirectURI)
     console.log('Code verifier:', codeVerifier.substring(0, 10) + '...')
     
-    // Try different token endpoints
+    // Try different token endpoints and parameters
     const tokenEndpoints = [
-      `${this.oauthServerURL}/oauth/token`, // id.kick.com/oauth/token
-      `${this.baseURL}/oauth/token`,         // kick.com/oauth/token
-      `${this.baseURL}/api/oauth/token`      // kick.com/api/oauth/token
+      {
+        url: `${this.oauthServerURL}/oauth/token`,
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          code: code,
+          redirect_uri: redirectURI,
+          code_verifier: codeVerifier
+        })
+      },
+      {
+        url: `${this.baseURL}/oauth/token`,
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          code: code,
+          redirect_uri: redirectURI,
+          code_verifier: codeVerifier
+        })
+      },
+      {
+        url: `${this.baseURL}/api/oauth/token`,
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          code: code,
+          redirect_uri: redirectURI,
+          code_verifier: codeVerifier
+        })
+      },
+      // Try without PKCE
+      {
+        url: `${this.baseURL}/oauth/token`,
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          code: code,
+          redirect_uri: redirectURI
+        })
+      },
+      // Try different grant type
+      {
+        url: `${this.baseURL}/oauth/token`,
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: this.clientId,
+          code: code,
+          redirect_uri: redirectURI
+        })
+      }
     ]
     
     let lastError: Error | null = null
     
     for (const endpoint of tokenEndpoints) {
       try {
-        console.log(`Trying token endpoint: ${endpoint}`)
+        console.log(`Trying token endpoint: ${endpoint.url}`)
+        console.log('Body:', endpoint.body.toString())
         
-        const response = await fetch(endpoint, {
+        const response = await fetch(endpoint.url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'User-Agent': 'SDHQ-Content-Analyzer/1.0'
           },
-          body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: this.clientId,
-            client_secret: this.clientSecret,
-            code: code,
-            redirect_uri: redirectURI,
-            code_verifier: codeVerifier
-          })
+          body: endpoint.body
         })
         
         console.log('Response status:', response.status)
