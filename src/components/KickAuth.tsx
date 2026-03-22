@@ -23,7 +23,9 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     process.env.NEXT_PUBLIC_KICK_CLIENT_SECRET || ''
   )
 
-  const kickSubscriptionChecker = new KickSubscriptionChecker()
+  const kickSubscriptionChecker = new KickSubscriptionChecker(
+  process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || ''
+)
 
   // Check for existing session on mount
   useEffect(() => {

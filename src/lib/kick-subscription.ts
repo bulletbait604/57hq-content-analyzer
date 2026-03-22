@@ -9,7 +9,12 @@ export interface SubscriptionResponse {
 }
 
 export class KickSubscriptionChecker {
-  private baseURL: string = 'https://api.kick.com'
+  private apiKey: string
+  private baseURL: string = 'https://kick-com-api.p.rapidapi.com'
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey
+  }
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
     try {
