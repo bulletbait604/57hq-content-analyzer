@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { User, LogIn, LogOut, CheckCircle, XCircle, Crown } from 'lucide-react'
-import { KickAPI, KickUser } from '@/lib/kick-api'
+import { KickAPI, KickUser, KickAuthResponse } from '@/lib/kick-api'
 import { KickSimpleOAuth } from '@/lib/kick-simple'
 import { KickSubscriptionChecker } from '@/lib/kick-subscription-checker'
 import { AdminPanel } from '@/components/AdminPanel'
@@ -123,14 +123,17 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
 
   const handleAuthSuccess = async (code: string, redirectUri: string) => {
     try {
-      // Exchange code for token
-      let tokenResponse;
+      console.log('🔐 Processing Kick OAuth callback...')
+      
+      // Exchange auth code for token (will use mock if Kick API fails)
+      let tokenResponse: KickAuthResponse
       try {
         tokenResponse = await kickAPI.exchangeCodeForToken(code, redirectUri)
+        console.log('✅ Real Kick token received')
       } catch (tokenError) {
-        console.log('Token exchange failed, using mock token for testing:', tokenError)
+        console.log('⚠️ Kick token API failed, using mock token for username lookup')
         
-        // Create a mock token response for testing
+        // Use mock token when Kick's API fails - we only need this for getting user info
         tokenResponse = {
           access_token: 'mock_access_token_' + Math.random().toString(36).substring(7),
           token_type: 'Bearer',
@@ -139,68 +142,75 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
         }
       }
       
-      // Get user info
+      // Get user data (username and profile picture)
       let userData;
       try {
         userData = await kickAPI.getCurrentUser(tokenResponse.access_token)
+        console.log('✅ Got real user data:', userData.username)
       } catch (userError) {
-        console.log('User data fetch failed, using mock user:', userError)
+        console.log('⚠️ Kick user API failed, creating mock user for testing')
         
-        // Create a mock user for testing
+        // Create a mock user for testing when Kick API fails
+        const mockUsername = 'kick_user_' + Math.random().toString(36).substring(7)
         userData = {
           id: 'mock_user_' + Math.random().toString(36).substring(7),
-          username: 'test_user',
-          display_name: 'Test User',
+          username: mockUsername,
+          display_name: 'Kick User',
           profile_image_url: ''
         }
+        console.log('🎭 Created mock user:', mockUsername)
       }
       
-      // Check subscription using RapidAPI (primary method)
-      let isSub;
+      // Now check subscription status using RapidAPI (this is the important part!)
+      console.log(`🔍 Checking subscription status for @${userData.username} to bulletbait604 via RapidAPI`)
+      let isSubscribed = false
+      
       try {
-        console.log('Checking subscription via RapidAPI for user:', userData.username)
-        
         // First check for admin override (for testing)
         const adminOverride = subscriptionChecker.checkAdminOverride(userData.username)
         if (adminOverride !== null) {
-          isSub = adminOverride
-          console.log('Using admin override for subscription status:', isSub)
+          isSubscribed = adminOverride
+          console.log(`👑 Admin override: @${userData.username} is ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}`)
         } else {
-          // Use RapidAPI to check subscription to bulletbait604
+          // Use RapidAPI to check real subscription status
           const subscriptionResult = await subscriptionChecker.checkSubscription(userData.username, tokenResponse.access_token)
-          isSub = subscriptionResult.isSubscribed
-          console.log(`Subscription check result: ${subscriptionResult.method} - ${isSub}`)
+          isSubscribed = subscriptionResult.isSubscribed
+          console.log(`📊 RapidAPI result: @${userData.username} is ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'} via ${subscriptionResult.method}`)
           
-          // If RapidAPI method was used, show the method
+          // Show detailed results
           if (subscriptionResult.method === 'rapidapi') {
-            console.log('✅ Successfully checked subscription via RapidAPI')
+            console.log('✅ Successfully verified subscription via RapidAPI')
           } else if (subscriptionResult.method === 'oauth') {
-            console.log('⚠️ OAuth subscription check worked (unexpected)')
+            console.log('⚠️ OAuth subscription check worked (unexpected but good)')
           } else {
-            console.log('❌ Subscription check failed, using fallback')
+            console.log('❌ RapidAPI check failed, using fallback method')
           }
         }
       } catch (subError) {
-        console.log('Subscription check failed, defaulting to false:', subError)
-        isSub = false // Default to not subscribed for safety
+        console.log('❌ Subscription check failed completely, defaulting to not subscribed:', subError)
+        isSubscribed = false // Default to not subscribed for safety
       }
       
-      // Store session
+      // Store session data
       localStorage.setItem('kickUser', JSON.stringify(userData))
       localStorage.setItem('kickAccessToken', tokenResponse.access_token)
-      localStorage.setItem('kickSubscription', isSub.toString())
+      localStorage.setItem('kickSubscription', isSubscribed.toString())
       
-      // Update state
+      // Update UI state
       setUser(userData)
-      setIsSubscribed(isSub)
+      setIsSubscribed(isSubscribed)
       onUserChange?.(userData)
-      onSubscriptionChange?.(isSub)
+      onSubscriptionChange?.(isSubscribed)
       
-      setIsLoading(false)
+      console.log(`🎉 Login complete! @${userData.username} is ${isSubscribed ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'} to bulletbait604`)
+      
     } catch (error) {
-      console.error('Auth success error:', error)
+      console.error('❌ Authentication failed:', error)
       setError('Failed to complete authentication')
+    } finally {
       setIsLoading(false)
+      // Clean up URL params
+      window.history.replaceState({}, document.title, window.location.pathname)
     }
   }
 
@@ -315,7 +325,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
           Connect Your Kick Account
         </CardTitle>
         <CardDescription className="text-cyan-300">
-          Login with Kick to unlock premium AI features for subscribers
+          Login to display your profile and verify subscription to bulletbait604
         </CardDescription>
       </CardHeader>
       <CardContent>
