@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const error = searchParams.get('error')
 
-  const mainAppUrl = 'https://sdhq-content-analyzer.vercel.app'
+  const mainAppUrl = 'https://sdhqcreatorcorner.vercel.app'
 
   if (code) {
     // Redirect to main app with success

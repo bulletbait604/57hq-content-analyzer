@@ -39,7 +39,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     if (authStatus === 'success') {
       const authCode = urlParams.get('code') || localStorage.getItem('kickAuthCode')
       if (authCode) {
-        const redirectUri = `https://sdhq-content-analyzer.vercel.app/auth/kick/callback`
+        const redirectUri = `https://sdhqcreatorcorner.vercel.app/auth/kick/callback`
         handleAuthSuccess(authCode, redirectUri)
         // Clean up
         localStorage.removeItem('kickAuthCode')
@@ -82,7 +82,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     setError(null)
 
     try {
-      const redirectUri = `https://sdhq-content-analyzer.vercel.app/auth/kick/callback`
+      const redirectUri = `https://sdhqcreatorcorner.vercel.app/auth/kick/callback`
       const authUrl = await kickAPI.getAuthURL(redirectUri)
       
       // Debug: Log the URL to console

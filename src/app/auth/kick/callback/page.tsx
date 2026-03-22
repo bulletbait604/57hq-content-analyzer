@@ -9,7 +9,7 @@ export default function KickCallback() {
     const error = urlParams.get('error')
 
     // Simple redirect to main page with auth info
-    const mainAppUrl = 'https://sdhq-content-analyzer.vercel.app'
+    const mainAppUrl = 'https://sdhqcreatorcorner.vercel.app'
 
     if (code) {
       // Store the auth code in localStorage (more reliable than sessionStorage)
