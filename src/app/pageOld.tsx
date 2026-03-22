@@ -9,7 +9,7 @@ import { ClipAnalyzer } from '@/components/ClipAnalyzer'
 import { ImprovementTips } from '@/components/ImprovementTips'
 import { TagGenerator } from '@/components/TagGenerator'
 import { AIContentOptimizer } from '@/components/AIContentOptimizer'
-import { KickAuthNew } from '@/components/KickAuthNew'
+import { KickAuth } from '@/components/KickAuth'
 
 export default function Home() {
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -49,7 +49,7 @@ export default function Home() {
         {/* Kick Authentication Section - Only show if not logged in */}
         {!user && (
           <div className="mb-8">
-            <KickAuthNew 
+            <KickAuth 
               onSubscriptionChange={(subscribed: boolean) => setIsSubscribed(subscribed)}
               onUserChange={(userData: any) => setUser(userData)}
             />

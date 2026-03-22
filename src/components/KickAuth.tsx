@@ -4,120 +4,88 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { User, LogIn, LogOut, CheckCircle, XCircle, Crown } from 'lucide-react'
-import { KickAPI, KickUser, KickAuthResponse } from '@/lib/kick-api'
-import { KickSimpleOAuth } from '@/lib/kick-simple'
-import { KickSubscriptionChecker } from '@/lib/kick-subscription-checker'
-import { AdminPanel } from '@/components/AdminPanel'
+import { KickOAuth, KickUser } from '@/lib/kick-oauth'
+import { RapidAPI } from '@/lib/rapidapi'
 
 interface KickAuthProps {
   onSubscriptionChange?: (subscribed: boolean) => void
   onUserChange?: (user: KickUser | null) => void
 }
 
-export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) {
+export function KickAuthNew({ onSubscriptionChange, onUserChange }: KickAuthProps) {
   const [user, setUser] = useState<KickUser | null>(null)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showAdminPanel, setShowAdminPanel] = useState(false)
 
-  const kickAPI = new KickAPI(
-    process.env.NEXT_PUBLIC_KICK_API_BASE_URL || 'https://kick.com',
+  const kickOAuth = new KickOAuth(
     process.env.NEXT_PUBLIC_KICK_CLIENT_ID || '',
     process.env.NEXT_PUBLIC_KICK_CLIENT_SECRET || ''
   )
 
-  // Initialize subscription checker with RapidAPI key (if available)
-  const subscriptionChecker = new KickSubscriptionChecker(
-    process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
-    'bulletbait604'
+  const rapidAPI = new RapidAPI(
+    process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || ''
   )
 
+  // Check for existing session on mount
   useEffect(() => {
-    // Check for existing session on mount
-    checkExistingSession()
+    const storedUser = localStorage.getItem('kickUser')
+    const storedSubscription = localStorage.getItem('kickSubscription')
     
-    // Check for auth callback
-    checkAuthCallback()
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser)
+        setUser(userData)
+        onUserChange?.(userData)
+      } catch (error) {
+        console.error('Failed to parse stored user data:', error)
+      }
+    }
+    
+    if (storedSubscription) {
+      const subscribed = storedSubscription === 'true'
+      setIsSubscribed(subscribed)
+      onSubscriptionChange?.(subscribed)
+    }
   }, [])
 
-  const checkAuthCallback = () => {
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const redirectURI = `${window.location.origin}/auth/kick/callback`
+      const authURL = await kickOAuth.getAuthURL(redirectURI)
+      
+      // Store return URL
+      sessionStorage.setItem('kickAuthReturn', window.location.pathname)
+      
+      // Redirect to Kick OAuth
+      window.location.href = authURL
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('Failed to start authentication')
+      setIsLoading(false)
+    }
+  }
+
+  const handleAuthCallback = async () => {
     const urlParams = new URLSearchParams(window.location.search)
     const authStatus = urlParams.get('auth')
     
     if (authStatus === 'success') {
       const authCode = urlParams.get('code') || localStorage.getItem('kickAuthCode')
       if (authCode) {
-        const redirectUri = `https://sdhqcreatorcorner.vercel.app/auth/kick/callback`
-        handleAuthSuccess(authCode, redirectUri)
-        // Clean up
+        const redirectUri = `${window.location.origin}/auth/kick/callback`
+        await handleAuthSuccess(authCode, redirectUri)
         localStorage.removeItem('kickAuthCode')
         sessionStorage.removeItem('kickAuthReturn')
-        // Clear URL params
         window.history.replaceState({}, '', window.location.pathname)
       }
     } else if (authStatus === 'error') {
-      const message = urlParams.get('message')
-      setError(message || 'Authentication failed')
-      setIsLoading(false)
-      // Clean up
-      sessionStorage.removeItem('kickAuthReturn')
-      localStorage.removeItem('kickAuthCode')
-      // Clear URL params
+      const errorMsg = urlParams.get('error') || 'Authentication failed'
+      setError(errorMsg)
       window.history.replaceState({}, '', window.location.pathname)
-    }
-  }
-
-  const checkExistingSession = () => {
-    try {
-      const storedUser = localStorage.getItem('kickUser')
-      const storedToken = localStorage.getItem('kickAccessToken')
-      const storedSubscription = localStorage.getItem('kickSubscription')
-      
-      if (storedUser && storedToken) {
-        const userData = JSON.parse(storedUser)
-        setUser(userData)
-        setIsSubscribed(storedSubscription === 'true')
-        onUserChange?.(userData)
-        onSubscriptionChange?.(storedSubscription === 'true')
-      }
-    } catch (error) {
-      console.error('Error checking existing session:', error)
-    }
-  }
-
-  const handleLogin = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const redirectUri = `https://sdhqcreatorcorner.vercel.app/auth/kick/callback`
-      const authUrl = await kickAPI.getAuthURL(redirectUri)
-      
-      // Debug: Log the URL to console
-      console.log('Kick OAuth URL:', authUrl)
-      console.log('Client ID:', process.env.NEXT_PUBLIC_KICK_CLIENT_ID)
-      console.log('Redirect URI:', redirectUri)
-      
-      // Also generate test URLs for manual testing
-      const simpleOAuth = new KickSimpleOAuth(process.env.NEXT_PUBLIC_KICK_CLIENT_ID || '')
-      const testUrls = simpleOAuth.getTestURLs(redirectUri)
-      
-      console.log('=== Alternative Test URLs ===')
-      testUrls.forEach((url, index) => {
-        console.log(`Test ${index + 1}: ${url}`)
-      })
-      
-      // Store current URL to return after auth
-      sessionStorage.setItem('kickAuthReturn', window.location.pathname)
-      
-      // Redirect directly instead of popup (more reliable)
-      window.location.href = authUrl
-      
-    } catch (error) {
-      console.error('Login error:', error)
-      setError('Failed to start authentication')
-      setIsLoading(false)
     }
   }
 
@@ -126,218 +94,123 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       console.log('🔐 Processing Kick OAuth callback...')
       
       // Exchange auth code for token
-      let tokenResponse: KickAuthResponse
-      try {
-        tokenResponse = await kickAPI.exchangeCodeForToken(code, redirectUri)
-        console.log('✅ Real Kick token received')
-        
-        // Check if user data is included in token response
-        if ('hasUserDataInToken' in tokenResponse && tokenResponse.hasUserDataInToken) {
-          console.log('🎁 Using user data from token response!')
-          // Extract user data from token response
-          const userData = {
-            id: tokenResponse.user?.id?.toString() || tokenResponse.sub?.toString() || 'unknown',
-            username: tokenResponse.user?.username || tokenResponse.user?.preferred_username || tokenResponse.username || 'unknown',
-            display_name: tokenResponse.user?.display_name || tokenResponse.user?.name || tokenResponse.display_name || 'Unknown User',
-            profile_image_url: tokenResponse.user?.profile_image_url || tokenResponse.user?.picture || ''
-          }
-          
-          console.log('🔍 User data from token:', userData)
-          
-          // Continue with subscription check
-          let isSubscribed = false
-          try {
-            const subscriptionResult = await subscriptionChecker.checkSubscription(userData.username, tokenResponse.access_token)
-            isSubscribed = subscriptionResult.isSubscribed
-            console.log(`📊 RapidAPI result: @${userData.username} is ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'} via ${subscriptionResult.method}`)
-          } catch (subError) {
-            console.error('❌ Subscription check failed:', subError)
-            isSubscribed = false
-          }
-          
-          // Store and update
-          localStorage.setItem('kickUser', JSON.stringify(userData))
-          localStorage.setItem('kickAccessToken', tokenResponse.access_token)
-          localStorage.setItem('kickSubscription', isSubscribed.toString())
-          
-          setUser(userData)
-          setIsSubscribed(isSubscribed)
-          onUserChange?.(userData)
-          onSubscriptionChange?.(isSubscribed)
-          
-          console.log(`🎉 Login complete! @${userData.username} is ${isSubscribed ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'} to bulletbait604`)
-          return // Skip the rest of the function
-        }
-        
-      } catch (tokenError) {
-        console.error('❌ Kick token exchange failed:', tokenError)
-        throw new Error('Kick OAuth token exchange failed. Please try again.')
-      }
+      const tokenResponse = await kickOAuth.exchangeCodeForToken(code, redirectUri)
+      console.log('✅ Real Kick token received')
       
-      // Get user data (username and profile picture)
-      let userData;
-      try {
-        userData = await kickAPI.getCurrentUser(tokenResponse.access_token)
-        console.log('✅ Got real user data:', userData.username)
-      } catch (userError) {
-        console.error('❌ Kick user API failed:', userError)
-        throw new Error('Failed to get user information from Kick. Please try again.')
-      }
+      // Get user info
+      const userData = await kickOAuth.getUserInfo(tokenResponse.access_token)
+      console.log('✅ Got user data:', userData.username)
       
-      // Now check subscription status using RapidAPI
-      console.log(`🔍 Checking subscription status for @${userData.username} to bulletbait604 via RapidAPI`)
-      let isSubscribed = false
+      // Check subscription using RapidAPI
+      console.log(`🔍 Checking subscription for @${userData.username} to bulletbait604`)
+      let isSub = false
       
       try {
-        // First check for admin override (for testing)
-        const adminOverride = subscriptionChecker.checkAdminOverride(userData.username)
-        if (adminOverride !== null) {
-          isSubscribed = adminOverride
-          console.log(`👑 Admin override: @${userData.username} is ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}`)
-        } else {
-          // Use RapidAPI to check real subscription status
-          const subscriptionResult = await subscriptionChecker.checkSubscription(userData.username, tokenResponse.access_token)
-          isSubscribed = subscriptionResult.isSubscribed
-          console.log(`📊 RapidAPI result: @${userData.username} is ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'} via ${subscriptionResult.method}`)
-          
-          // Show detailed results
-          if (subscriptionResult.method === 'rapidapi') {
-            console.log('✅ Successfully verified subscription via RapidAPI')
-          } else if (subscriptionResult.method === 'oauth') {
-            console.log('⚠️ OAuth subscription check worked (unexpected but good)')
-          } else {
-            console.log('❌ RapidAPI check failed, using fallback method')
-          }
-        }
+        const subscriptionResult = await rapidAPI.checkSubscription(userData.username)
+        isSub = subscriptionResult.isSubscribed
+        console.log(`📊 RapidAPI result: ${isSub} via ${subscriptionResult.method}`)
       } catch (subError) {
         console.error('❌ Subscription check failed:', subError)
-        // Don't throw error, just default to not subscribed
-        isSubscribed = false
+        isSub = false
       }
       
-      // Store session data
+      // Store session
       localStorage.setItem('kickUser', JSON.stringify(userData))
       localStorage.setItem('kickAccessToken', tokenResponse.access_token)
-      localStorage.setItem('kickSubscription', isSubscribed.toString())
+      localStorage.setItem('kickSubscription', isSub.toString())
       
-      // Update UI state
+      // Update state
       setUser(userData)
-      setIsSubscribed(isSubscribed)
+      setIsSubscribed(isSub)
       onUserChange?.(userData)
-      onSubscriptionChange?.(isSubscribed)
+      onSubscriptionChange?.(isSub)
       
-      console.log(`🎉 Login complete! @${userData.username} is ${isSubscribed ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'} to bulletbait604`)
+      console.log(`🎉 Login complete! @${userData.username} is ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}`)
       
     } catch (error) {
       console.error('❌ Authentication failed:', error)
       setError(error instanceof Error ? error.message : 'Failed to complete authentication')
     } finally {
       setIsLoading(false)
-      // Clean up URL params
-      window.history.replaceState({}, document.title, window.location.pathname)
     }
   }
 
   const handleLogout = () => {
-    try {
-      // Clear session
-      localStorage.removeItem('kickUser')
-      localStorage.removeItem('kickAccessToken')
-      localStorage.removeItem('kickSubscription')
-      
-      // Update state
-      setUser(null)
-      setIsSubscribed(false)
-      onUserChange?.(null)
-      onSubscriptionChange?.(false)
-      setError(null)
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
+    // Clear session
+    localStorage.removeItem('kickUser')
+    localStorage.removeItem('kickAccessToken')
+    localStorage.removeItem('kickSubscription')
+    
+    // Update state
+    setUser(null)
+    setIsSubscribed(false)
+    onUserChange?.(null)
+    onSubscriptionChange?.(false)
+    setError(null)
   }
+
+  // Check for auth callback on mount
+  useEffect(() => {
+    handleAuthCallback()
+  }, [])
 
   if (user) {
     return (
-      <div className="space-y-4">
-        <Card className="bg-black border-cyan-500/20">
-          <CardHeader>
-            <CardTitle className="text-cyan-400 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
-              Logged In
-            </CardTitle>
-            <CardDescription className="text-gray-400">
-              Welcome to SDHQ Content Analyzer
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              {user.profile_image_url ? (
-                <img 
-                  src={user.profile_image_url} 
-                  alt={user.display_name}
-                  className="w-12 h-12 rounded-full"
-                />
-              ) : (
-                <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-cyan-400" />
-                </div>
-              )}
-              <div>
-                <div className="text-cyan-300 font-medium">{user.display_name}</div>
-                <div className="text-gray-400 text-sm">@{user.username}</div>
+      <Card className="bg-black border border-cyan-500/20">
+        <CardHeader>
+          <CardTitle className="text-cyan-400 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5" />
+            Logged In
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Welcome to SDHQ Content Analyzer
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            {user.profile_image_url ? (
+              <img 
+                src={user.profile_image_url} 
+                alt={user.display_name}
+                className="w-12 h-12 rounded-full"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
+                <User className="w-6 h-6 text-cyan-400" />
               </div>
+            )}
+            <div>
+              <div className="text-cyan-300 font-medium">Logged in as</div>
+              <div className="text-white font-semibold">{user.display_name}</div>
+              <div className="text-gray-400 text-sm">@{user.username}</div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              {isSubscribed ? (
-                <>
-                  <Crown className="w-5 h-5 text-yellow-400" />
-                  <span className="text-yellow-400 font-medium">Premium Member</span>
-                  <span className="text-gray-400 text-sm">(Subscribed to bulletbait604)</span>
-                </>
-              ) : (
-                <>
-                  <XCircle className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-400">Free Tier</span>
-                  <span className="text-gray-400 text-sm">(Not subscribed)</span>
-                </>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            {isSubscribed ? (
+              <>
+                <Crown className="w-5 h-5 text-yellow-400" />
+                <span className="text-yellow-400 font-medium">Premium Member</span>
+                <span className="text-gray-400 text-sm">(Subscribed to bulletbait604)</span>
+              </>
+            ) : (
+              <>
+                <XCircle className="w-5 h-5 text-gray-400" />
+                <span className="text-gray-400">Free Tier</span>
+                <span className="text-gray-400 text-sm">(Not subscribed)</span>
+              </>
+            )}
+          </div>
 
-            <Button
-              onClick={handleLogout}
-              className="w-full bg-red-500 hover:bg-red-600"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Admin Panel for Testing */}
-        <div className="flex justify-center">
           <Button
-            onClick={() => setShowAdminPanel(!showAdminPanel)}
-            variant="outline"
-            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-sm"
+            onClick={handleLogout}
+            className="w-full bg-red-500 hover:bg-red-600"
           >
-            {showAdminPanel ? 'Hide' : 'Show'} Admin Panel (Testing)
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
           </Button>
-        </div>
-
-        {showAdminPanel && (
-          <AdminPanel 
-            onSubscriptionChange={(username, subscribed) => {
-              // Update subscription if it's the current user
-              if (user && user.username === username) {
-                setIsSubscribed(subscribed)
-                onSubscriptionChange?.(subscribed)
-                localStorage.setItem('kickSubscription', subscribed.toString())
-              }
-            }}
-          />
-        )}
-      </div>
+        </CardContent>
+      </Card>
     )
   }
 

@@ -8,11 +8,11 @@ export default function KickCallback() {
     const code = urlParams.get('code')
     const error = urlParams.get('error')
 
-    // Simple redirect to main page with auth info
-    const mainAppUrl = 'https://sdhqcreatorcorner.vercel.app'
+    // Get the current domain dynamically
+    const mainAppUrl = `${window.location.protocol}//${window.location.host}`
 
     if (code) {
-      // Store the auth code in localStorage (more reliable than sessionStorage)
+      // Store the auth code in localStorage
       localStorage.setItem('kickAuthCode', code)
       window.location.href = `${mainAppUrl}?auth=success&code=${code}`
     } else if (error) {
