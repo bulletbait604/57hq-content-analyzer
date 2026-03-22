@@ -56,12 +56,12 @@ export function AlgorithmInfoEnhanced() {
         icon: '🎵',
         lastUpdate: '2026-03-15',
         keyFactors: [
-          'Watch time completion rate (70% weight)',
-          'Engagement velocity (first 1 hour)',
-          'Video relevance score',
-          'User interaction patterns',
-          'Sound/music popularity trends',
-          'Creator authority score'
+          'How long people watch your videos',
+          'How quickly people like/comment in the first hour',
+          'How relevant your content is to viewers',
+          'How people interact with your content',
+          'Using trending sounds and music',
+          'Your account\'s credibility and consistency'
         ],
         tips: [
           'Hook viewers in first 3 seconds',
@@ -101,12 +101,12 @@ export function AlgorithmInfoEnhanced() {
         icon: '📷',
         lastUpdate: '2026-03-18',
         keyFactors: [
-          'Story completion rate',
-          'Reel watch time percentage',
-          'Comment-to-like ratio',
-          'Save rate indicator',
-          'Profile visit frequency',
-          'DM engagement metrics'
+          'How many people finish watching your Stories',
+          'How much of your Reels people watch',
+          'Ratio of comments to likes (more comments = better)',
+          'How many people save your posts',
+          'How often people visit your profile',
+          'Messages and engagement metrics'
         ],
         tips: [
           'Post Reels with 15-30 second duration',
@@ -136,12 +136,12 @@ export function AlgorithmInfoEnhanced() {
         icon: '▶️',
         lastUpdate: '2026-03-20',
         keyFactors: [
-          'Session watch time contribution',
-          'Click-through rate from thumbnails',
-          'Average view duration percentage',
-          'Audience retention patterns',
-          'Comment engagement quality',
-          'Subscriber growth velocity'
+          'How much time people spend on YouTube because of your videos',
+          'How many people click on your thumbnails',
+          'How much of each video people actually watch',
+          'When people stop watching your videos',
+          'Quality of comments and engagement',
+          'How fast you\'re getting new subscribers'
         ],
         tips: [
           'Create custom thumbnails with high contrast',
@@ -171,12 +171,12 @@ export function AlgorithmInfoEnhanced() {
         icon: '🐦',
         lastUpdate: '2026-03-22',
         keyFactors: [
-          'Engagement velocity (first hour)',
-          'Reply-to-retweet ratio',
-          'Thread completion rate',
-          'Hashtag relevance score',
-          'Follower interaction quality',
-          'Media attachment engagement'
+          'How quickly people engage in the first hour',
+          'Ratio of replies to retweets (more replies = better)',
+          'How many people finish reading your threads',
+          'How relevant your hashtags are',
+          'Quality of interactions with your followers',
+          'How well your photos/videos perform'
         ],
         tips: [
           'Post during peak engagement hours (8-10 AM, 6-8 PM)',
