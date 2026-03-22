@@ -174,26 +174,48 @@ export class KickOAuth {
 
     // If JWT doesn't work, try API endpoints with better error handling
     console.log('🔄 JWT parsing failed, trying API endpoints...')
+    
+    // Try different authentication methods and endpoints
     const endpoints = [
-      'https://kick.com/api/v2/user',
-      'https://kick.com/api/v1/user',
-      'https://kick.com/user',
-      'https://id.kick.com/api/v1/user',
-      'https://id.kick.com/user'
+      // Try with Bearer token
+      { url: 'https://kick.com/api/v2/user', auth: `Bearer ${accessToken}` },
+      { url: 'https://kick.com/api/v1/user', auth: `Bearer ${accessToken}` },
+      { url: 'https://kick.com/user', auth: `Bearer ${accessToken}` },
+      { url: 'https://id.kick.com/api/v1/user', auth: `Bearer ${accessToken}` },
+      { url: 'https://id.kick.com/user', auth: `Bearer ${accessToken}` },
+      // Try with token as query parameter
+      { url: `https://kick.com/api/v1/user?token=${accessToken}`, auth: null },
+      { url: `https://kick.com/api/v2/user?token=${accessToken}`, auth: null },
+      // Try with OAuth token header
+      { url: 'https://kick.com/api/v1/user', auth: `OAuth ${accessToken}` },
+      { url: 'https://kick.com/api/v2/user', auth: `OAuth ${accessToken}` },
+      // Try with different base URLs
+      { url: 'https://api.kick.com/v1/user', auth: `Bearer ${accessToken}` },
+      { url: 'https://api.kick.com/v2/user', auth: `Bearer ${accessToken}` }
     ]
 
     for (const endpoint of endpoints) {
       try {
-        console.log(`Trying endpoint: ${endpoint}`)
-        const response = await fetch(endpoint, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'User-Agent': 'SDHQ-Content-Analyzer/1.0',
-            'Origin': typeof window !== 'undefined' ? window.location.origin : 'https://sdhqcreatorcorner.vercel.app',
-            'Referer': typeof window !== 'undefined' ? window.location.origin : 'https://sdhqcreatorcorner.vercel.app'
-          }
+        const endpointUrl = typeof endpoint === 'string' ? endpoint : endpoint.url
+        const authHeader = typeof endpoint === 'string' ? `Bearer ${accessToken}` : endpoint.auth
+        
+        console.log(`Trying endpoint: ${endpointUrl}`)
+        console.log(`Auth method: ${authHeader ? authHeader.substring(0, 20) + '...' : 'None'}`)
+        
+        const headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'SDHQ-Content-Analyzer/1.0',
+          'Origin': typeof window !== 'undefined' ? window.location.origin : 'https://sdhqcreatorcorner.vercel.app',
+          'Referer': typeof window !== 'undefined' ? window.location.origin : 'https://sdhqcreatorcorner.vercel.app'
+        }
+        
+        if (authHeader) {
+          headers['Authorization'] = authHeader
+        }
+        
+        const response = await fetch(endpointUrl, {
+          headers: headers
         })
 
         console.log(`Response status: ${response.status}`)
@@ -202,6 +224,8 @@ export class KickOAuth {
         if (response.ok) {
           const data = await response.json()
           console.log('✅ Got user data from API:', data)
+          console.log('API response keys:', Object.keys(data))
+          console.log('API response details:', JSON.stringify(data, null, 2))
           
           return {
             id: data.id?.toString() || data.user_id?.toString() || 'unknown',
@@ -211,11 +235,11 @@ export class KickOAuth {
           }
         } else {
           const errorText = await response.text()
-          console.log(`❌ Endpoint ${endpoint} failed (${response.status}):`, errorText.substring(0, 100))
+          console.log(`❌ Endpoint ${endpointUrl} failed (${response.status}):`, errorText.substring(0, 100))
           console.log('Error content type:', response.headers.get('content-type'))
         }
       } catch (error) {
-        console.log(`❌ Endpoint ${endpoint} request failed:`, error)
+        console.log(`❌ Endpoint ${endpointUrl} request failed:`, error)
         continue
       }
     }
