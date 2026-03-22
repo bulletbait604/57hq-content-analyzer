@@ -8,7 +8,7 @@ export interface SubscriptionResponse {
 
 export class KickSubscriptionChecker {
   private apiKey: string
-  private baseURL: string = 'https://kick-com-api.p.rapidapi.com'
+  private baseURL: string = 'https://api.kick.com'
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
@@ -16,79 +16,87 @@ export class KickSubscriptionChecker {
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
     try {
-      console.log(`🔍 Checking subscription via RapidAPI for ${username} to ${channelName}`)
+      console.log(`🔍 Checking subscription via Official Kick API for ${username} to ${channelName}`)
       
-      // Method 1: Try RapidAPI for subscriber list (primary method)
+      // Method 1: Try Official Kick API for subscriber list
       try {
-        console.log(`🚀 Trying RapidAPI for subscriber list: https://kick-com-api.p.rapidapi.com/channel/${channelName}/subscribers`)
-        const rapidApiResponse = await fetch(`https://kick-com-api.p.rapidapi.com/channel/${channelName}/subscribers`, {
+        console.log(`🚀 Trying Official Kick API: https://api.kick.com/public/v1/channels/${channelName}`)
+        const channelResponse = await fetch(`https://api.kick.com/public/v1/channels/${channelName}`, {
           method: 'GET',
           headers: {
-            'X-RapidAPI-Key': this.apiKey,
-            'X-RapidAPI-Host': 'kick-com-api.p.rapidapi.com'
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
           }
         })
 
-        console.log(`RapidAPI subscribers response: ${rapidApiResponse.status}`)
+        console.log(`Official Kick API response: ${channelResponse.status}`)
         
-        if (rapidApiResponse.ok) {
-          const rapidApiData = await rapidApiResponse.json()
-          console.log('📋 Got subscriber list from RapidAPI:', rapidApiData)
+        if (channelResponse.ok) {
+          const channelData = await channelResponse.json()
+          console.log('� Got channel info from Official Kick API:', channelData)
+          console.log('📋 RAW Response:', JSON.stringify(channelData, null, 2))
+          console.log('📋 Response structure:', Object.keys(channelData))
           
-          if (rapidApiData.data && Array.isArray(rapidApiData.data)) {
-            console.log(`📋 Found ${rapidApiData.data.length} subscribers via RapidAPI`)
+          // Check if channel has subscriber data in any format
+          if (channelData.data) {
+            console.log('📋 Available data keys:', Object.keys(channelData.data))
             
-            const isSubscribed = rapidApiData.data.some((subscriber: any) => {
-              const subscriberUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
-              const loggedInUsername = username.toLowerCase()
-              console.log(`🔍 Checking if subscriber "${subscriberUsername}" matches logged-in user "${loggedInUsername}"`)
-              return subscriberUsername === loggedInUsername
-            })
+            // Try different possible subscriber data locations
+            const subscriberData = channelData.data.subscribers || 
+                               channelData.data.subscription_data ||
+                               channelData.data.subscriptions ||
+                               channelData.data.paid_subscribers ||
+                               channelData.data.subscriber_list ||
+                               channelData.data.members ||
+                               channelData.data.followers
+                               
+            console.log('📋 Subscriber data found:', subscriberData ? JSON.stringify(subscriberData, null, 2) : 'None')
             
-            console.log(`✅ RapidAPI cross-reference check result: ${isSubscribed}`)
-            
-            if (isSubscribed) {
-              console.log(`🎉 FOUND "${username.toLowerCase()}" in ${channelName}'s RapidAPI subscriber list!`)
-              return { 
-                isSubscribed: true, 
-                method: 'rapidapi_subscriber_list',
-                data: {
-                  rapidApiData: rapidApiData.data,
-                  subscriberFound: rapidApiData.data.find((sub: any) => 
-                    sub.username?.toLowerCase() === username.toLowerCase() || 
-                    sub.name?.toLowerCase() === username.toLowerCase()
-                  ),
-                  totalSubscribers: rapidApiData.data.length
+            if (subscriberData && Array.isArray(subscriberData)) {
+              console.log(`📋 Found ${subscriberData.length} subscribers via Official Kick API`)
+              
+              const isSubscribed = subscriberData.some((subscriber: any) => {
+                const subscriberUsername = subscriber.username?.toLowerCase() || 
+                                                subscriber.name?.toLowerCase() || 
+                                                subscriber.user?.username?.toLowerCase() ||
+                                                subscriber.display_name?.toLowerCase()
+                const loggedInUsername = username.toLowerCase()
+                console.log(`🔍 Checking subscriber "${subscriberUsername}" vs logged-in user "${loggedInUsername}"`)
+                return subscriberUsername === loggedInUsername
+              })
+              
+              console.log(`✅ Official Kick API check result: ${isSubscribed}`)
+              
+              if (isSubscribed) {
+                console.log(`🎉 FOUND "${username.toLowerCase()}" in ${channelName}'s subscriber list!`)
+                return { 
+                  isSubscribed: true, 
+                  method: 'official_kick_api_subscriber_list',
+                  data: {
+                    channelData: channelData.data,
+                    subscriberFound: subscriberData.find((sub: any) => 
+                      sub.username?.toLowerCase() === username.toLowerCase() || 
+                      sub.name?.toLowerCase() === username.toLowerCase() ||
+                      sub.user?.username?.toLowerCase() === username.toLowerCase()
+                    ),
+                    totalSubscribers: subscriberData.length
+                  }
                 }
+              } else {
+                console.log(`❌ "${username.toLowerCase()}" NOT found in ${channelName}'s subscriber list`)
               }
             } else {
-              console.log(`❌ "${username.toLowerCase()}" NOT found in ${channelName}'s RapidAPI subscriber list`)
+              console.log('❌ No subscriber array found in official API response')
             }
           } else {
-            console.log('❌ No subscriber data found in RapidAPI response')
+            console.log('❌ No data object found in official API response')
           }
         } else {
-          const rapidApiError = await rapidApiResponse.text()
-          console.log(`❌ RapidAPI subscribers failed (${rapidApiResponse.status}):`, rapidApiError)
-          
-          if (rapidApiResponse.status === 403) {
-            return { 
-              isSubscribed: false, 
-              method: 'rapidapi',
-              error: 'API subscription required: Subscribe to Kick API on RapidAPI'
-            }
-          }
-          
-          if (rapidApiResponse.status === 429) {
-            return { 
-              isSubscribed: false, 
-              method: 'rapidapi',
-              error: 'Rate limit exceeded: Too many requests to RapidAPI'
-            }
-          }
+          const errorText = await channelResponse.text()
+          console.log(`❌ Official Kick API failed (${channelResponse.status}):`, errorText)
         }
-      } catch (rapidApiError) {
-        console.log('❌ RapidAPI subscriber list request failed:', rapidApiError)
+      } catch (officialApiError) {
+        console.log('❌ Official Kick API request failed:', officialApiError)
       }
 
       // Method 2: Fallback to follow status check
@@ -127,14 +135,14 @@ export class KickSubscriptionChecker {
       console.log(`❌ Could not verify subscription for ${username} - all methods failed`)
       return { 
         isSubscribed: false, 
-        method: 'rapidapi',
+        method: 'official_kick_api',
         error: 'All methods failed - user may not be subscribed'
       }
     } catch (error) {
-      console.error('RapidAPI subscription check failed:', error)
+      console.error('Official Kick API subscription check failed:', error)
       return { 
         isSubscribed: false, 
-        method: 'rapidapi',
+        method: 'official_kick_api',
         error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
