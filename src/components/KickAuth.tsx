@@ -102,8 +102,40 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       console.log('✅ Real Kick token received')
       
       // Get user info
-      const userData = await kickOAuth.getUserInfo(tokenResponse.access_token)
-      console.log('✅ Got user data:', userData.username)
+      let userData;
+      try {
+        userData = await kickOAuth.getUserInfo(tokenResponse.access_token)
+        console.log('✅ Got real user data:', userData.username)
+      } catch (userError) {
+        console.error('❌ Kick user API failed:', userError)
+        
+        // Ask user for their username since we can't get it from API
+        const kickUsername = prompt(
+          'Kick API is currently experiencing issues.\n\n' +
+          'Please enter your exact Kick username (without @):\n\n' +
+          'This is required to verify your subscription to bulletbait604'
+        );
+        
+        if (!kickUsername || kickUsername.trim() === '') {
+          throw new Error('Username is required to continue')
+        }
+        
+        // Clean and validate username
+        const cleanUsername = kickUsername.replace('@', '').trim().toLowerCase()
+        
+        if (cleanUsername.length < 3) {
+          throw new Error('Please enter a valid Kick username')
+        }
+        
+        userData = {
+          id: 'kick_user_' + cleanUsername,
+          username: cleanUsername,
+          display_name: kickUsername,
+          profile_image_url: ''
+        }
+        
+        console.log('👤 Using provided username:', userData)
+      }
       
       // Check subscription using RapidAPI
       console.log(`🔍 Checking subscription for @${userData.username} to bulletbait604`)

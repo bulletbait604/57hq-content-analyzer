@@ -114,56 +114,79 @@ export class KickOAuth {
   }
 
   async getUserInfo(accessToken: string): Promise<KickUser> {
-    // Try to decode JWT token first
+    console.log('🔍 Trying to get user info from Kick OAuth token...')
+    
+    // First, try to decode JWT token to get user data
     try {
       const tokenParts = accessToken.split('.')
       if (tokenParts.length === 3) {
         const payload = JSON.parse(atob(tokenParts[1]))
+        console.log('🔍 JWT token payload:', payload)
         
-        if (payload.username && payload.username !== 'unknown') {
+        // Try multiple field names for username
+        const username = payload.username || payload.preferred_username || payload.name || payload.login || payload.sub
+        const displayName = payload.display_name || payload.name || payload.username || payload.preferred_username || 'Unknown User'
+        const userId = payload.sub || payload.id || payload.user_id || 'unknown'
+        const profileImage = payload.picture || payload.profile_image_url || payload.avatar_url || payload.image_url || ''
+        
+        if (username && username !== 'unknown' && username !== 'sub') {
+          console.log('✅ Extracted user data from JWT token:', { username, displayName, userId })
           return {
-            id: payload.sub || payload.id || 'unknown',
-            username: payload.username,
-            display_name: payload.display_name || payload.name || payload.username,
-            profile_image_url: payload.picture || payload.profile_image_url || ''
+            id: userId,
+            username: username,
+            display_name: displayName,
+            profile_image_url: profileImage
           }
         }
       }
     } catch (jwtError) {
-      console.log('Could not decode JWT token:', jwtError)
+      console.log('❌ Could not decode JWT token:', jwtError)
     }
 
-    // If JWT doesn't work, try API endpoints
+    // If JWT doesn't work, try API endpoints with better error handling
     const endpoints = [
       'https://kick.com/api/v2/user',
       'https://kick.com/api/v1/user',
-      'https://kick.com/user'
+      'https://kick.com/user',
+      'https://id.kick.com/api/v1/user',
+      'https://id.kick.com/user'
     ]
 
     for (const endpoint of endpoints) {
       try {
+        console.log(`Trying endpoint: ${endpoint}`)
         const response = await fetch(endpoint, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'SDHQ-Content-Analyzer/1.0',
+            'Origin': typeof window !== 'undefined' ? window.location.origin : 'https://sdhqcreatorcorner.vercel.app',
+            'Referer': typeof window !== 'undefined' ? window.location.origin : 'https://sdhqcreatorcorner.vercel.app'
           }
         })
 
         if (response.ok) {
           const data = await response.json()
+          console.log('✅ Got user data from API:', data)
+          
           return {
-            id: data.id?.toString() || 'unknown',
+            id: data.id?.toString() || data.user_id?.toString() || 'unknown',
             username: data.username || data.name || 'unknown',
             display_name: data.display_name || data.name || data.username || 'Unknown User',
-            profile_image_url: data.profile_image_url || data.avatar_url || ''
+            profile_image_url: data.profile_image_url || data.avatar_url || data.image_url || ''
           }
+        } else {
+          const errorText = await response.text()
+          console.log(`❌ Endpoint ${endpoint} failed (${response.status}):`, errorText.substring(0, 100))
         }
       } catch (error) {
-        console.log(`Endpoint ${endpoint} failed:`, error)
+        console.log(`❌ Endpoint ${endpoint} request failed:`, error)
         continue
       }
     }
 
-    throw new Error('Could not get user information')
+    // If all methods fail, throw a descriptive error
+    throw new Error(`Could not get user information. Kick API returned HTML errors and JWT token parsing failed. Please check your Kick OAuth configuration.`)
   }
 }
