@@ -10,6 +10,12 @@ export interface KickAuthResponse {
   token_type: string
   expires_in: number
   refresh_token?: string
+  user?: any
+  profile?: any
+  username?: string
+  sub?: string
+  display_name?: string
+  hasUserDataInToken?: boolean
 }
 
 export class KickAPI {
@@ -168,18 +174,27 @@ export class KickAPI {
         
         if (response.ok) {
           const text = await response.text()
-          console.log('Response text:', text)
+          console.log('Token response text:', text)
           
           try {
             const tokenData = JSON.parse(text)
-            console.log('Token exchange success!')
+            console.log('Token exchange success!', tokenData)
+            
+            // Check if user data is included in token response
+            if (tokenData.user || tokenData.profile || tokenData.username) {
+              console.log('🎁 Found user data in token response!')
+              return {
+                ...tokenData,
+                hasUserDataInToken: true
+              }
+            }
             
             // Clean up code verifier
             sessionStorage.removeItem('kick_code_verifier')
             
             return tokenData
           } catch (parseError) {
-            console.log('Failed to parse JSON from:', text)
+            console.log('Failed to parse JSON from token response:', text)
             lastError = new Error(`Invalid JSON response: ${text.substring(0, 200)}`)
             continue
           }
@@ -236,11 +251,24 @@ export class KickAPI {
             const data = JSON.parse(text)
             console.log('✅ Successfully got user data:', data)
             
+            // Extract user data with better debugging
+            const userId = data.id?.toString() || data.user_id?.toString() || data.sub?.toString() || 'unknown'
+            const username = data.username || data.preferred_username || data.name || data.login || 'unknown'
+            const displayName = data.display_name || data.name || data.username || data.preferred_username || 'Unknown User'
+            const profileImage = data.profile_image_url || data.avatar_url || data.image_url || data.picture || ''
+            
+            console.log('🔍 Extracted user data:', {
+              id: userId,
+              username: username,
+              display_name: displayName,
+              profile_image_url: profileImage
+            })
+            
             return {
-              id: data.id?.toString() || data.user_id?.toString() || 'unknown',
-              username: data.username || data.name || 'unknown',
-              display_name: data.display_name || data.name || data.username || 'Unknown User',
-              profile_image_url: data.profile_image_url || data.avatar_url || data.image_url || ''
+              id: userId,
+              username: username,
+              display_name: displayName,
+              profile_image_url: profileImage
             }
           } catch (parseError) {
             console.log('Failed to parse JSON from user endpoint:', text)

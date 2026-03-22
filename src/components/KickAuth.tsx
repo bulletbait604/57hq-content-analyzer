@@ -130,6 +130,45 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       try {
         tokenResponse = await kickAPI.exchangeCodeForToken(code, redirectUri)
         console.log('✅ Real Kick token received')
+        
+        // Check if user data is included in token response
+        if ('hasUserDataInToken' in tokenResponse && tokenResponse.hasUserDataInToken) {
+          console.log('🎁 Using user data from token response!')
+          // Extract user data from token response
+          const userData = {
+            id: tokenResponse.user?.id?.toString() || tokenResponse.sub?.toString() || 'unknown',
+            username: tokenResponse.user?.username || tokenResponse.user?.preferred_username || tokenResponse.username || 'unknown',
+            display_name: tokenResponse.user?.display_name || tokenResponse.user?.name || tokenResponse.display_name || 'Unknown User',
+            profile_image_url: tokenResponse.user?.profile_image_url || tokenResponse.user?.picture || ''
+          }
+          
+          console.log('🔍 User data from token:', userData)
+          
+          // Continue with subscription check
+          let isSubscribed = false
+          try {
+            const subscriptionResult = await subscriptionChecker.checkSubscription(userData.username, tokenResponse.access_token)
+            isSubscribed = subscriptionResult.isSubscribed
+            console.log(`📊 RapidAPI result: @${userData.username} is ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'} via ${subscriptionResult.method}`)
+          } catch (subError) {
+            console.error('❌ Subscription check failed:', subError)
+            isSubscribed = false
+          }
+          
+          // Store and update
+          localStorage.setItem('kickUser', JSON.stringify(userData))
+          localStorage.setItem('kickAccessToken', tokenResponse.access_token)
+          localStorage.setItem('kickSubscription', isSubscribed.toString())
+          
+          setUser(userData)
+          setIsSubscribed(isSubscribed)
+          onUserChange?.(userData)
+          onSubscriptionChange?.(isSubscribed)
+          
+          console.log(`🎉 Login complete! @${userData.username} is ${isSubscribed ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'} to bulletbait604`)
+          return // Skip the rest of the function
+        }
+        
       } catch (tokenError) {
         console.error('❌ Kick token exchange failed:', tokenError)
         throw new Error('Kick OAuth token exchange failed. Please try again.')
