@@ -29,11 +29,21 @@ export class KickAPI {
       redirect_uri: redirectURI,
       response_type: 'code',
       scope: 'user:read channel:read',
-      state: Math.random().toString(36).substring(7),
-      prompt: 'consent' // Force authorization screen even if logged in
+      state: Math.random().toString(36).substring(7)
     })
 
-    return `${this.baseURL}/oauth/authorize?${params.toString()}`
+    // Try different OAuth endpoints - Kick might use a different one
+    const endpoints = [
+      `${this.baseURL}/oauth/authorize`,
+      `${this.baseURL}/oauth/authorize/`,
+      `${this.baseURL}/oauth2/authorize`,
+      `${this.baseURL}/authorize`,
+      `${this.baseURL}/oauth/authorization`
+    ]
+    
+    // Start with the standard one, we can try others if needed
+    const baseUrl = endpoints[0]
+    return `${baseUrl}?${params.toString()}`
   }
 
   async exchangeCodeForToken(code: string, redirectURI: string): Promise<KickAuthResponse> {

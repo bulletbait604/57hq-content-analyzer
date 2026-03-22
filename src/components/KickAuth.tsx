@@ -83,6 +83,10 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       const redirectUri = `${window.location.origin}/auth/kick/callback`
       const authUrl = kickAPI.getAuthURL(redirectUri)
       
+      // Debug: Log the URL to console
+      console.log('Kick OAuth URL:', authUrl)
+      console.log('Client ID:', process.env.NEXT_PUBLIC_KICK_CLIENT_ID)
+      
       // Store current URL to return after auth
       sessionStorage.setItem('kickAuthReturn', window.location.pathname)
       
