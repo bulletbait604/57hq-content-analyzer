@@ -30,7 +30,7 @@ KICK_CLIENT_SECRET=your-kick-client-secret
 
 ### **Step 2: Test Locally**
 ```bash
-cd C:\Users\mrama\CascadeProjects\57hq-content-analyzer
+cd C:\Users\mrama\CascadeProjects\sdhq-content-analyzer
 npm run dev
 ```
 Open: http://localhost:3000
@@ -74,7 +74,7 @@ KICK_CLIENT_SECRET=your-kick-client-secret
 - ✅ **Platform Optimizer** - YouTube/TikTok/Instagram tips
 - ✅ **Clip Analysis** - Retention scoring with basic optimizations
 - ✅ **Improvement Tips** - Actionable advice for content creators
-- ✅ **57 HQ Branding** - Cyan/lime green Matrix theme
+- ✅ **SDHQ Branding** - Cyan/lime green Matrix theme
 
 ### **For AI Users (With API Key):**
 - 🤖 **AI Content Optimizer** - GPT-4 or DeepSeek analysis
@@ -93,10 +93,7 @@ KICK_CLIENT_SECRET=your-kick-client-secret
 
 ## 🌐 **Share Your App:**
 
-### **Your Vercel URL:**
-```
-https://your-project-name.vercel.app
-```
+### **Redirect URI**: `https://sdhq-content-analyzer.vercel.app/auth/kick/callback`
 
 ### **For Your Friends:**
 - **Basic Access**: 100% free - no signup required
@@ -127,7 +124,7 @@ https://your-project-name.vercel.app
 - **Secure Architecture**: OAuth integration with token management
 
 ### **🎨 Brand Consistency:**
-- **57 HQ Colors**: Cyan blue (#00ffff) and lime green (#00ff00)
+- **SDHQ Colors**: Cyan blue (#00ffff) and lime green (#00ff00)
 - **Matrix Theme**: Black background with neon accents
 - **Professional Look**: Competes with paid tools
 - **Visual Polish**: Smooth animations and transitions
