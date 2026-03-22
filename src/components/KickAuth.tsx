@@ -27,15 +27,15 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
     process.env.NEXT_PUBLIC_KICK_CLIENT_SECRET || ''
   )
 
-  // Get user badges from bulletbait604 chat
+  // Get user badges from bulletbait604 using official Kick API
   const getUserBadges = async (username: string) => {
     try {
-      const channelResponse = await fetch(`https://kick.com/api/v1/channels/bulletbait604`, {
+      // Get channel info first
+      const channelResponse = await fetch(`https://api.kick.com/public/v1/channels/bulletbait604`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('kickAccessToken')}`,
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
           'Origin': 'https://kick.com',
           'Referer': 'https://kick.com'
@@ -44,17 +44,18 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
 
       if (channelResponse.ok) {
         const channelData = await channelResponse.json()
+        console.log('📺 Channel data:', channelData)
         
         if (channelData.data && channelData.data.chatroom) {
           const chatroomId = channelData.data.chatroom.id
+          console.log(`💬 Found chatroom ID: ${chatroomId}`)
           
           // Get recent chat messages to find user's badges
-          const messagesResponse = await fetch(`https://kick.com/api/v1/chatrooms/${chatroomId}/messages`, {
+          const messagesResponse = await fetch(`https://api.kick.com/public/v1/chatrooms/${chatroomId}/messages`, {
             method: 'GET',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('kickAccessToken')}`,
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
               'Origin': 'https://kick.com',
               'Referer': 'https://kick.com'
@@ -63,6 +64,7 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
 
           if (messagesResponse.ok) {
             const messagesData = await messagesResponse.json()
+            console.log('📋 Chat messages data:', messagesData)
             
             if (messagesData.data && messagesData.data.messages) {
               const userMessages = messagesData.data.messages.filter((message: any) => 
@@ -71,16 +73,20 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
                 message.sender.username.toLowerCase() === username.toLowerCase()
               )
               
+              console.log(`📋 Found ${userMessages.length} messages from ${username}`)
+              
               if (userMessages.length > 0) {
                 const latestMessage = userMessages[0]
-                return latestMessage.sender.badges || []
+                const badges = latestMessage.sender.badges || []
+                console.log(`🏅 User badges:`, badges)
+                return badges
               }
             }
           }
         }
       }
     } catch (error) {
-      console.error('Failed to get user badges:', error)
+      console.error('Failed to get user badges from official API:', error)
     }
     
     return []
@@ -257,9 +263,8 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
               />
             </div>
             <div>
-              <div className="text-cyan-300 font-medium">Logged in as</div>
+              <div className="text-cyan-300 text-sm font-medium">Logged in as</div>
               <div className="text-white font-semibold">{user.display_name}</div>
-              <div className="text-gray-400 text-sm">@{user.username}</div>
               
               {/* User Badges */}
               {userBadges && userBadges.length > 0 && (
