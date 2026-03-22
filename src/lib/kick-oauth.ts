@@ -80,6 +80,11 @@ export class KickOAuth {
       throw new Error('Code verifier not found')
     }
 
+    console.log('🔐 Exchanging code for token...')
+    console.log('Code:', code.substring(0, 10) + '...')
+    console.log('Redirect URI:', redirectURI)
+    console.log('Code verifier:', codeVerifier.substring(0, 10) + '...')
+
     const tokenEndpoint = `${this.oauthServerURL}/oauth/token`
     
     try {
@@ -87,7 +92,8 @@ export class KickOAuth {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'User-Agent': 'SDHQ-Content-Analyzer/1.0'
         },
         body: new URLSearchParams({
           grant_type: 'authorization_code',
@@ -99,15 +105,25 @@ export class KickOAuth {
         })
       })
 
+      console.log('Token response status:', response.status)
+      
       if (!response.ok) {
         const errorText = await response.text()
+        console.log('Token error response:', errorText)
         throw new Error(`HTTP ${response.status}: ${errorText}`)
       }
 
       const tokenData = await response.json()
+      console.log('✅ Token exchange success!')
+      console.log('Token response:', tokenData)
+      console.log('Access token:', tokenData.access_token ? tokenData.access_token.substring(0, 20) + '...' : 'No access token')
+      
+      // Clean up code verifier
       sessionStorage.removeItem('kick_code_verifier')
+      
       return tokenData
     } catch (error) {
+      console.error('❌ Token exchange failed:', error)
       sessionStorage.removeItem('kick_code_verifier')
       throw error
     }
@@ -115,11 +131,17 @@ export class KickOAuth {
 
   async getUserInfo(accessToken: string): Promise<KickUser> {
     console.log('🔍 Trying to get user info from Kick OAuth token...')
+    console.log('Access token type:', typeof accessToken)
+    console.log('Access token length:', accessToken.length)
+    console.log('Access token preview:', accessToken.substring(0, 50) + '...')
     
     // First, try to decode JWT token to get user data
     try {
       const tokenParts = accessToken.split('.')
+      console.log('Token parts count:', tokenParts.length)
+      
       if (tokenParts.length === 3) {
+        console.log('Token looks like JWT, attempting to decode payload...')
         const payload = JSON.parse(atob(tokenParts[1]))
         console.log('🔍 JWT token payload:', payload)
         
@@ -129,7 +151,9 @@ export class KickOAuth {
         const userId = payload.sub || payload.id || payload.user_id || 'unknown'
         const profileImage = payload.picture || payload.profile_image_url || payload.avatar_url || payload.image_url || ''
         
-        if (username && username !== 'unknown' && username !== 'sub') {
+        console.log('Extracted fields:', { username, displayName, userId, hasUsername: !!username })
+        
+        if (username && username !== 'unknown' && username !== 'sub' && typeof username === 'string' && username.length > 2) {
           console.log('✅ Extracted user data from JWT token:', { username, displayName, userId })
           return {
             id: userId,
@@ -137,13 +161,19 @@ export class KickOAuth {
             display_name: displayName,
             profile_image_url: profileImage
           }
+        } else {
+          console.log('❌ JWT token does not contain valid username data')
         }
+      } else {
+        console.log('❌ Token does not appear to be a valid JWT (wrong number of parts)')
       }
     } catch (jwtError) {
       console.log('❌ Could not decode JWT token:', jwtError)
+      console.log('JWT error details:', jwtError instanceof Error ? jwtError.message : 'Unknown error')
     }
 
     // If JWT doesn't work, try API endpoints with better error handling
+    console.log('🔄 JWT parsing failed, trying API endpoints...')
     const endpoints = [
       'https://kick.com/api/v2/user',
       'https://kick.com/api/v1/user',
@@ -166,6 +196,9 @@ export class KickOAuth {
           }
         })
 
+        console.log(`Response status: ${response.status}`)
+        console.log(`Response headers:`, Object.fromEntries(response.headers.entries()))
+        
         if (response.ok) {
           const data = await response.json()
           console.log('✅ Got user data from API:', data)
@@ -179,6 +212,7 @@ export class KickOAuth {
         } else {
           const errorText = await response.text()
           console.log(`❌ Endpoint ${endpoint} failed (${response.status}):`, errorText.substring(0, 100))
+          console.log('Error content type:', response.headers.get('content-type'))
         }
       } catch (error) {
         console.log(`❌ Endpoint ${endpoint} request failed:`, error)
@@ -186,7 +220,7 @@ export class KickOAuth {
       }
     }
 
-    // If all methods fail, throw a descriptive error
-    throw new Error(`Could not get user information. Kick API returned HTML errors and JWT token parsing failed. Please check your Kick OAuth configuration.`)
+    // If all methods fail, throw a descriptive error with debugging info
+    throw new Error(`Could not get user information. JWT parsing failed and all API endpoints returned HTML errors. Token type: ${typeof accessToken}, Token length: ${accessToken.length}. Please check your Kick OAuth configuration and ensure the token contains user data.`)
   }
 }
