@@ -18,27 +18,9 @@ export class KickSubscriptionChecker {
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
     try {
-      console.log(`🔍 Checking subscription via official Kick API for ${username} to ${channelName}`)
+      console.log(`🔍 Checking subscription via RapidAPI for ${username} to ${channelName}`)
       
-      // Check if user is checking their own subscription
-      const isCheckingOwnSubscription = username.toLowerCase() === channelName.toLowerCase()
-      
-      if (isCheckingOwnSubscription) {
-        console.log(`✅ User ${username} is checking their own subscription to ${channelName}`)
-        console.log(`🎯 Since this is the channel owner, they are automatically considered subscribed`)
-        return { 
-          isSubscribed: true, 
-          method: 'owner_check',
-          data: { 
-            isOwner: true, 
-            username: username, 
-            channel: channelName,
-            message: 'Channel owner is automatically subscribed'
-          }
-        }
-      }
-
-      // Method 1: Try RapidAPI for subscriber list (more likely to work)
+      // Method 1: Try RapidAPI for subscriber list (primary method)
       try {
         console.log(`🚀 Trying RapidAPI for subscriber list: https://kick-com-api.p.rapidapi.com/channel/${channelName}/subscribers`)
         const rapidApiResponse = await fetch(`https://kick-com-api.p.rapidapi.com/channel/${channelName}/subscribers`, {
@@ -53,16 +35,16 @@ export class KickSubscriptionChecker {
         
         if (rapidApiResponse.ok) {
           const rapidApiData = await rapidApiResponse.json()
-          console.log('� Got subscriber list from RapidAPI:', rapidApiData)
+          console.log('📋 Got subscriber list from RapidAPI:', rapidApiData)
           
           if (rapidApiData.data && Array.isArray(rapidApiData.data)) {
             console.log(`📋 Found ${rapidApiData.data.length} subscribers via RapidAPI`)
             
             const isSubscribed = rapidApiData.data.some((subscriber: any) => {
               const subscriberUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
-              const loggedInUsername = username.toLowerCase()
-              console.log(`🔍 Checking if subscriber "${subscriberUsername}" matches logged-in user "${loggedInUsername}"`)
-              return subscriberUsername === loggedInUsername
+              const targetUsername = username.toLowerCase()
+              console.log(`🔍 Checking if subscriber "${subscriberUsername}" matches logged-in user "${targetUsername}"`)
+              return subscriberUsername === targetUsername
             })
             
             console.log(`✅ RapidAPI cross-reference check result: ${isSubscribed}`)
@@ -110,36 +92,9 @@ export class KickSubscriptionChecker {
         console.log('❌ RapidAPI subscriber list request failed:', rapidApiError)
       }
 
-      // Method 2: Fallback to official Kick API channel info
+      // Method 2: Fallback to follow status check
       try {
-        console.log(`🚀 Trying official Kick API channel endpoint: ${this.baseURL}/public/v1/channels/${channelName}`)
-        const channelResponse = await fetch(`${this.baseURL}/public/v1/channels/${channelName}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        })
-
-        console.log(`Official Kick API channel response: ${channelResponse.status}`)
-        
-        if (channelResponse.ok) {
-          const channelData = await channelResponse.json()
-          console.log('� Got channel info from official Kick API:', channelData)
-          
-          // Check if channel has subscriber data
-          if (channelData.data && channelData.data.subscribers && Array.isArray(channelData.data.subscribers)) {
-            console.log(`📋 Found ${channelData.data.subscribers.length} subscribers in channel data`)
-            
-            const isSubscribed = channelData.data.subscribers.some((subscriber: any) => {
-              const subUsername = subscriber.username?.toLowerCase() || subscriber.name?.toLowerCase() || subscriber.user?.username?.toLowerCase()
-              const targetUsername = username.toLowerCase()
-              return subUsername === targetUsername
-            })
-            
-            console.log(`✅ Official API cross-reference check result: ${isSubscribed}`)
-            
-            if (isSubscribed) {
+        console.log(`� Checking if ${username} follows ${channelName} as fallback`)
               console.log(`🎉 FOUND "${username.toLowerCase()}" in ${channelName}'s subscriber list!`)
               return { 
                 isSubscribed: true, 
