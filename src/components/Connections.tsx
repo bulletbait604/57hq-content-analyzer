@@ -14,92 +14,139 @@ import {
   CheckCircle, 
   XCircle, 
   ExternalLink,
-  Key
+  Key,
+  Twitter
 } from 'lucide-react'
 
 interface PlatformConnection {
   platform: string
+  icon: string
   connected: boolean
   username?: string
-  apiKey?: string
   connectedAt?: string
 }
 
 export function Connections() {
   const [connections, setConnections] = useState<PlatformConnection[]>([
-    { platform: 'Instagram', connected: false },
-    { platform: 'YouTube', connected: false },
-    { platform: 'TikTok', connected: false }
+    { platform: 'TikTok', icon: '🎵', connected: false },
+    { platform: 'Instagram', icon: '📷', connected: false },
+    { platform: 'YouTube', icon: '▶️', connected: false },
+    { platform: 'Twitter', icon: '🐦', connected: false }
   ])
 
-  const [showApiSetup, setShowApiSetup] = useState<string | null>(null)
+  const handleConnect = (platform: string) => {
+    console.log(`🔗 Connecting to ${platform}...`)
+    
+    // Get the appropriate OAuth URL for each platform
+    let oauthUrl = ''
+    
+    switch (platform) {
+      case 'TikTok':
+        // Redirect to TikTok OAuth (using RapidAPI for now since official TikTok API is complex)
+        oauthUrl = `https://www.tiktok.com/@bulletbait604`
+        break
+        
+      case 'Instagram':
+        // Redirect to Instagram OAuth
+        const instagramClientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID
+        const instagramRedirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI || 'https://sdhqcreatorcorner.vercel.app/auth/instagram/callback'
+        oauthUrl = `https://api.instagram.com/oauth/authorize?client_id=${instagramClientId}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=user_profile,user_media&response_type=code`
+        break
+        
+      case 'YouTube':
+        // Redirect to YouTube OAuth
+        const youtubeClientId = process.env.NEXT_PUBLIC_YOUTUBE_CLIENT_ID
+        const youtubeRedirectUri = process.env.NEXT_PUBLIC_YOUTUBE_REDIRECT_URI || 'https://sdhqcreatorcorner.vercel.app/auth/youtube/callback'
+        oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${youtubeClientId}&redirect_uri=${encodeURIComponent(youtubeRedirectUri)}&scope=https://www.googleapis.com/auth/youtube.readonly&response_type=code&access_type=offline&prompt=consent`
+        break
+        
+      case 'Twitter':
+        // Redirect to Twitter OAuth (note: Twitter API requires developer approval)
+        oauthUrl = `https://twitter.com/intent/follow?screen_name=bulletbait604`
+        break
+    }
+    
+    if (oauthUrl) {
+      console.log(`🔗 Redirecting to ${platform} OAuth: ${oauthUrl}`)
+      // Store the platform being connected for callback handling
+      localStorage.setItem('connecting_platform', platform)
+      // Open in new window for OAuth flow
+      window.open(oauthUrl, '_blank', 'width=600,height=600')
+    }
+  }
+
+  const handleDisconnect = (platform: string) => {
+    console.log(`🔌 Disconnecting from ${platform}...`)
+    
+    setConnections(prev => 
+      prev.map(conn => 
+        conn.platform === platform 
+          ? { ...conn, connected: false, username: undefined, connectedAt: undefined }
+          : conn
+      )
+    )
+    
+    // Clear stored tokens for this platform
+    localStorage.removeItem(`${platform.toLowerCase()}_auth_code`)
+    localStorage.removeItem(`${platform.toLowerCase()}_access_token`)
+  }
 
   const getPlatformIcon = (platform: string) => {
-    switch (platform) {
-      case 'Instagram': return <Instagram className="w-5 h-5" />
-      case 'YouTube': return <Youtube className="w-5 h-5" />
-      case 'TikTok': return <Music className="w-5 h-5" />
-      default: return <Link className="w-5 h-5" />
-    }
+    const platformInfo = connections.find(p => p.platform === platform)
+    return platformInfo?.icon || '📱'
   }
 
   const getPlatformColor = (platform: string) => {
     switch (platform) {
-      case 'Instagram': return 'bg-pink-500'
-      case 'YouTube': return 'bg-red-500'
       case 'TikTok': return 'bg-black'
+      case 'Instagram': return 'bg-gradient-to-r from-purple-500 to-pink-500'
+      case 'YouTube': return 'bg-red-500'
+      case 'Twitter': return 'bg-blue-500'
       default: return 'bg-gray-500'
     }
   }
 
-  const handleConnect = (platform: string) => {
-    setShowApiSetup(platform)
-  }
-
-  const handleDisconnect = (platform: string) => {
-    setConnections(prev => 
-      prev.map(conn => 
-        conn.platform === platform 
-          ? { ...conn, connected: false, username: undefined, apiKey: undefined }
-          : conn
-      )
-    )
-  }
-
-  const handleApiSave = (platform: string, apiKey: string, username: string) => {
-    setConnections(prev => 
-      prev.map(conn => 
-        conn.platform === platform 
-          ? { 
-              ...conn, 
-              connected: true, 
-              username, 
-              apiKey,
-              connectedAt: new Date().toISOString()
-            }
-          : conn
-      )
-    )
-    setShowApiSetup(null)
-  }
+  // Check for successful OAuth connections from URL parameters
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const authSuccess = urlParams.get('auth')
+      const platform = urlParams.get('platform')
+      
+      if (authSuccess === 'success' && platform) {
+        console.log(`✅ Successfully connected to ${platform}`)
+        
+        setConnections(prev => 
+          prev.map(conn => 
+            conn.platform === platform 
+              ? { ...conn, connected: true, username: 'user', connectedAt: new Date().toISOString() }
+              : conn
+          )
+        )
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
+    }
+  })
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-cyan-400 mb-4">Social Media Connections</h2>
-        <p className="text-gray-400 max-w-2xl mx-auto">
-          Connect your social media accounts to analyze content across all platforms and get comprehensive insights.
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-cyan-400 mb-2">Connect Your Social Media</h2>
+        <p className="text-cyan-300">
+          Link your social media accounts to analyze your content and get personalized insights
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {connections.map((connection) => (
-          <Card key={connection.platform} className="bg-black border border-cyan-500/20">
-            <CardHeader className="pb-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        {connections.map((connection, index) => (
+          <Card key={index} className="bg-black border border-cyan-500">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${getPlatformColor(connection.platform)} bg-opacity-20`}>
-                    {getPlatformIcon(connection.platform)}
+                    <span className="text-2xl">{getPlatformIcon(connection.platform)}</span>
                   </div>
                   <div>
                     <CardTitle className="text-cyan-300 text-lg">{connection.platform}</CardTitle>
@@ -153,13 +200,13 @@ export function Connections() {
               ) : (
                 <div className="space-y-4">
                   <p className="text-gray-400 text-sm">
-                    Connect your {connection.platform} account to analyze content and get platform-specific insights.
+                    Connect your {connection.platform} account to analyze your content and get platform-specific insights.
                   </p>
                   <Button
                     className="w-full bg-cyan-500 text-black hover:bg-cyan-400"
                     onClick={() => handleConnect(connection.platform)}
                   >
-                    <Key className="w-4 h-4 mr-2" />
+                    <Link className="w-4 h-4 mr-2" />
                     Connect {connection.platform}
                   </Button>
                 </div>
@@ -169,68 +216,39 @@ export function Connections() {
         ))}
       </div>
 
-      {/* API Setup Modal */}
-      {showApiSetup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="bg-black border border-cyan-500 w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-cyan-400">
-                Connect {showApiSetup}
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Enter your API credentials to connect your {showApiSetup} account
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-cyan-300">Username</Label>
-                <Input
-                  id="username"
-                  placeholder={`Your ${showApiSetup} username`}
-                  className="bg-black border-cyan-500 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="apiKey" className="text-cyan-300">API Key</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="Enter your API key"
-                  className="bg-black border-cyan-500 text-white"
-                />
-              </div>
-              <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-3">
-                <p className="text-cyan-300 text-sm mb-2">How to get your API key:</p>
-                <ol className="text-gray-400 text-xs space-y-1 list-decimal list-inside">
-                  <li>Go to {showApiSetup} Developer Dashboard</li>
-                  <li>Create a new application or use existing one</li>
-                  <li>Generate API key with read permissions</li>
-                  <li>Copy and paste the key above</li>
-                </ol>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="text-gray-400 border-gray-400"
-                  onClick={() => setShowApiSetup(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="bg-cyan-500 text-black hover:bg-cyan-400"
-                  onClick={() => {
-                    const usernameInput = document.getElementById('username') as HTMLInputElement
-                    const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement
-                    handleApiSave(showApiSetup, apiKeyInput.value, usernameInput.value)
-                  }}
-                >
-                  Connect
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <Card className="bg-black border border-cyan-500/20">
+        <CardHeader>
+          <CardTitle className="text-cyan-400">How It Works</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <h4 className="text-cyan-300 font-medium">1. Connect Your Accounts</h4>
+              <p className="text-gray-400 text-sm">
+                Click "Connect" on each platform to authorize access to your content data.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-cyan-300 font-medium">2. Analyze Your Content</h4>
+              <p className="text-gray-400 text-sm">
+                We'll pull your recent uploads and analyze performance across all platforms.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-cyan-300 font-medium">3. Get Insights</h4>
+              <p className="text-gray-400 text-sm">
+                Receive personalized recommendations based on your actual content data.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-cyan-300 font-medium">4. Optimize & Grow</h4>
+              <p className="text-gray-400 text-sm">
+                Use our AI-powered tools to improve your content strategy and reach.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
