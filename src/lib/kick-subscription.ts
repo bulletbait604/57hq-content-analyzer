@@ -8,7 +8,7 @@ export interface SubscriptionResponse {
 
 export class KickSubscriptionChecker {
   private apiKey: string
-  private baseURL: string = 'https://api.kick.com'
+  private baseURL: string = 'https://kick.com/api/v1'
   private authToken: string = ''
 
   constructor(apiKey: string) {
@@ -23,11 +23,11 @@ export class KickSubscriptionChecker {
 
   async checkSubscription(username: string, channelName: string = 'bulletbait604'): Promise<SubscriptionResponse> {
     try {
-      console.log(`🔍 Checking subscription via Official Kick API for ${username} to ${channelName}`)
+      console.log(`🔍 Checking subscription via Unofficial Kick API for ${username} to ${channelName}`)
       
-      // Method 1: Try to get user's own subscriptions
+      // Method 1: Try to get user's own subscriptions using unofficial API
       try {
-        console.log(`🚀 Trying Official Kick API: https://kick.com/api/v1/subscriptions`)
+        console.log(`🚀 Trying Unofficial Kick API: https://kick.com/api/v1/user/subscriptions`)
         
         const headers: Record<string, string> = {
           'Accept': 'application/json',
@@ -42,7 +42,7 @@ export class KickSubscriptionChecker {
           console.log('⚠️ No auth token available - making unauthenticated request')
         }
         
-        const userSubsResponse = await fetch(`https://kick.com/api/v1/subscriptions`, {
+        const userSubsResponse = await fetch(`https://kick.com/api/v1/user/subscriptions`, {
           method: 'GET',
           headers
         })
@@ -51,7 +51,7 @@ export class KickSubscriptionChecker {
         
         if (userSubsResponse.ok) {
           const userSubsData = await userSubsResponse.json()
-          console.log('📺 Got user subscriptions from Official Kick API:', userSubsData)
+          console.log('📺 Got user subscriptions from Unofficial Kick API:', userSubsData)
           console.log('📋 RAW Response:', JSON.stringify(userSubsData, null, 2))
           console.log('📋 Response structure:', Object.keys(userSubsData))
           
@@ -74,7 +74,7 @@ export class KickSubscriptionChecker {
               console.log(`🎉 FOUND subscription from ${username} to ${channelName}!`)
               return { 
                 isSubscribed: true, 
-                method: 'user_subscriptions_check',
+                method: 'unofficial_user_subscriptions',
                 data: {
                   userSubscriptions: userSubsData.data,
                   subscriptionFound: userSubsData.data.find((sub: any) => 
@@ -101,7 +101,50 @@ export class KickSubscriptionChecker {
         console.log('❌ User subscriptions request failed:', userSubsError)
       }
 
-      // Method 2: Fallback to check if user follows channel
+      // Method 2: Try to get channel subscribers using unofficial API
+      try {
+        console.log(`🔄 Trying channel subscribers endpoint: https://kick.com/api/v1/channels/${channelName}/subscribers`)
+        
+        const headers: Record<string, string> = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+        
+        // Add auth token if available
+        if (this.authToken) {
+          headers['Authorization'] = `Bearer ${this.authToken}`
+        }
+        
+        const channelSubsResponse = await fetch(`https://kick.com/api/v1/channels/${channelName}/subscribers`, {
+          method: 'GET',
+          headers
+        })
+
+        console.log(`Channel subscribers response: ${channelSubsResponse.status}`)
+        
+        if (channelSubsResponse.ok) {
+          const channelSubsData = await channelSubsResponse.json()
+          console.log('📺 Got channel subscribers from Unofficial Kick API:', channelSubsData)
+          
+          if (channelSubsData.data && Array.isArray(channelSubsData.data)) {
+            const isSubscribed = channelSubsData.data.some((subscriber: any) => 
+              subscriber.username?.toLowerCase() === username.toLowerCase()
+            )
+            
+            console.log(`✅ Channel subscribers check result: ${isSubscribed}`)
+            
+            return { 
+              isSubscribed: isSubscribed, 
+              method: 'unofficial_channel_subscribers',
+              data: channelSubsData.data
+            }
+          }
+        }
+      } catch (channelError) {
+        console.log('❌ Channel subscribers check failed:', channelError)
+      }
+
+      // Method 3: Fallback to check if user follows channel
       try {
         console.log(`🔄 Trying fallback: check if ${username} follows ${channelName}`)
         
@@ -147,14 +190,14 @@ export class KickSubscriptionChecker {
       console.log(`❌ Could not verify subscription for ${username} - all methods failed`)
       return { 
         isSubscribed: false, 
-        method: 'official_kick_api',
+        method: 'unofficial_kick_api',
         error: 'All methods failed - user may not be subscribed'
       }
     } catch (error) {
-      console.error('Official Kick API subscription check failed:', error)
+      console.error('Unofficial Kick API subscription check failed:', error)
       return { 
         isSubscribed: false, 
-        method: 'official_kick_api',
+        method: 'unofficial_kick_api',
         error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
