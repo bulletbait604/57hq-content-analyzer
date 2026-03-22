@@ -198,28 +198,67 @@ export class KickAPI {
     
     // Clean up code verifier on failure
     sessionStorage.removeItem('kick_code_verifier')
-    throw lastError || new Error('All token endpoints failed')
+    throw lastError || new Error('All Kick token endpoints failed - Kick OAuth API may be down')
   }
 
   async getCurrentUser(accessToken: string): Promise<KickUser> {
-    const response = await fetch(`${this.baseURL}/api/v2/user`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+    console.log('🔍 Trying to get user data from Kick API...')
+    
+    // Try different user endpoints
+    const userEndpoints = [
+      `${this.baseURL}/api/v2/user`,
+      `${this.baseURL}/api/v1/user`,
+      `${this.baseURL}/user`,
+      `${this.oauthServerURL}/api/v1/user`,
+      `${this.oauthServerURL}/user`
+    ]
+    
+    for (const endpoint of userEndpoints) {
+      try {
+        console.log(`Trying user endpoint: ${endpoint}`)
+        
+        const response = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'SDHQ-Content-Analyzer/1.0'
+          }
+        })
+        
+        console.log(`Response status: ${response.status}`)
+        
+        if (response.ok) {
+          const text = await response.text()
+          console.log('Response text:', text)
+          
+          try {
+            const data = JSON.parse(text)
+            console.log('✅ Successfully got user data:', data)
+            
+            return {
+              id: data.id?.toString() || data.user_id?.toString() || 'unknown',
+              username: data.username || data.name || 'unknown',
+              display_name: data.display_name || data.name || data.username || 'Unknown User',
+              profile_image_url: data.profile_image_url || data.avatar_url || data.image_url || ''
+            }
+          } catch (parseError) {
+            console.log('Failed to parse JSON from user endpoint:', text)
+            continue
+          }
+        } else {
+          const errorText = await response.text()
+          console.log(`User endpoint error (${response.status}):`, errorText)
+          continue
+        }
+      } catch (error) {
+        console.log(`User endpoint request failed:`, error)
+        continue
       }
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to get user info')
     }
-
-    const data = await response.json()
-    return {
-      id: data.id.toString(),
-      username: data.username,
-      display_name: data.display_name || data.username,
-      profile_image_url: data.profile_image_url || ''
-    }
+    
+    console.log('❌ All user endpoints failed')
+    throw new Error('All Kick user endpoints failed - Kick API may be down')
   }
 
   async checkSubscription(accessToken: string, channelId: string): Promise<boolean> {

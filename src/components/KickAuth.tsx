@@ -125,21 +125,14 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     try {
       console.log('🔐 Processing Kick OAuth callback...')
       
-      // Exchange auth code for token (will use mock if Kick API fails)
+      // Exchange auth code for token
       let tokenResponse: KickAuthResponse
       try {
         tokenResponse = await kickAPI.exchangeCodeForToken(code, redirectUri)
         console.log('✅ Real Kick token received')
       } catch (tokenError) {
-        console.log('⚠️ Kick token API failed, using mock token for username lookup')
-        
-        // Use mock token when Kick's API fails - we only need this for getting user info
-        tokenResponse = {
-          access_token: 'mock_access_token_' + Math.random().toString(36).substring(7),
-          token_type: 'Bearer',
-          expires_in: 3600,
-          refresh_token: 'mock_refresh_token_' + Math.random().toString(36).substring(7)
-        }
+        console.error('❌ Kick token exchange failed:', tokenError)
+        throw new Error('Kick OAuth token exchange failed. Please try again.')
       }
       
       // Get user data (username and profile picture)
@@ -148,20 +141,11 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
         userData = await kickAPI.getCurrentUser(tokenResponse.access_token)
         console.log('✅ Got real user data:', userData.username)
       } catch (userError) {
-        console.log('⚠️ Kick user API failed, creating mock user for testing')
-        
-        // Create a mock user for testing when Kick API fails
-        const mockUsername = 'kick_user_' + Math.random().toString(36).substring(7)
-        userData = {
-          id: 'mock_user_' + Math.random().toString(36).substring(7),
-          username: mockUsername,
-          display_name: 'Kick User',
-          profile_image_url: ''
-        }
-        console.log('🎭 Created mock user:', mockUsername)
+        console.error('❌ Kick user API failed:', userError)
+        throw new Error('Failed to get user information from Kick. Please try again.')
       }
       
-      // Now check subscription status using RapidAPI (this is the important part!)
+      // Now check subscription status using RapidAPI
       console.log(`🔍 Checking subscription status for @${userData.username} to bulletbait604 via RapidAPI`)
       let isSubscribed = false
       
@@ -187,8 +171,9 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
           }
         }
       } catch (subError) {
-        console.log('❌ Subscription check failed completely, defaulting to not subscribed:', subError)
-        isSubscribed = false // Default to not subscribed for safety
+        console.error('❌ Subscription check failed:', subError)
+        // Don't throw error, just default to not subscribed
+        isSubscribed = false
       }
       
       // Store session data
@@ -206,7 +191,7 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       
     } catch (error) {
       console.error('❌ Authentication failed:', error)
-      setError('Failed to complete authentication')
+      setError(error instanceof Error ? error.message : 'Failed to complete authentication')
     } finally {
       setIsLoading(false)
       // Clean up URL params
