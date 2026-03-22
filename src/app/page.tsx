@@ -36,54 +36,75 @@ export default function Home() {
       console.log(`📡 Channel API response status: ${channelResponse.status}`)
       
       if (channelResponse.ok) {
-        const channelData = await channelResponse.json()
-        console.log('📺 Channel data:', channelData)
+        const responseText = await channelResponse.text()
+        console.log('📋 Raw channel response:', responseText.substring(0, 500))
         
-        if (channelData.chatroom) {
-          const chatroomId = channelData.chatroom.id
-          console.log(`💬 Found chatroom ID: ${chatroomId}`)
-          
-          // Get recent chat messages
-          const messagesResponse = await fetch(`https://kick.com/api/v2/chatrooms/${chatroomId}/messages`, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
-              'Origin': 'https://kick.com',
-              'Referer': 'https://kick.com'
-            }
-          })
-
-          console.log(`📡 Messages API response status: ${messagesResponse.status}`)
-          
-          if (messagesResponse.ok) {
-            const messagesData = await messagesResponse.json()
-            console.log('📋 Chat messages data:', messagesData)
-            
-            if (messagesData.data && Array.isArray(messagesData.data)) {
-              const userMessages = messagesData.data.filter((message: any) => 
-                message.sender && 
-                message.sender.username && 
-                message.sender.username.toLowerCase() === username.toLowerCase()
-              )
-              
-              console.log(`📋 Found ${userMessages.length} messages from ${username}`)
-              
-              if (userMessages.length > 0) {
-                const latestMessage = userMessages[0]
-                const badges = latestMessage.sender.badges || []
-                console.log(`🏅 User badges found:`, badges)
-                return badges
-              }
-            } else {
-              console.log('❌ messagesData.data is not an array:', messagesData.data)
-            }
-          } else {
-            console.log(`❌ Messages API failed: ${messagesResponse.status}`)
-          }
+        // Check if response is HTML (error page) or JSON
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+          console.log('❌ Channel API returned HTML instead of JSON - possibly blocked or rate limited')
         } else {
-          console.log('❌ No chatroom found in channel data:', channelData)
+          try {
+            const channelData = JSON.parse(responseText)
+            console.log('📺 Channel data:', channelData)
+            
+            if (channelData.chatroom) {
+              const chatroomId = channelData.chatroom.id
+              console.log(`💬 Found chatroom ID: ${chatroomId}`)
+              
+              // Get recent chat messages
+              const messagesResponse = await fetch(`https://kick.com/api/v2/chatrooms/${chatroomId}/messages`, {
+                method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
+                  'Origin': 'https://kick.com',
+                  'Referer': 'https://kick.com'
+                }
+              })
+
+              console.log(`📡 Messages API response status: ${messagesResponse.status}`)
+              
+              if (messagesResponse.ok) {
+                const messagesResponseText = await messagesResponse.text()
+                console.log('📋 Raw messages response:', messagesResponseText.substring(0, 500))
+                
+                if (messagesResponseText.includes('<!DOCTYPE') || messagesResponseText.includes('<html')) {
+                  console.log('❌ Messages API returned HTML instead of JSON')
+                } else {
+                  try {
+                    const messagesData = JSON.parse(messagesResponseText)
+                    console.log('📋 Chat messages data:', messagesData)
+                    
+                    if (messagesData.data && Array.isArray(messagesData.data)) {
+                      const userMessages = messagesData.data.filter((message: any) => 
+                        message.sender && 
+                        message.sender.username && 
+                        message.sender.username.toLowerCase() === username.toLowerCase()
+                      )
+                      
+                      console.log(`📋 Found ${userMessages.length} messages from ${username}`)
+                      
+                      if (userMessages.length > 0) {
+                        const latestMessage = userMessages[0]
+                        const badges = latestMessage.sender.badges || []
+                        console.log(`🏅 User badges found:`, badges)
+                        return badges
+                      }
+                    } else {
+                      console.log('❌ messagesData.data is not an array:', messagesData.data)
+                    }
+                  } catch (jsonError) {
+                    console.log('❌ Failed to parse messages JSON:', jsonError)
+                  }
+                }
+              } else {
+                console.log(`❌ Messages API failed: ${messagesResponse.status}`)
+              }
+            }
+          } catch (jsonError) {
+            console.log('❌ Failed to parse channel JSON:', jsonError)
+          }
         }
       } else {
         console.log(`❌ Channel API failed: ${channelResponse.status}`)
@@ -107,45 +128,71 @@ export default function Home() {
       console.log(`📡 RapidAPI response status: ${rapidResponse.status}`)
       
       if (rapidResponse.ok) {
-        const rapidData = await rapidResponse.json()
-        console.log('📺 RapidAPI data:', rapidData)
+        const rapidResponseText = await rapidResponse.text()
+        console.log('📋 Raw RapidAPI response:', rapidResponseText.substring(0, 500))
         
-        if (rapidData.data && rapidData.data.chatroom) {
-          const chatroomId = rapidData.data.chatroom.id
-          console.log(`💬 Found RapidAPI chatroom ID: ${chatroomId}`)
-          
-          // Get recent chat messages from RapidAPI
-          const messagesResponse = await fetch(`https://kick-api2.p.rapidapi.com/v2/chatrooms/${chatroomId}/messages`, {
-            method: 'GET',
-            headers: {
-              'X-RapidAPI-Key': process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
-          })
-
-          if (messagesResponse.ok) {
-            const messagesData = await messagesResponse.json()
-            console.log('📋 RapidAPI messages data:', messagesData)
+        if (rapidResponseText.includes('<!DOCTYPE') || rapidResponseText.includes('<html')) {
+          console.log('❌ RapidAPI returned HTML instead of JSON')
+        } else {
+          try {
+            const rapidData = JSON.parse(rapidResponseText)
+            console.log('📺 RapidAPI data:', rapidData)
             
-            if (messagesData.data && Array.isArray(messagesData.data)) {
-              const userMessages = messagesData.data.filter((message: any) => 
-                message.sender && 
-                message.sender.username && 
-                message.sender.username.toLowerCase() === username.toLowerCase()
-              )
+            if (rapidData.data && rapidData.data.chatroom) {
+              const chatroomId = rapidData.data.chatroom.id
+              console.log(`💬 Found RapidAPI chatroom ID: ${chatroomId}`)
               
-              console.log(`📋 Found ${userMessages.length} messages from ${username} via RapidAPI`)
-              
-              if (userMessages.length > 0) {
-                const latestMessage = userMessages[0]
-                const badges = latestMessage.sender.badges || []
-                console.log(`🏅 User badges found via RapidAPI:`, badges)
-                return badges
+              // Get recent chat messages from RapidAPI
+              const messagesResponse = await fetch(`https://kick-api2.p.rapidapi.com/v2/chatrooms/${chatroomId}/messages`, {
+                method: 'GET',
+                headers: {
+                  'X-RapidAPI-Key': process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+                }
+              })
+
+              if (messagesResponse.ok) {
+                const rapidMessagesText = await messagesResponse.text()
+                console.log('📋 Raw RapidAPI messages response:', rapidMessagesText.substring(0, 500))
+                
+                if (rapidMessagesText.includes('<!DOCTYPE') || rapidMessagesText.includes('<html')) {
+                  console.log('❌ RapidAPI messages returned HTML instead of JSON')
+                } else {
+                  try {
+                    const messagesData = JSON.parse(rapidMessagesText)
+                    console.log('📋 RapidAPI messages data:', messagesData)
+                    
+                    if (messagesData.data && Array.isArray(messagesData.data)) {
+                      const userMessages = messagesData.data.filter((message: any) => 
+                        message.sender && 
+                        message.sender.username && 
+                        message.sender.username.toLowerCase() === username.toLowerCase()
+                      )
+                      
+                      console.log(`📋 Found ${userMessages.length} messages from ${username} via RapidAPI`)
+                      
+                      if (userMessages.length > 0) {
+                        const latestMessage = userMessages[0]
+                        const badges = latestMessage.sender.badges || []
+                        console.log(`🏅 User badges found via RapidAPI:`, badges)
+                        return badges
+                      }
+                    } else {
+                      console.log('❌ RapidAPI messagesData.data is not an array:', messagesData.data)
+                    }
+                  } catch (rapidJsonError) {
+                    console.log('❌ Failed to parse RapidAPI messages JSON:', rapidJsonError)
+                  }
+                }
               }
             }
+          } catch (rapidJsonError) {
+            console.log('❌ Failed to parse RapidAPI JSON:', rapidJsonError)
           }
         }
+      } else {
+        console.log(`❌ RapidAPI failed: ${rapidResponse.status}`)
       }
     } catch (rapidError) {
       console.error('❌ RapidAPI failed:', rapidError)
@@ -168,21 +215,36 @@ export default function Home() {
       console.log(`📡 Subscription API response status: ${subResponse.status}`)
       
       if (subResponse.ok) {
-        const subData = await subResponse.json()
-        console.log('📋 Subscription data:', subData)
+        const subResponseText = await subResponse.text()
+        console.log('📋 Raw subscription response:', subResponseText.substring(0, 500))
         
-        if (subData.data && Array.isArray(subData.data)) {
-          const userSub = subData.data.find((sub: any) => 
-            sub.username && 
-            sub.username.toLowerCase() === username.toLowerCase()
-          )
-          
-          if (userSub) {
-            console.log(`✅ Found user in subscribers list:`, userSub)
-            // Create a subscriber badge if user is in subscribers list
-            return [{ type: 'subscriber', name: 'Subscriber', source: 'subscribers_api' }]
+        if (subResponseText.includes('<!DOCTYPE') || subResponseText.includes('<html')) {
+          console.log('❌ Subscription API returned HTML instead of JSON')
+        } else {
+          try {
+            const subData = JSON.parse(subResponseText)
+            console.log('📋 Subscription data:', subData)
+            
+            if (subData.data && Array.isArray(subData.data)) {
+              const userSub = subData.data.find((sub: any) => 
+                sub.username && 
+                sub.username.toLowerCase() === username.toLowerCase()
+              )
+              
+              if (userSub) {
+                console.log(`✅ Found user in subscribers list:`, userSub)
+                // Create a subscriber badge if user is in subscribers list
+                return [{ type: 'subscriber', name: 'Subscriber', source: 'subscribers_api' }]
+              }
+            } else {
+              console.log('❌ User not found in subscribers list')
+            }
+          } catch (subJsonError) {
+            console.log('❌ Failed to parse subscription JSON:', subJsonError)
           }
         }
+      } else {
+        console.log(`❌ Subscription API failed: ${subResponse.status}`)
       }
     } catch (subError) {
       console.error('❌ Subscription API failed:', subError)
