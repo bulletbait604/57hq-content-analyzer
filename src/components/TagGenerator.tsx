@@ -224,7 +224,7 @@ export function TagGenerator() {
               </div>
               
               <div className="mt-6 p-4 bg-black border border-cyan-600 rounded-lg">
-                <h4 className="font-semibold text-cyan-400 mb-3">57 HQ Analysis Insights</h4>
+                <h4 className="font-semibold text-cyan-400 mb-3">SDHQ Analysis Insights</h4>
                 <ul className="space-y-2 text-sm text-cyan-300">
                   <li className="flex items-start gap-2">
                     <span className="text-cyan-500 mt-1">•</span>

@@ -37,7 +37,7 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // 57 HQ Brand Colors
+        // SDHQ Brand Colors
         cyan: {
           50: '#f0fdff',
           100: '#ccfbff',

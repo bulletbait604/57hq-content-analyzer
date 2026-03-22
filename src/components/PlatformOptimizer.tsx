@@ -238,7 +238,7 @@ export function PlatformOptimizer() {
 
         <Card className="bg-black border border-cyan-500">
           <CardHeader>
-            <CardTitle className="text-white">57 HQ Optimization Tips</CardTitle>
+            <CardTitle className="text-white">SDHQ Optimization Tips</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
