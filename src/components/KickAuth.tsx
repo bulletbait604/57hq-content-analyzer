@@ -139,14 +139,24 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
       
       // Check subscription using RapidAPI
       console.log(`🔍 Checking subscription for @${userData.username} to bulletbait604`)
+      console.log(`🔑 Using RapidAPI key: ${process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY ? 'Key exists' : 'No key found'}`)
+      
       let isSub = false
       
       try {
+        console.log(`🚀 Calling RapidAPI subscription check...`)
         const subscriptionResult = await rapidAPI.checkSubscription(userData.username)
         isSub = subscriptionResult.isSubscribed
         console.log(`📊 RapidAPI result: ${isSub} via ${subscriptionResult.method}`)
+        console.log(`📊 Full result data:`, subscriptionResult)
+        
+        if (subscriptionResult.error) {
+          console.log(`⚠️ RapidAPI returned error: ${subscriptionResult.error}`)
+        }
+        
       } catch (subError) {
         console.error('❌ Subscription check failed:', subError)
+        console.log('❌ Error details:', subError)
         isSub = false
       }
       
@@ -185,6 +195,35 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
     onUserChange?.(null)
     onSubscriptionChange?.(false)
     setError(null)
+  }
+
+  const handleManualSubscriptionCheck = async () => {
+    if (!user) {
+      setError('Please log in first to check subscription')
+      return
+    }
+
+    console.log(`🔍 Manual subscription check for @${user.username}`)
+    console.log(`🔑 Using RapidAPI key: ${process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY ? 'Key exists' : 'No key found'}`)
+    
+    try {
+      const subscriptionResult = await rapidAPI.checkSubscription(user.username)
+      const isSub = subscriptionResult.isSubscribed
+      
+      console.log(`📊 Manual check result: ${isSub} via ${subscriptionResult.method}`)
+      console.log(`📊 Full result data:`, subscriptionResult)
+      
+      // Update subscription status
+      setIsSubscribed(isSub)
+      localStorage.setItem('kickSubscription', isSub.toString())
+      onSubscriptionChange?.(isSub)
+      
+      alert(`Subscription check complete: ${isSub ? 'SUBSCRIBED ✅' : 'NOT SUBSCRIBED ❌'}`)
+      
+    } catch (error) {
+      console.error('❌ Manual subscription check failed:', error)
+      setError(`Subscription check failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   // Check for auth callback on mount
@@ -246,6 +285,15 @@ export function KickAuth({ onSubscriptionChange, onUserChange }: KickAuthProps) 
           >
             <LogOut className="w-4 h-4 mr-2" />
             Logout
+          </Button>
+
+          <Button
+            onClick={handleManualSubscriptionCheck}
+            variant="outline"
+            className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Recheck Subscription
           </Button>
         </CardContent>
       </Card>
