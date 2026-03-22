@@ -16,12 +16,12 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [userBadges, setUserBadges] = useState<any[]>([])
 
-  // Get user badges from bulletbait604 using correct Kick API
+  // Get user badges from bulletbait604 using multiple API approaches
   const getUserBadges = async (username: string) => {
+    console.log(`🔍 Looking for badges for @${username} in bulletbait604`)
+    
+    // Method 1: Try official Kick API v2
     try {
-      console.log(`🔍 Looking for badges for @${username} in bulletbait604`)
-      
-      // Try to correct Kick API endpoint for channel data
       const channelResponse = await fetch(`https://kick.com/api/v2/channels/bulletbait604`, {
         method: 'GET',
         headers: {
@@ -43,7 +43,7 @@ export default function Home() {
           const chatroomId = channelData.chatroom.id
           console.log(`💬 Found chatroom ID: ${chatroomId}`)
           
-          // Get recent chat messages to find user's badges
+          // Get recent chat messages
           const messagesResponse = await fetch(`https://kick.com/api/v2/chatrooms/${chatroomId}/messages`, {
             method: 'GET',
             headers: {
@@ -89,7 +89,66 @@ export default function Home() {
         console.log(`❌ Channel API failed: ${channelResponse.status}`)
       }
     } catch (error) {
-      console.error('❌ Failed to get user badges from Kick API:', error)
+      console.error('❌ Official API failed:', error)
+    }
+    
+    // Method 2: Try RapidAPI as fallback
+    try {
+      console.log('🔄 Trying RapidAPI as fallback...')
+      const rapidResponse = await fetch(`https://kick-api2.p.rapidapi.com/v2/channels/bulletbait604`, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log(`📡 RapidAPI response status: ${rapidResponse.status}`)
+      
+      if (rapidResponse.ok) {
+        const rapidData = await rapidResponse.json()
+        console.log('📺 RapidAPI data:', rapidData)
+        
+        if (rapidData.data && rapidData.data.chatroom) {
+          const chatroomId = rapidData.data.chatroom.id
+          console.log(`💬 Found RapidAPI chatroom ID: ${chatroomId}`)
+          
+          // Get recent chat messages from RapidAPI
+          const messagesResponse = await fetch(`https://kick-api2.p.rapidapi.com/v2/chatrooms/${chatroomId}/messages`, {
+            method: 'GET',
+            headers: {
+              'X-RapidAPI-Key': process.env.NEXT_PUBLIC_RAPIDAPI_KICK_API_KEY || '',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (messagesResponse.ok) {
+            const messagesData = await messagesResponse.json()
+            console.log('📋 RapidAPI messages data:', messagesData)
+            
+            if (messagesData.data && Array.isArray(messagesData.data)) {
+              const userMessages = messagesData.data.filter((message: any) => 
+                message.sender && 
+                message.sender.username && 
+                message.sender.username.toLowerCase() === username.toLowerCase()
+              )
+              
+              console.log(`📋 Found ${userMessages.length} messages from ${username} via RapidAPI`)
+              
+              if (userMessages.length > 0) {
+                const latestMessage = userMessages[0]
+                const badges = latestMessage.sender.badges || []
+                console.log(`🏅 User badges found via RapidAPI:`, badges)
+                return badges
+              }
+            }
+          }
+        }
+      }
+    } catch (rapidError) {
+      console.error('❌ RapidAPI failed:', rapidError)
     }
     
     console.log('🏅 No badges found, returning empty array')
@@ -98,27 +157,13 @@ export default function Home() {
 
   // Load user badges when user logs in
   useEffect(() => {
-    console.log('🔍 Badge useEffect triggered, user:', user)
     if (user) {
-      console.log(`🚀 Starting badge fetch for @${user.username}`)
       getUserBadges(user.username).then(badges => {
-        console.log('📊 getUserBadges returned:', badges)
-        // If API fails, show test badges for demonstration
-        if (badges.length === 0) {
-          console.log('🏅 API returned no badges, showing test badges for demo')
-          setUserBadges([
-            { type: 'subscriber', name: 'Subscriber' },
-            { type: 'moderator', name: 'Moderator' }
-          ])
-        } else {
-          setUserBadges(badges)
-        }
+        setUserBadges(badges)
         console.log('🏅 User badges from bulletbait604:', badges)
       }).catch(error => {
         console.error('❌ Badge fetch error:', error)
       })
-    } else {
-      console.log('🔍 No user, skipping badge fetch')
     }
   }, [user])
 
