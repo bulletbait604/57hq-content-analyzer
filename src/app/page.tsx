@@ -155,27 +155,13 @@ export default function Home() {
         )}
 
         <Tabs defaultValue="algorithm-info" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 bg-black/50 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 bg-black/50 rounded-lg p-1">
             <TabsTrigger 
               value="algorithm-info" 
               className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
             >
               <FileText className="w-4 h-4 mr-2" />
               Algorithm Info
-            </TabsTrigger>
-            <TabsTrigger 
-              value="youtube-shorts" 
-              className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              YouTube Shorts
-            </TabsTrigger>
-            <TabsTrigger 
-              value="youtube-long" 
-              className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
-            >
-              <Video className="w-4 h-4 mr-2" />
-              YouTube Long
             </TabsTrigger>
             <TabsTrigger 
               value="clip-analysis" 
@@ -208,14 +194,6 @@ export default function Home() {
 
           <TabsContent value="algorithm-info" className="mt-6">
             <AlgorithmInfo />
-          </TabsContent>
-
-          <TabsContent value="youtube-shorts" className="mt-6">
-            <YouTubeInfo type="shorts" />
-          </TabsContent>
-
-          <TabsContent value="youtube-long" className="mt-6">
-            <YouTubeInfo type="long" />
           </TabsContent>
 
           <TabsContent value="clip-analysis" className="mt-6">
@@ -268,6 +246,72 @@ function AlgorithmInfo() {
         'Use end screens to promote other content',
         'Post during peak audience hours (6-9 PM local time)',
         'Include relevant keywords in first 2 lines of description'
+      ]
+    },
+    {
+      name: 'YouTube Shorts',
+      icon: '⚡',
+      color: 'border-orange-500',
+      bgColor: 'bg-orange-500/10',
+      lastUpdate: '2024-03-23',
+      factors: [
+        'First 3 seconds critical for retention',
+        'Hook in first 1 second with strong visual',
+        'Trending audio usage drives discovery',
+        'Fast-paced editing increases completion rate',
+        'Vertical format optimized for mobile',
+        'Loop potential encourages re-watches',
+        'Text overlays for silent viewing',
+        'Consistent posting (3-5 Shorts daily)',
+        'Quick engagement in first hour drives algorithm',
+        'Short-form watch session contribution',
+        'Sound synchronization accuracy'
+      ],
+      tips: [
+        'Use trending sounds from YouTube library',
+        'Keep Shorts under 30 seconds (15-25 ideal)',
+        'Add captions for accessibility',
+        'Post during peak hours (6-9 PM)',
+        'Use hashtags #shorts #viral #trending',
+        'Create series to encourage follows',
+        'Engage with comments in first hour',
+        'Optimize for mobile viewing experience',
+        'Test different aspect ratios (9:16 vs 16:9)',
+        'Use jump cuts and quick transitions'
+      ]
+    },
+    {
+      name: 'YouTube Long',
+      icon: '📹',
+      color: 'border-red-600',
+      bgColor: 'bg-red-600/10',
+      lastUpdate: '2024-03-23',
+      factors: [
+        'Watch time retention (first 30 seconds critical)',
+        'Session watch time contribution',
+        'Click-through rate from thumbnails',
+        'Video completion rate (70%+ ideal)',
+        'Audience retention curves',
+        'Keyword optimization in titles/descriptions',
+        'Video upload consistency and timing',
+        'Engagement velocity (first 24 hours)',
+        'Deep content value and expertise',
+        'Long-form subscriber growth impact',
+        'Algorithm preference for 8+ minute content',
+        'End screen engagement optimization'
+      ],
+      tips: [
+        'Create compelling thumbnails with high contrast',
+        'Hook viewers in first 15 seconds',
+        'Use end screens to promote other content',
+        'Post during peak audience hours',
+        'Include relevant keywords in first 2 lines',
+        'Aim for 8+ minute videos for monetization',
+        'Build series for subscriber retention',
+        'Use timestamps for navigation',
+        'Create multiple content pillars',
+        'Focus on evergreen topics for long-term growth',
+        'Optimize for search vs suggested content'
       ]
     },
     {
@@ -485,10 +529,12 @@ function ClipAnalysis() {
 
   const platforms = [
     { value: 'youtube', label: 'YouTube', icon: '🎥' },
+    { value: 'youtube shorts', label: 'YouTube Shorts', icon: '⚡' },
+    { value: 'youtube long', label: 'YouTube Long', icon: '📹' },
     { value: 'tiktok', label: 'TikTok', icon: '🎵' },
     { value: 'instagram', label: 'Instagram', icon: '📷' },
     { value: 'twitter', label: 'Twitter', icon: '🐦' },
-    { value: 'facebook', label: 'Facebook Reels', icon: '👥' }
+    { value: 'facebook reels', label: 'Facebook Reels', icon: '👥' }
   ]
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -922,9 +968,12 @@ function ContentAnalysis() {
   const [analyzedContent, setAnalyzedContent] = useState<any[]>([])
 
   const platforms = [
-    { name: 'YouTube', icon: '🎥', color: 'border-red-500' },
-    { name: 'Facebook', icon: '👥', color: 'border-blue-600' },
-    { name: 'KICK', icon: '🎮', color: 'border-green-500' },
+    { name: 'YouTube Shorts', icon: '⚡', color: 'bg-orange-500' },
+    { name: 'YouTube Long', icon: '📹', color: 'bg-red-500' },
+    { name: 'TikTok', icon: '🎵', color: 'bg-black' },
+    { name: 'Instagram', icon: '�', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
+    { name: 'Twitter', icon: '🐦', color: 'bg-blue-500' },
+    { name: 'Facebook Reels', icon: '👥', color: 'bg-blue-600' },
     { name: 'Twitch', icon: '📺', color: 'border-purple-500' }
   ]
 

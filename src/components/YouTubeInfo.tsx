@@ -37,7 +37,7 @@ export function YouTubeInfo({ type }: YouTubeInfo) {
     setIsRefreshing(false)
   }
 
-  // Shorts-specific algorithm factors
+  // YouTube Shorts-specific algorithm factors
   const shortsFactors = [
     'First 3 seconds critical for retention',
     'Hook in first 1 second with strong visual',
@@ -46,7 +46,10 @@ export function YouTubeInfo({ type }: YouTubeInfo) {
     'Vertical format optimized for mobile',
     'Loop potential encourages re-watches',
     'Text overlays for silent viewing',
-    'Consistent posting (3-5 Shorts daily)'
+    'Consistent posting (3-5 Shorts daily)',
+    'Quick engagement in first hour drives algorithm',
+    'Short-form watch session contribution',
+    'Sound synchronization accuracy'
   ]
 
   const shortsTips = [
@@ -56,10 +59,13 @@ export function YouTubeInfo({ type }: YouTubeInfo) {
     'Post during peak hours (6-9 PM)',
     'Use hashtags #shorts #viral #trending',
     'Create series to encourage follows',
-    'Engage with comments in first hour'
+    'Engage with comments in first hour',
+    'Optimize for mobile viewing experience',
+    'Test different aspect ratios (9:16 vs 16:9)',
+    'Use jump cuts and quick transitions'
   ]
 
-  // Long-form specific algorithm factors
+  // YouTube Long-form specific algorithm factors
   const longFormFactors = [
     'Watch time retention (first 30 seconds critical)',
     'Session watch time contribution',
@@ -69,7 +75,10 @@ export function YouTubeInfo({ type }: YouTubeInfo) {
     'Keyword optimization in titles/descriptions',
     'Video upload consistency and timing',
     'Engagement velocity (first 24 hours)',
-    'Deep content value and expertise'
+    'Deep content value and expertise',
+    'Long-form subscriber growth impact',
+    'Algorithm preference for 8+ minute content',
+    'End screen engagement optimization'
   ]
 
   const longFormTips = [
@@ -81,7 +90,9 @@ export function YouTubeInfo({ type }: YouTubeInfo) {
     'Aim for 8+ minute videos for monetization',
     'Build series for subscriber retention',
     'Use timestamps for navigation',
-    'Create multiple content pillars'
+    'Create multiple content pillars',
+    'Focus on evergreen topics for long-term growth',
+    'Optimize for search vs suggested content'
   ]
 
   const factors = type === 'shorts' ? shortsFactors : longFormFactors
