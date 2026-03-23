@@ -1,25 +1,33 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input-proper'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
-import { PremiumAccess } from '@/lib/premium-access'
-import SubscribersManager from '@/lib/subscribers'
 import { 
   Upload, 
-  Search, 
-  RefreshCw,
-  Eye, 
-  TrendingUp, 
-  Hash, 
+  Play, 
+  Settings, 
   FileText, 
-  Zap,
+  Hash, 
+  Search, 
+  Clock, 
+  RefreshCw,
   Lock,
+  CheckCircle,
+  ExternalLink,
+  Star,
+  TrendingUp,
   Video,
-  Link
+  Link,
+  Zap
 } from 'lucide-react'
+import { AlgorithmUpdater } from '@/lib/algorithm-updater'
+import { PremiumAccess } from '@/lib/premium-access'
+import SubscribersManager from '@/lib/subscribers'
+import TikTokMetadataService from '@/lib/tiktok-metadata'
 
 interface AnalysisResult {
   clipTitle: string
@@ -375,14 +383,42 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
         let videoId = ''
         let platform = 'Unknown'
         let contentType = 'Video'
+        let tiktokMetadata = null
         
         if (urlLower.includes('tiktok.com')) {
           platform = 'TikTok'
           contentType = 'Short-form Video'
-          // Extract TikTok video ID
-          const tiktokMatch = videoUrl.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
-          if (tiktokMatch) videoId = tiktokMatch[1]
-          content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization`
+          
+          // Try to get TikTok metadata
+          try {
+            const tiktokService = TikTokMetadataService.getInstance()
+            tiktokMetadata = await tiktokService.getMetadata(videoUrl)
+            
+            if (tiktokMetadata) {
+              content += `\nPlatform: TikTok\nVideo ID: ${tiktokMetadata.id}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization`
+              content += `\n\nTIKTOK METADATA:
+Title: ${tiktokMetadata.title}
+Description: ${tiktokMetadata.description}
+Author: ${tiktokMetadata.author.displayName} (@${tiktokMetadata.author.username})
+Views: ${tiktokMetadata.stats.views.toLocaleString()}
+Likes: ${tiktokMetadata.stats.likes.toLocaleString()}
+Comments: ${tiktokMetadata.stats.comments.toLocaleString()}
+Shares: ${tiktokMetadata.stats.shares.toLocaleString()}
+Duration: ${tiktokMetadata.duration} seconds
+Hashtags: ${tiktokMetadata.hashtags.join(', ')}
+${tiktokMetadata.music ? `Music: ${tiktokMetadata.music.title} - ${tiktokMetadata.music.author}` : ''}`
+            } else {
+              // Fallback to URL extraction
+              const tiktokMatch = videoUrl.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
+              if (tiktokMatch) videoId = tiktokMatch[1]
+              content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization\nNote: Metadata extraction failed, using URL analysis`
+            }
+          } catch (error) {
+            console.warn('TikTok metadata extraction failed:', error)
+            const tiktokMatch = videoUrl.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
+            if (tiktokMatch) videoId = tiktokMatch[1]
+            content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization\nNote: Metadata extraction failed, using URL analysis`
+          }
         } else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
           platform = 'YouTube'
           contentType = videoUrl.includes('shorts') ? 'Short' : 'Long-form Video'
@@ -424,10 +460,11 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
 - Video ID: ${videoId || 'Not extractable'}
 - Target Platform: ${selectedPlatform}
 - URL Structure: ${new URL(videoUrl).pathname}
+- Metadata Available: ${tiktokMetadata ? 'Yes' : 'No'}
 
 CONTENT ANALYSIS REQUIREMENTS:
 - Analyze this ${contentType.toLowerCase()} for actual video content
-- Extract any game-related information from the URL structure
+- ${tiktokMetadata ? 'USE THE EXTRACTED TIKTOK METADATA ABOVE' : 'Extract any game-related information from the URL structure'}
 - Identify the game being played from context clues
 - Determine gaming platform (PC, PlayStation, Xbox, Mobile)
 - Identify streaming platform from URL patterns
@@ -436,7 +473,7 @@ CONTENT ANALYSIS REQUIREMENTS:
 - Create platform-specific optimization strategies
 
 VIDEO METADATA EXTRACTION:
-- Attempt to determine the actual video title from URL patterns
+- ${tiktokMetadata ? 'USE REAL TIKTOK DATA: title, description, hashtags, stats' : 'Attempt to determine the actual video title from URL patterns'}
 - Extract any visible game information from the URL
 - Identify content type (gameplay, highlights, tutorial, etc.)
 - Analyze for game-specific elements and mechanics
