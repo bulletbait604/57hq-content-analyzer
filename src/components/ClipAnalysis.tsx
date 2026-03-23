@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { PremiumAccess } from '@/lib/premium-access'
+import SubscribersManager from '@/lib/subscribers'
 import { 
   Upload, 
   Search, 
@@ -55,8 +56,10 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
     { value: 'facebook reels', label: 'Facebook Reels', icon: '👥' }
   ]
 
-  // Check premium access
+  // Check premium access and subscriber access
   const isPremiumUser = hasPremium || PremiumAccess.getInstance().hasPremiumAccess(user?.username)
+  const subscribersManager = SubscribersManager.getInstance()
+  const canAccessAnalysis = isPremiumUser || (user && subscribersManager.isSubscriber(user.username))
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -386,8 +389,8 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
   const handleAnalyze = async () => {
     if (!selectedFile && !videoUrl.trim()) return
     
-    if (!isPremiumUser) {
-      alert('This feature requires a premium subscription. Please upgrade to access Clip Analysis.')
+    if (!canAccessAnalysis) {
+      alert('This feature requires a premium subscription or subscriber access. Please upgrade to access Clip Analysis.')
       return
     }
     
@@ -466,20 +469,20 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
   }
 
   // Premium lock screen
-  if (!isPremiumUser) {
+  if (!canAccessAnalysis) {
     return (
       <Card className="bg-black border-green-500/30">
         <CardHeader>
           <CardTitle className="text-green-400 flex items-center gap-2">
             <Lock className="w-5 h-5" />
-            Clip Analysis - Premium Feature
+            Clip Analysis - Premium & Subscriber Feature
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center space-y-4">
             <div className="text-gray-400">
-              <p className="text-lg mb-2">🔒 Premium Feature</p>
-              <p>Clip Analysis with AI-powered optimization is available to premium users only.</p>
+              <p className="text-lg mb-2">🔒 Premium & Subscriber Feature</p>
+              <p>Clip Analysis with AI-powered optimization is available to premium users and subscribers only.</p>
             </div>
             <div className="space-y-2">
               <h4 className="text-green-400 font-semibold">Premium Features:</h4>
@@ -493,7 +496,7 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
               </ul>
             </div>
             <div className="text-yellow-400 text-sm">
-              <p>Upgrade to premium to unlock this feature and boost your content performance!</p>
+              <p>Upgrade to premium or get subscriber access to unlock this feature and boost your content performance!</p>
             </div>
           </div>
         </CardContent>

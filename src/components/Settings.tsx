@@ -5,12 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
+import SubscribersManager from '@/lib/subscribers'
 import { 
   Settings as SettingsIcon, 
   Globe,
   Shield,
   FileText,
-  Mail
+  Mail,
+  Users,
+  UserPlus,
+  Crown,
+  Trash2
 } from 'lucide-react'
 
 interface SettingsProps {
@@ -35,7 +40,17 @@ const translations = {
     saved: 'Settings saved successfully!',
     error: 'Error saving settings',
     selectLanguage: 'Select Language',
-    selectTheme: 'Select Theme'
+    selectTheme: 'Select Theme',
+    admin: 'Administrator',
+    subscriberManagement: 'Subscriber Management',
+    addSubscriber: 'Add Subscriber',
+    removeSubscriber: 'Remove',
+    subscriberList: 'Current Subscribers',
+    noSubscribers: 'No subscribers found',
+    usernamePlaceholder: 'Enter username...',
+    addSuccess: 'Subscriber added successfully!',
+    removeSuccess: 'Subscriber removed successfully!',
+    adminOnly: 'Administrator Only'
   },
   es: {
     title: 'Configuración',
@@ -56,7 +71,17 @@ const translations = {
     saved: '¡Configuración guardada con éxito!',
     error: 'Error al guardar la configuración',
     selectLanguage: 'Seleccionar Idioma',
-    selectTheme: 'Seleccionar Tema'
+    selectTheme: 'Seleccionar Tema',
+    admin: 'Administrador',
+    subscriberManagement: 'Gestión de Suscriptores',
+    addSubscriber: 'Agregar Suscriptor',
+    removeSubscriber: 'Eliminar',
+    subscriberList: 'Suscriptores Actuales',
+    noSubscribers: 'No se encontraron suscriptores',
+    usernamePlaceholder: 'Ingrese nombre de usuario...',
+    addSuccess: '¡Suscriptor agregado con éxito!',
+    removeSuccess: '¡Suscriptor eliminado con éxito!',
+    adminOnly: 'Solo Administrador'
   },
   fr: {
     title: 'Paramètres',
@@ -75,7 +100,17 @@ const translations = {
     saved: 'Paramètres sauvegardés avec succès!',
     error: 'Erreur lors de la sauvegarde des paramètres',
     selectLanguage: 'Sélectionner la Langue',
-    selectTheme: 'Sélectionner le Thème'
+    selectTheme: 'Sélectionner le Thème',
+    admin: 'Administrateur',
+    subscriberManagement: 'Gestion des Abonnés',
+    addSubscriber: 'Ajouter un Abonné',
+    removeSubscriber: 'Supprimer',
+    subscriberList: 'Abonnés Actuels',
+    noSubscribers: 'Aucun abonné trouvé',
+    usernamePlaceholder: 'Entrez le nom d\'utilisateur...',
+    addSuccess: 'Abonné ajouté avec succès!',
+    removeSuccess: 'Abonné supprimé avec succès!',
+    adminOnly: 'Administrateur Seulement'
   },
   de: {
     title: 'Einstellungen',
@@ -94,7 +129,17 @@ const translations = {
     saved: 'Einstellungen erfolgreich gespeichert!',
     error: 'Fehler beim Speichern der Einstellungen',
     selectLanguage: 'Sprache Auswählen',
-    selectTheme: 'Thema Auswählen'
+    selectTheme: 'Thema Auswählen',
+    admin: 'Administrator',
+    subscriberManagement: 'Abonnenten-Verwaltung',
+    addSubscriber: 'Abonnent Hinzufügen',
+    removeSubscriber: 'Entfernen',
+    subscriberList: 'Aktuelle Abonnenten',
+    noSubscribers: 'Keine Abonnenten gefunden',
+    usernamePlaceholder: 'Benutzername eingeben...',
+    addSuccess: 'Abonnent erfolgreich hinzugefügt!',
+    removeSuccess: 'Abonnent erfolgreich entfernt!',
+    adminOnly: 'Nur Administrator'
   },
   ja: {
     title: '設定',
@@ -113,7 +158,17 @@ const translations = {
     saved: '設定が正常に保存されました！',
     error: '設定の保存中にエラーが発生しました',
     selectLanguage: '言語を選択',
-    selectTheme: 'テーマを選択'
+    selectTheme: 'テーマを選択',
+    admin: '管理者',
+    subscriberManagement: '購読者管理',
+    addSubscriber: '購読者を追加',
+    removeSubscriber: '削除',
+    subscriberList: '現在の購読者',
+    noSubscribers: '購読者が見つかりません',
+    usernamePlaceholder: 'ユーザー名を入力...',
+    addSuccess: '購読者が正常に追加されました！',
+    removeSuccess: '購読者が正常に削除されました！',
+    adminOnly: '管理者のみ'
   }
 }
 
@@ -135,6 +190,12 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   const [currentLanguage, setCurrentLanguage] = useState<Language>(language)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [newSubscriber, setNewSubscriber] = useState('')
+  const [subscribers, setSubscribers] = useState(SubscribersManager.getInstance().getSubscribers())
+  const [subscribersManager] = useState(SubscribersManager.getInstance())
+  
+  const isAdmin = user && subscribersManager.isAdmin(user.username)
+  const isSubscriber = user && subscribersManager.isSubscriber(user.username)
 
   const t = (key: keyof typeof translations.en) => translations[currentLanguage][key] || translations.en[key]
 
@@ -148,6 +209,29 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
     setCurrentLanguage(newLanguage)
     localStorage.setItem('language', newLanguage)
     onLanguageChange(newLanguage)
+  }
+
+  const handleAddSubscriber = () => {
+    if (!newSubscriber.trim() || !isAdmin) return
+    
+    const success = subscribersManager.addSubscriber(newSubscriber.trim(), user.username)
+    if (success) {
+      setSubscribers(subscribersManager.getSubscribers())
+      setNewSubscriber('')
+      setSaveMessage(t('addSuccess'))
+      setTimeout(() => setSaveMessage(''), 3000)
+    }
+  }
+
+  const handleRemoveSubscriber = (username: string) => {
+    if (!isAdmin) return
+    
+    const success = subscribersManager.removeSubscriber(username, user.username)
+    if (success) {
+      setSubscribers(subscribersManager.getSubscribers())
+      setSaveMessage(t('removeSuccess'))
+      setTimeout(() => setSaveMessage(''), 3000)
+    }
   }
 
   const handleSaveSettings = async () => {
@@ -265,6 +349,82 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Admin Badge */}
+      {isAdmin && (
+        <Card className="bg-black border-yellow-500/30">
+          <CardHeader>
+            <CardTitle className="text-yellow-400 flex items-center gap-2">
+              <Crown className="w-5 h-5" />
+              {t('admin')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-yellow-600/20 text-yellow-400 border-yellow-500">
+                {t('adminOnly')}
+              </Badge>
+              <span className="text-gray-300 text-sm">Full system access</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Subscriber Management - Admin Only */}
+      {isAdmin && (
+        <Card className="bg-black border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="text-purple-400 flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {t('subscriberManagement')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Add Subscriber */}
+            <div>
+              <Label className="text-purple-400">{t('addSubscriber')}</Label>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={newSubscriber}
+                  onChange={(e) => setNewSubscriber(e.target.value)}
+                  placeholder={t('usernamePlaceholder')}
+                  className="flex-1 bg-black border border-purple-500/50 rounded p-2 text-white"
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddSubscriber()}
+                />
+                <Button
+                  onClick={handleAddSubscriber}
+                  className="bg-purple-600 hover:bg-purple-500 text-white"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Subscribers List */}
+            <div>
+              <Label className="text-purple-400">{t('subscriberList')}</Label>
+              <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                {subscribers.length > 0 ? (
+                  subscribers.map((subscriber, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-black/50 rounded">
+                      <span className="text-white text-sm">{subscriber.username}</span>
+                      <Button
+                        onClick={() => handleRemoveSubscriber(subscriber.username)}
+                        className="bg-red-600 hover:bg-red-500 text-white p-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-400 text-sm">{t('noSubscribers')}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Save Button */}
       <div className="flex justify-center">
