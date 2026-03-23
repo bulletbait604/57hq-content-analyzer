@@ -151,19 +151,44 @@ Provide a comprehensive analysis in this exact JSON format:
     })
 
     if (!response.ok) {
-      throw new Error('DeepSeek API request failed')
+      const errorData = await response.text()
+      console.error('DeepSeek API Error:', response.status, errorData)
+      throw new Error(`DeepSeek API request failed: ${response.status}`)
     }
 
     const data = await response.json()
     const analysisText = data.choices[0].message.content
+    console.log('DeepSeek Response:', analysisText)
     
     // Parse the JSON response
     try {
-      return JSON.parse(analysisText)
+      const parsed = JSON.parse(analysisText)
+      
+      // Ensure all required fields are present
+      return {
+        clipTitle: parsed.clipTitle || 'Untitled Video',
+        titleSuggestions: Array.isArray(parsed.titleSuggestions) ? parsed.titleSuggestions : [],
+        clipDescription: parsed.clipDescription || 'No description available',
+        descriptionSuggestions: Array.isArray(parsed.descriptionSuggestions) ? parsed.descriptionSuggestions : [],
+        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+        tagSuggestions: Array.isArray(parsed.tagSuggestions) ? parsed.tagSuggestions : [],
+        editingTips: Array.isArray(parsed.editingTips) ? parsed.editingTips : [],
+        algorithmInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights : []
+      }
     } catch (parseError) {
       const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0])
+        const parsed = JSON.parse(jsonMatch[0])
+        return {
+          clipTitle: parsed.clipTitle || 'Untitled Video',
+          titleSuggestions: Array.isArray(parsed.titleSuggestions) ? parsed.titleSuggestions : [],
+          clipDescription: parsed.clipDescription || 'No description available',
+          descriptionSuggestions: Array.isArray(parsed.descriptionSuggestions) ? parsed.descriptionSuggestions : [],
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+          tagSuggestions: Array.isArray(parsed.tagSuggestions) ? parsed.tagSuggestions : [],
+          editingTips: Array.isArray(parsed.editingTips) ? parsed.editingTips : [],
+          algorithmInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights : []
+        }
       }
       throw new Error('Could not parse AI response')
     }
@@ -188,7 +213,14 @@ Provide specific, actionable recommendations in JSON format:
   "editingRecommendations": ["Edit tip 1", "Edit tip 2"]
 }`
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}`, {
+    // Check if Google API key is available
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY
+    if (!apiKey || apiKey === 'your_google_api_key_here') {
+      console.warn('Google AI API key not configured, skipping Gemini analysis')
+      return null
+    }
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -207,11 +239,14 @@ Provide specific, actionable recommendations in JSON format:
     })
 
     if (!response.ok) {
-      throw new Error('Google AI API request failed')
+      const errorData = await response.text()
+      console.error('Google AI API Error:', response.status, errorData)
+      return null
     }
 
     const data = await response.json()
     const text = data.candidates[0].content.parts[0].text
+    console.log('Gemini Response:', text)
     
     try {
       return JSON.parse(text)
@@ -220,7 +255,8 @@ Provide specific, actionable recommendations in JSON format:
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0])
       }
-      throw new Error('Could not parse Google AI response')
+      console.error('Could not parse Gemini response:', text)
+      return null
     }
   }
 
@@ -244,34 +280,51 @@ Provide specific, actionable recommendations in JSON format:
         content = `URL: ${videoUrl}`
       }
 
-      // Analyze with both APIs
-      const [deepseekResult, googleResult] = await Promise.all([
+      // Analyze with both DeepSeek and Gemini APIs
+      const [deepseekResult, googleResult] = await Promise.allSettled([
         analyzeWithDeepSeek(content, selectedPlatform),
         analyzeWithGoogleAI(content, selectedPlatform)
       ])
-
-      // Combine results from both APIs
-      const combinedResult: AnalysisResult = {
-        clipTitle: deepseekResult.clipTitle || 'Untitled Clip',
-        titleSuggestions: deepseekResult.titleSuggestions || [],
-        clipDescription: deepseekResult.clipDescription || 'No description available',
-        descriptionSuggestions: deepseekResult.descriptionSuggestions || [],
-        tags: deepseekResult.tags || [],
-        tagSuggestions: deepseekResult.tagSuggestions || [],
+      
+      // Process DeepSeek result (always available)
+      const deepseekData = deepseekResult.status === 'fulfilled' ? deepseekResult.value : null
+      const googleData = googleResult.status === 'fulfilled' ? googleResult.value : null
+      
+      if (!deepseekData) {
+        throw new Error('DeepSeek analysis failed')
+      }
+      
+      // Combine results from both AIs
+      const combinedAnalysis = {
+        clipTitle: deepseekData.clipTitle || 'Untitled Video',
+        titleSuggestions: [
+          ...(deepseekData.titleSuggestions || []),
+          ...(googleData?.titleOptimization ? [googleData.titleOptimization] : [])
+        ].slice(0, 5), // Limit to 5 suggestions
+        clipDescription: deepseekData.clipDescription || 'No description available',
+        descriptionSuggestions: [
+          ...(deepseekData.descriptionSuggestions || []),
+          ...(googleData?.descriptionOptimization ? [googleData.descriptionOptimization] : [])
+        ].slice(0, 3), // Limit to 3 suggestions
+        tags: [
+          ...(deepseekData.tags || []),
+          ...(googleData?.tagStrategy ? [googleData.tagStrategy] : [])
+        ].slice(0, 10), // Limit to 10 tags
+        tagSuggestions: deepseekData.tagSuggestions || [],
         editingTips: [
-          ...deepseekResult.editingTips || [],
-          ...googleResult.editingRecommendations || []
-        ],
+          ...(deepseekData.editingTips || []),
+          ...(googleData?.editingRecommendations || [])
+        ].slice(0, 8), // Limit to 8 tips
         algorithmInsights: [
-          ...deepseekResult.algorithmInsights || [],
-          googleResult.titleOptimization || '',
-          googleResult.descriptionOptimization || '',
-          googleResult.tagStrategy || ''
+          ...(deepseekData.algorithmInsights || []),
+          ...(googleData?.titleOptimization ? [`Gemini: ${googleData.titleOptimization}`] : []),
+          ...(googleData?.descriptionOptimization ? [`Gemini: ${googleData.descriptionOptimization}`] : []),
+          ...(googleData?.tagStrategy ? [`Gemini: ${googleData.tagStrategy}`] : [])
         ].filter(Boolean),
         researchTimestamp: new Date()
       }
 
-      setAnalysisResult(combinedResult)
+      setAnalysisResult(combinedAnalysis)
       
     } catch (error) {
       console.error('Analysis failed:', error)
@@ -301,11 +354,11 @@ Provide specific, actionable recommendations in JSON format:
               <h4 className="text-green-400 font-semibold">Premium Features:</h4>
               <ul className="text-gray-300 text-sm space-y-1">
                 <li>• DeepSeek AI analysis</li>
-                <li>• Google AI integration</li>
+                <li>• Google Gemini integration</li>
                 <li>• Advanced title optimization</li>
                 <li>• Algorithm-specific tags</li>
                 <li>• Editing recommendations</li>
-                <li>• VidIQ research integration</li>
+                <li>• Dual AI insights</li>
               </ul>
             </div>
             <div className="text-yellow-400 text-sm">
@@ -412,7 +465,7 @@ Provide specific, actionable recommendations in JSON format:
             {isAnalyzing ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing with AI...
+                Analyzing with DeepSeek & Gemini...
               </>
             ) : (
               <>
