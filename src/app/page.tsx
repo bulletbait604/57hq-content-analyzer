@@ -47,7 +47,7 @@ export default function Home() {
         </div>
 
         {/* User Profile Status */}
-        {user && (
+        {user ? (
           <div className="mb-6">
             <div className="bg-black border border-cyan-500/30 rounded-lg p-4">
               <div className="flex items-center justify-between">
@@ -77,6 +77,10 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <KickAuth onUserChange={setUser} />
           </div>
         )}
 
