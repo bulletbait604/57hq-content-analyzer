@@ -102,7 +102,7 @@ export function ClipAnalyzerEnhanced() {
         engagement: parseFloat(analysisResult.algorithmScore?.toString() || '0'),
         retention: 0,
         score: Math.round((analysisResult.algorithmScore || 0) * 10),
-        optimization: analysisResult.insights || [],
+        insights: analysisResult.insights || [],
         suggestions: analysisResult.recommendations || []
       }
       
