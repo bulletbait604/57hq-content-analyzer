@@ -84,22 +84,29 @@ CONTENT: ${content}
 
 CRITICAL ANALYSIS REQUIREMENTS:
 1. EXTRACT ACTUAL VIDEO CONTENT - Analyze the URL/content to determine:
-   - The actual video title (not generic)
-   - The real video description (not generic)
-   - Existing tags used in the video
-   - Game name being played
+   - The actual video title (infer from URL patterns, platform, and context)
+   - The real video description (create based on content analysis)
+   - Existing tags used in the video (infer from platform and game)
+   - Game name being played (identify from context clues)
    - Game type/category (FPS, RPG, Strategy, etc.)
    - Gaming platform (PC, PlayStation, Xbox, Mobile, etc.)
    - Streaming platform (Twitch, YouTube, Kick, etc.)
 
-2. VIDEO CONTENT ANALYSIS:
-   - Identify the specific game from the URL/content
-   - Determine game genre and category
-   - Analyze gaming platform mentioned or implied
-   - Identify streaming platform from URL structure
-   - Extract any visible game mechanics or features
+2. ENHANCED URL ANALYSIS:
+   - Extract video ID from URL structure
+   - Identify platform-specific content patterns
+   - Analyze URL path for content clues
+   - Determine content type from URL patterns
+   - Infer game information from platform context
 
-3. COMPREHENSIVE TAG GENERATION:
+3. INTELLIGENT CONTENT INFERENCE:
+   - When direct metadata isn't accessible, use URL patterns to infer content
+   - Use platform knowledge to estimate video content
+   - Leverage game-specific knowledge from URL context
+   - Create realistic titles and descriptions based on analysis
+   - Generate comprehensive tags from inferred content
+
+4. COMPREHENSIVE TAG GENERATION:
    - Game-specific tags (game name, characters, weapons)
    - Genre tags (FPS, RPG, Battle Royale, etc.)
    - Platform tags (PC, PS5, Xbox, Mobile)
@@ -228,11 +235,11 @@ RECENT ALGORITHM UPDATES:
 
 Based on this comprehensive analysis, provide detailed optimization recommendations in JSON format:
 {
-  "clipTitle": "The actual extracted title from the video content",
+  "clipTitle": "Inferred or extracted title from video content and URL analysis",
   "titleSuggestions": ["Optimized title 1", "Optimized title 2", "Optimized title 3"],
-  "clipDescription": "The actual extracted description from the video content",
+  "clipDescription": "Inferred or created description based on content analysis",
   "descriptionSuggestions": ["Enhanced description 1", "Enhanced description 2", "Enhanced description 3"],
-  "tags": ["extracted_tag_1", "extracted_tag_2", "extracted_tag_3", "game_name", "genre", "platform"],
+  "tags": ["inferred_tag_1", "inferred_tag_2", "inferred_tag_3", "game_name", "genre", "platform"],
   "tagSuggestions": ["game_specific_tag_1", "game_specific_tag_2", "trending_tag_1", "algorithm_tag_1", "platform_tag_1", "genre_tag_1"],
   "editingTips": ["Specific editing tip for this game content", "Optimization for this platform", "Engagement improvement suggestion"],
   "algorithmInsights": ["Platform-specific algorithm insight 1", "Algorithm insight 2"],
@@ -241,7 +248,7 @@ Based on this comprehensive analysis, provide detailed optimization recommendati
   "engagementTriggers": ["Psychological trigger 1", "Psychological trigger 2", "Psychological trigger 3"],
   "performancePrediction": "Predicted performance based on algorithm alignment and trending patterns",
   "gameAnalysis": {
-    "gameName": "The specific game being played",
+    "gameName": "The specific game being played (inferred from context)",
     "gameGenre": "FPS, RPG, Battle Royale, etc.",
     "gamingPlatform": "PC, PlayStation, Xbox, Mobile, etc.",
     "streamingPlatform": "Twitch, YouTube, Kick, etc.",
@@ -249,7 +256,7 @@ Based on this comprehensive analysis, provide detailed optimization recommendati
   }
 }
 
-IMPORTANT: Extract REAL content from the URL/video. Do not use generic titles or descriptions. Analyze the actual game, platform, and content type.`
+IMPORTANT: When direct metadata access fails, use intelligent inference from URL patterns, platform knowledge, and context analysis. Create realistic and relevant titles, descriptions, and tags based on the available information and your knowledge of gaming content trends.`
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -363,27 +370,77 @@ IMPORTANT: Extract REAL content from the URL/video. Do not use generic titles or
         
         // Extract platform-specific information from URL
         const urlLower = videoUrl.toLowerCase()
+        
+        // Extract video ID and platform-specific details
+        let videoId = ''
+        let platform = 'Unknown'
+        let contentType = 'Video'
+        
         if (urlLower.includes('tiktok.com')) {
-          content += `\nPlatform: TikTok\nType: Video URL\nAnalysis Focus: TikTok algorithm optimization`
+          platform = 'TikTok'
+          contentType = 'Short-form Video'
+          // Extract TikTok video ID
+          const tiktokMatch = videoUrl.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
+          if (tiktokMatch) videoId = tiktokMatch[1]
+          content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization`
         } else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
-          content += `\nPlatform: YouTube\nType: Video URL\nAnalysis Focus: YouTube algorithm optimization`
+          platform = 'YouTube'
+          contentType = videoUrl.includes('shorts') ? 'Short' : 'Long-form Video'
+          // Extract YouTube video ID
+          const youtubeMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]+)/)
+          if (youtubeMatch) videoId = youtubeMatch[1]
+          content += `\nPlatform: YouTube\nVideo ID: ${videoId}\nType: ${contentType}\nAnalysis Focus: YouTube algorithm optimization`
         } else if (urlLower.includes('instagram.com')) {
-          content += `\nPlatform: Instagram\nType: Video URL\nAnalysis Focus: Instagram Reels algorithm optimization`
+          platform = 'Instagram'
+          contentType = 'Reel'
+          content += `\nPlatform: Instagram\nType: Reel\nAnalysis Focus: Instagram Reels algorithm optimization`
         } else if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) {
-          content += `\nPlatform: Twitter/X\nType: Video URL\nAnalysis Focus: Twitter algorithm optimization`
+          platform = 'Twitter/X'
+          contentType = 'Video'
+          content += `\nPlatform: Twitter/X\nType: Video\nAnalysis Focus: Twitter algorithm optimization`
         } else if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) {
-          content += `\nPlatform: Facebook\nType: Video URL\nAnalysis Focus: Facebook Reels algorithm optimization`
+          platform = 'Facebook'
+          contentType = 'Reel'
+          content += `\nPlatform: Facebook\nType: Reel\nAnalysis Focus: Facebook Reels algorithm optimization`
+        } else if (urlLower.includes('twitch.tv')) {
+          platform = 'Twitch'
+          contentType = 'Clip'
+          // Extract Twitch channel and clip info
+          const twitchMatch = videoUrl.match(/twitch\.tv\/([\w.-]+)\/clip\/([\w-]+)/)
+          if (twitchMatch) {
+            content += `\nPlatform: Twitch\nChannel: ${twitchMatch[1]}\nClip ID: ${twitchMatch[2]}\nType: Clip\nAnalysis Focus: Twitch clip optimization`
+          } else {
+            content += `\nPlatform: Twitch\nType: Clip\nAnalysis Focus: Twitch clip optimization`
+          }
         } else {
+          platform = 'General'
           content += `\nPlatform: General\nType: Video URL\nAnalysis Focus: ${selectedPlatform} algorithm optimization`
         }
         
-        // Add analysis context
-        content += `\n\nANALYSIS REQUIREMENTS:
-- Analyze this ${selectedPlatform} content for algorithm optimization
-- Extract any available metadata from the URL structure
-- Provide platform-specific recommendations
+        // Add enhanced analysis context
+        content += `\n\nENHANCED ANALYSIS CONTEXT:
+- Platform: ${platform}
+- Content Type: ${contentType}
+- Video ID: ${videoId || 'Not extractable'}
+- Target Platform: ${selectedPlatform}
+- URL Structure: ${new URL(videoUrl).pathname}
+
+CONTENT ANALYSIS REQUIREMENTS:
+- Analyze this ${contentType.toLowerCase()} for actual video content
+- Extract any game-related information from the URL structure
+- Identify the game being played from context clues
+- Determine gaming platform (PC, PlayStation, Xbox, Mobile)
+- Identify streaming platform from URL patterns
+- Generate comprehensive tags for this specific content
 - Focus on ${selectedPlatform} algorithm factors
-- Generate trending hashtags and optimization strategies`
+- Create platform-specific optimization strategies
+
+VIDEO METADATA EXTRACTION:
+- Attempt to determine the actual video title from URL patterns
+- Extract any visible game information from the URL
+- Identify content type (gameplay, highlights, tutorial, etc.)
+- Analyze for game-specific elements and mechanics
+- Generate relevant tags based on extracted information`
       }
 
       // Analyze with DeepSeek API only - enhanced for actual content analysis
