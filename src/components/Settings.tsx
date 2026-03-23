@@ -141,7 +141,7 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   // Load language from localStorage on mount
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as Language
-    if (savedLanguage) setLanguage(savedLanguage)
+    if (savedLanguage) setCurrentLanguage(savedLanguage)
   }, [])
 
   const handleLanguageChange = (newLanguage: Language) => {
