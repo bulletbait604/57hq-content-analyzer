@@ -111,7 +111,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-green-400 mb-2">57HQ Content Analyzer</h1>
+          <h1 className="text-4xl font-bold text-green-400 mb-2">SDHQ Content Analyzer</h1>
           <p className="text-gray-300">Ultimate Content Creator Platform - AI-Powered Analysis & Optimization</p>
         </div>
 

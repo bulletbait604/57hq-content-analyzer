@@ -11,32 +11,32 @@ const translations = {
   en: {
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
-    rights: '© 2024 57HQ Content Analyzer. All rights reserved.',
+    rights: '© 2024 SDHQ Content Analyzer. All rights reserved.',
     powered: 'Powered by AI'
   },
   es: {
     privacy: 'Política de Privacidad',
     terms: 'Términos de Servicio',
-    rights: '© 2024 57HQ Content Analyzer. Todos los derechos reservados.',
+    rights: '© 2024 SDHQ Content Analyzer. Todos los derechos reservados.',
     powered: 'Impulsado por IA'
   },
   fr: {
     privacy: 'Politique de Confidentialité',
     terms: 'Conditions d\'Utilisation',
-    rights: '© 2024 57HQ Content Analyzer. Tous droits réservés.',
+    rights: ' 2024 SDHQ Content Analyzer. Tous droits réservés.',
     powered: 'Alimenté par IA'
   },
   de: {
     privacy: 'Datenschutzerklärung',
     terms: 'Nutzungsbedingungen',
-    rights: '© 2024 57HQ Content Analyzer. Alle Rechte vorbehalten.',
+    rights: ' 2024 SDHQ Content Analyzer. Alle Rechte vorbehalten.',
     powered: 'Angetrieben von KI'
   },
   ja: {
     privacy: 'プライバシーポリシー',
     terms: '利用規約',
-    rights: '© 2024 57HQ Content Analyzer. すべての権利を保有。',
-    powered: 'AIによる動作'
+    rights: ' 2024 SDHQ Content Analyzer. 全権利留保。',
+    powered: 'AI駆動'
   }
 }
 

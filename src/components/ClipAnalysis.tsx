@@ -37,6 +37,13 @@ interface AnalysisResult {
     engagementTriggers: string[]
     performancePrediction: string
   } | null
+  gameAnalysis?: {
+    gameName: string
+    gameGenre: string
+    gamingPlatform: string
+    streamingPlatform: string
+    contentFocus: string
+  }
 }
 
 export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: boolean }) {
@@ -71,9 +78,35 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
   }
 
   const analyzeWithDeepSeek = async (content: string, platform: string) => {
-    const deepseekPrompt = `You are a senior social media algorithm researcher with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
+    const deepseekPrompt = `You are a senior social media algorithm researcher and content analyst with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
 
 CONTENT: ${content}
+
+CRITICAL ANALYSIS REQUIREMENTS:
+1. EXTRACT ACTUAL VIDEO CONTENT - Analyze the URL/content to determine:
+   - The actual video title (not generic)
+   - The real video description (not generic)
+   - Existing tags used in the video
+   - Game name being played
+   - Game type/category (FPS, RPG, Strategy, etc.)
+   - Gaming platform (PC, PlayStation, Xbox, Mobile, etc.)
+   - Streaming platform (Twitch, YouTube, Kick, etc.)
+
+2. VIDEO CONTENT ANALYSIS:
+   - Identify the specific game from the URL/content
+   - Determine game genre and category
+   - Analyze gaming platform mentioned or implied
+   - Identify streaming platform from URL structure
+   - Extract any visible game mechanics or features
+
+3. COMPREHENSIVE TAG GENERATION:
+   - Game-specific tags (game name, characters, weapons)
+   - Genre tags (FPS, RPG, Battle Royale, etc.)
+   - Platform tags (PC, PS5, Xbox, Mobile)
+   - Streaming tags (Twitch, YouTube, Kick)
+   - Content type tags (gameplay, highlights, tutorial)
+   - Trending tags relevant to this specific game
+   - Algorithm-optimized tags for ${platform}
 
 PLATFORM ALGORITHM RESEARCH FOR ${platform.toUpperCase()} (2026):
 
@@ -193,21 +226,30 @@ RECENT ALGORITHM UPDATES:
 - Enhanced audio-visual sync analysis
 - Improved user engagement pattern recognition`}
 
-Based on this deep algorithm research, provide comprehensive optimization recommendations in JSON format:
+Based on this comprehensive analysis, provide detailed optimization recommendations in JSON format:
 {
-  "clipTitle": "Extracted or suggested title",
-  "titleSuggestions": ["Title 1", "Title 2", "Title 3"],
-  "clipDescription": "Extracted or suggested description",
-  "descriptionSuggestions": ["Description 1", "Description 2", "Description 3"],
-  "tags": ["tag1", "tag2", "tag3", "..."],
-  "tagSuggestions": ["suggestion1", "suggestion2", "..."],
-  "editingTips": ["Tip 1", "Tip 2", "Tip 3"],
-  "algorithmInsights": ["Insight 1", "Insight 2"],
+  "clipTitle": "The actual extracted title from the video content",
+  "titleSuggestions": ["Optimized title 1", "Optimized title 2", "Optimized title 3"],
+  "clipDescription": "The actual extracted description from the video content",
+  "descriptionSuggestions": ["Enhanced description 1", "Enhanced description 2", "Enhanced description 3"],
+  "tags": ["extracted_tag_1", "extracted_tag_2", "extracted_tag_3", "game_name", "genre", "platform"],
+  "tagSuggestions": ["game_specific_tag_1", "game_specific_tag_2", "trending_tag_1", "algorithm_tag_1", "platform_tag_1", "genre_tag_1"],
+  "editingTips": ["Specific editing tip for this game content", "Optimization for this platform", "Engagement improvement suggestion"],
+  "algorithmInsights": ["Platform-specific algorithm insight 1", "Algorithm insight 2"],
   "algorithmResearch": "Detailed analysis of current ${platform} algorithm factors and how this content aligns",
-  "trendingOpportunities": "Current trending topics and hashtags that align with this content",
+  "trendingOpportunities": "Current trending topics and hashtags that align with this specific game/content",
   "engagementTriggers": ["Psychological trigger 1", "Psychological trigger 2", "Psychological trigger 3"],
-  "performancePrediction": "Predicted performance based on algorithm alignment and trending patterns"
-}`
+  "performancePrediction": "Predicted performance based on algorithm alignment and trending patterns",
+  "gameAnalysis": {
+    "gameName": "The specific game being played",
+    "gameGenre": "FPS, RPG, Battle Royale, etc.",
+    "gamingPlatform": "PC, PlayStation, Xbox, Mobile, etc.",
+    "streamingPlatform": "Twitch, YouTube, Kick, etc.",
+    "contentFocus": "gameplay, highlights, tutorial, etc."
+  }
+}
+
+IMPORTANT: Extract REAL content from the URL/video. Do not use generic titles or descriptions. Analyze the actual game, platform, and content type.`
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -259,7 +301,14 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
         algorithmResearch: parsed.algorithmResearch || '',
         trendingOpportunities: parsed.trendingOpportunities || '',
         engagementTriggers: Array.isArray(parsed.engagementTriggers) ? parsed.engagementTriggers : [],
-        performancePrediction: parsed.performancePrediction || ''
+        performancePrediction: parsed.performancePrediction || '',
+        gameAnalysis: parsed.gameAnalysis || {
+          gameName: 'Unknown Game',
+          gameGenre: 'Unknown',
+          gamingPlatform: 'Unknown',
+          streamingPlatform: 'Unknown',
+          contentFocus: 'Unknown'
+        }
       }
     } catch (parseError) {
       const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
@@ -277,7 +326,14 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
           algorithmResearch: parsed.algorithmResearch || '',
           trendingOpportunities: parsed.trendingOpportunities || '',
           engagementTriggers: Array.isArray(parsed.engagementTriggers) ? parsed.engagementTriggers : [],
-          performancePrediction: parsed.performancePrediction || ''
+          performancePrediction: parsed.performancePrediction || '',
+          gameAnalysis: parsed.gameAnalysis || {
+            gameName: 'Unknown Game',
+            gameGenre: 'Unknown',
+            gamingPlatform: 'Unknown',
+            streamingPlatform: 'Unknown',
+            contentFocus: 'Unknown'
+          }
         }
       }
       console.error('Could not parse DeepSeek response:', analysisText)
@@ -354,6 +410,14 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
           trendingOpportunities: deepseekResult.trendingOpportunities || '',
           engagementTriggers: Array.isArray(deepseekResult.engagementTriggers) ? deepseekResult.engagementTriggers : [],
           performancePrediction: deepseekResult.performancePrediction || ''
+        },
+        // Game Analysis
+        gameAnalysis: deepseekResult.gameAnalysis || {
+          gameName: 'Unknown Game',
+          gameGenre: 'Unknown',
+          gamingPlatform: 'Unknown',
+          streamingPlatform: 'Unknown',
+          contentFocus: 'Unknown'
         }
       }
 

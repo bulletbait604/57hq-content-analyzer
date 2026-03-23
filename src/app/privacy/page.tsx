@@ -158,7 +158,7 @@ export default function PrivacyPolicy() {
             <CardContent>
               <div className="space-y-2 text-gray-300">
                 <p>For privacy-related questions or concerns, contact us at:</p>
-                <p><strong>Email:</strong> privacy@57hq.com</p>
+                <p><strong>Email:</strong> privacy@sdhq.com</p>
                 <p><strong>Response Time:</strong> Within 48 hours</p>
               </div>
             </CardContent>
