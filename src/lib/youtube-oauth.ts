@@ -29,6 +29,23 @@ export interface YouTubeChannel {
   videoCount: string
 }
 
+export interface YouTubeUser {
+  channelId: string
+  channelTitle: string
+  description: string
+  thumbnail: string
+  subscriberCount: string
+  videoCount: string
+}
+
+export interface YouTubeAuthResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+  refresh_token: string
+  scope: string
+}
+
 export class YouTubeOAuth {
   private clientId: string
   private clientSecret: string
@@ -45,7 +62,120 @@ export class YouTubeOAuth {
     ]
   }
 
-  getAuthorizationUrl(): string {
+  // Exchange authorization code for access token
+  async exchangeCodeForToken(code: string): Promise<YouTubeAuthResponse> {
+    console.log('🔐 Exchanging code for YouTube access token...')
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token'
+    
+    try {
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: this.redirectUri
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('YouTube token error:', errorText)
+        throw new Error(`YouTube API error: ${response.status} - ${errorText}`)
+      }
+
+      const tokenData = await response.json()
+      console.log('✅ YouTube token exchange success!')
+      
+      return tokenData
+    } catch (error) {
+      console.error('❌ YouTube token exchange failed:', error)
+      throw error
+    }
+  }
+
+  // Get user information with access token
+  async getUserInfo(accessToken: string): Promise<YouTubeUser> {
+    console.log('🔍 Getting YouTube user info...')
+    
+    const userInfoUrl = 'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true'
+    
+    try {
+      const response = await fetch(userInfoUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('YouTube user info error:', errorText)
+        throw new Error(`YouTube API error: ${response.status} - ${errorText}`)
+      }
+
+      const userData = await response.json()
+      console.log('✅ Got YouTube user info:', userData)
+      
+      if (!userData.items || userData.items.length === 0) {
+        throw new Error('No YouTube channel found')
+      }
+
+      const channel = userData.items[0]
+      return {
+        channelId: channel.id,
+        channelTitle: channel.snippet.title,
+        description: channel.snippet.description,
+        thumbnail: channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.default?.url || '',
+        subscriberCount: channel.statistics?.subscriberCount || '0',
+        videoCount: channel.statistics?.videoCount || '0'
+      }
+    } catch (error) {
+      console.error('❌ YouTube user info failed:', error)
+      throw error
+    }
+  }
+
+  // Refresh access token
+  async refreshToken(refreshToken: string): Promise<YouTubeAuthResponse> {
+    console.log('🔄 Refreshing YouTube access token...')
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token'
+    
+    try {
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`YouTube refresh error: ${response.status} - ${errorText}`)
+      }
+
+      const tokenData = await response.json()
+      console.log('✅ YouTube token refresh success!')
+      
+      return tokenData
+    } catch (error) {
+      console.error('❌ YouTube token refresh failed:', error)
+      throw error
+    }
+  }
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,

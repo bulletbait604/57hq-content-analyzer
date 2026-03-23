@@ -28,8 +28,6 @@ interface PlatformConnection {
 
 export function Connections() {
   const [connections, setConnections] = useState<PlatformConnection[]>([
-    { platform: 'TikTok', icon: '🎵', connected: false },
-    { platform: 'Instagram', icon: '📷', connected: false },
     { platform: 'YouTube', icon: '▶️', connected: false },
     { platform: 'Twitter', icon: '🐦', connected: false }
   ])
@@ -41,20 +39,6 @@ export function Connections() {
     let oauthUrl = ''
     
     switch (platform) {
-      case 'TikTok':
-        // Use proper TikTok OAuth
-        const tiktokClientId = process.env.NEXT_PUBLIC_TIKTOK_CLIENT_ID
-        const tiktokRedirectUri = process.env.NEXT_PUBLIC_TIKTOK_REDIRECT_URI || 'https://sdhq-content-analyzer.vercel.app/auth/tiktok/callback'
-        oauthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${tiktokClientId}&redirect_uri=${encodeURIComponent(tiktokRedirectUri)}&scope=user.info.basic,user.info.profile,user.info.stats&response_type=code`
-        break
-        
-      case 'Instagram':
-        // Redirect to Instagram OAuth
-        const instagramClientId = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID
-        const instagramRedirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI || 'https://sdhqcreatorcorner.vercel.app/auth/instagram/callback'
-        oauthUrl = `https://api.instagram.com/oauth/authorize?client_id=${instagramClientId}&redirect_uri=${encodeURIComponent(instagramRedirectUri)}&scope=user_profile,user_media&response_type=code`
-        break
-        
       case 'YouTube':
         // Redirect to YouTube OAuth
         const youtubeClientId = process.env.NEXT_PUBLIC_YOUTUBE_CLIENT_ID
@@ -100,8 +84,6 @@ export function Connections() {
 
   const getPlatformColor = (platform: string) => {
     switch (platform) {
-      case 'TikTok': return 'bg-black'
-      case 'Instagram': return 'bg-gradient-to-r from-purple-500 to-pink-500'
       case 'YouTube': return 'bg-red-500'
       case 'Twitter': return 'bg-blue-500'
       default: return 'bg-gray-500'

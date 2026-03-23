@@ -241,7 +241,7 @@ export class SocialVerificationService {
       }
     })
     
-    return Math.min(credits, 30) // Max 30 credits per day (3 platforms × 10)
+    return Math.min(credits, 20) // Max 20 credits per day (2 platforms × 10)
   }
 
   // Complete verification for all platforms
@@ -250,7 +250,6 @@ export class SocialVerificationService {
     
     const platforms = [
       () => this.checkKickFollow(username),
-      () => this.checkTikTokFollow(username),
       () => this.checkYouTubeSubscribe(username)
     ]
     
@@ -264,7 +263,7 @@ export class SocialVerificationService {
       if (result.status === 'fulfilled') {
         results.push(result.value)
       } else {
-        const platformNames = ['Kick', 'TikTok', 'YouTube']
+        const platformNames = ['Kick', 'YouTube']
         results.push({
           platform: platformNames[index],
           isFollowing: false,
@@ -284,7 +283,7 @@ export class SocialVerificationService {
       verifiedPlatforms,
       aiCreditsPerDay: aiCredits,
       socialStatus: results,
-      isVerified: verifiedPlatforms >= 2, // Require at least 2 platforms
+      isVerified: verifiedPlatforms >= 1, // Require at least 1 platform now
       lastChecked: new Date()
     }
     
