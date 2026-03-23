@@ -385,11 +385,11 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
         let contentType = 'Video'
         let tiktokMetadata = null
         
-        if (urlLower.includes('tiktok.com')) {
+        if (urlLower.includes('tiktok.com') || urlLower.includes('tiktok')) {
           platform = 'TikTok'
           contentType = 'Short-form Video'
           
-          // Try to get TikTok metadata
+          // Only try TikTok metadata extraction for actual TikTok URLs
           try {
             const tiktokService = TikTokMetadataService.getInstance()
             tiktokMetadata = await tiktokService.getMetadata(videoUrl)
@@ -411,13 +411,13 @@ ${tiktokMetadata.music ? `Music: ${tiktokMetadata.music.title} - ${tiktokMetadat
               // Fallback to URL extraction
               const tiktokMatch = videoUrl.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
               if (tiktokMatch) videoId = tiktokMatch[1]
-              content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization\nNote: Metadata extraction failed, using URL analysis`
+              content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization\nNote: TikTok metadata extraction failed, using URL analysis`
             }
           } catch (error) {
             console.warn('TikTok metadata extraction failed:', error)
             const tiktokMatch = videoUrl.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/)
             if (tiktokMatch) videoId = tiktokMatch[1]
-            content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization\nNote: Metadata extraction failed, using URL analysis`
+            content += `\nPlatform: TikTok\nVideo ID: ${videoId}\nType: Short-form video\nAnalysis Focus: TikTok algorithm optimization\nNote: TikTok metadata extraction failed, using URL analysis`
           }
         } else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
           platform = 'YouTube'
