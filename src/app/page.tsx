@@ -14,6 +14,74 @@ import { KickAuth } from '@/components/KickAuth'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
+  const [channelSubscriptions, setChannelSubscriptions] = useState<any[]>([])
+  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState<boolean>(false)
+
+  // Check channel subscriptions when user logs in
+  useEffect(() => {
+    if (user && user.username) {
+      checkChannelSubscriptions(user.username)
+    } else {
+      setChannelSubscriptions([])
+    }
+  }, [user])
+
+  // Function to check channel subscriptions
+  const checkChannelSubscriptions = async (username: string) => {
+    setIsLoadingSubscriptions(true)
+    try {
+      // Get access token from localStorage
+      const accessToken = typeof window !== 'undefined' ? localStorage.getItem('kickAccessToken') : null
+      
+      if (!accessToken) {
+        console.log('❌ No access token found for API call')
+        setIsLoadingSubscriptions(false)
+        return
+      }
+
+      console.log(`🔍 Checking channel subscriptions for ${username} via Kick API`)
+      
+      // Use bulletbait604 as the channel ID (you might need to get the actual channel ID)
+      const channelId = 'bulletbait604' // You may need to replace with actual channel ID
+      const response = await fetch(`https://api.kick.com/v1/channels/${channelId}/subscriptions`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log(`Kick API subscriptions response status: ${response.status}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Got channel subscriptions from Kick API:', data)
+        
+        // Handle different response formats
+        let subscriptions = []
+        if (Array.isArray(data)) {
+          subscriptions = data
+        } else if (data.data && Array.isArray(data.data)) {
+          subscriptions = data.data
+        } else if (data.subscriptions && Array.isArray(data.subscriptions)) {
+          subscriptions = data.subscriptions
+        }
+        
+        setChannelSubscriptions(subscriptions)
+        console.log(`📊 Found ${subscriptions.length} channel subscriptions`)
+      } else {
+        const errorText = await response.text()
+        console.log(`❌ Kick API subscriptions failed (${response.status}):`, errorText)
+        setChannelSubscriptions([])
+      }
+    } catch (error) {
+      console.error('❌ Error checking channel subscriptions:', error)
+      setChannelSubscriptions([])
+    } finally {
+      setIsLoadingSubscriptions(false)
+    }
+  }
 
   console.log(`🔐 Subscriber access: ❌ Denied`)
 
@@ -60,6 +128,28 @@ export default function Home() {
                   <div>
                     <div className="text-cyan-300 text-sm font-medium">Logged in as</div>
                     <div className="text-white font-semibold">{user.display_name}</div>
+                    
+                    {/* Channel Subscriptions Data */}
+                    <div className="mt-2">
+                      {isLoadingSubscriptions ? (
+                        <div className="text-yellow-400 text-xs">Loading channel data...</div>
+                      ) : (
+                        <div className="text-xs">
+                          <div className="text-cyan-400 font-semibold mb-1">Channel API Data:</div>
+                          <div className="text-gray-300">
+                            <div>📊 Subscriptions: {channelSubscriptions.length}</div>
+                            {channelSubscriptions.length > 0 && (
+                              <div className="mt-1">
+                                <div className="text-gray-400">Sample data:</div>
+                                <div className="text-xs text-gray-500 break-all">
+                                  {JSON.stringify(channelSubscriptions[0], null, 2).substring(0, 200)}...
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
