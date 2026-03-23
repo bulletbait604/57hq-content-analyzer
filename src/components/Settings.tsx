@@ -130,6 +130,10 @@ const translations = {
 type Language = keyof typeof translations
 type Theme = 'dark' | 'light'
 
+interface SettingsProps {
+  user: any
+}
+
 export function Settings({ user }: SettingsProps) {
   const [theme, setTheme] = useState<Theme>('dark')
   const [language, setLanguage] = useState<Language>('en')

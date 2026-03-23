@@ -140,13 +140,15 @@ export default function Home() {
               <Search className="w-4 h-4 mr-2" />
               Content Analysis
             </TabsTrigger>
-            <TabsTrigger 
-              value="legal" 
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-black text-gray-400 border border-green-500/30"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </TabsTrigger>
+            {user && (
+              <TabsTrigger 
+                value="legal" 
+                className="data-[state=active]:bg-green-600 data-[state=active]:text-black text-gray-400 border border-green-500/30"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="algorithm-info" className="mt-6">
@@ -172,7 +174,14 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="legal" className="mt-6">
-            <SettingsComponent user={user} hasPremium={hasPremium} />
+            {user ? (
+              <SettingsComponent user={user} />
+            ) : (
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-green-400 mb-2">Settings</h2>
+                <p className="text-gray-300">Please sign in to access settings</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
