@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input-proper'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
-import { TikTokAPI, TikTokVideo } from '@/lib/tiktok-api'
 import { YouTubeOAuth } from '@/lib/youtube-oauth'
 import { 
   Search, 
@@ -55,7 +54,6 @@ export function ContentAnalyzerEnhanced() {
   const [selectedClip, setSelectedClip] = useState<string | null>(null)
 
   const platforms = [
-    { name: 'TikTok', icon: '🎵', color: 'bg-black' },
     { name: 'Instagram', icon: '📷', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
     { name: 'YouTube', icon: '▶️', color: 'bg-red-500' }
   ]
@@ -66,15 +64,7 @@ export function ContentAnalyzerEnhanced() {
       const connected = []
       if (localStorage.getItem('instagram_auth_code')) connected.push('Instagram')
       if (localStorage.getItem('youtube_auth_code')) connected.push('YouTube')
-      // TikTok uses RapidAPI, so it's always available
-      connected.push('TikTok')
-      
       setConnectedAccounts(connected)
-      
-      // Auto-populate if we have connected accounts
-      if (connected.length > 0) {
-        fetchConnectedContent()
-      }
     }
   }, [])
 
@@ -85,39 +75,6 @@ export function ContentAnalyzerEnhanced() {
     const allContent: ContentUpload[] = []
     
     try {
-      // Fetch from TikTok (always available via RapidAPI)
-      if (connectedAccounts.includes('TikTok')) {
-        try {
-          const tiktokAPI = new TikTokAPI(process.env.NEXT_PUBLIC_RAPIDAPI_TIKTOK_API_KEY || '')
-          
-          // Get trending content since we don't have a specific username
-          const trendingVideos = await tiktokAPI.searchVideos('trending', 10)
-          
-          const tiktokContent = trendingVideos.map((video, index) => ({
-            id: video.id,
-            platform: 'TikTok',
-            title: video.title,
-            description: video.description,
-            thumbnail: video.thumbnail,
-            url: video.url,
-            uploadTime: `${Math.floor((Date.now() - video.createTime * 1000) / (1000 * 60 * 60))} hours ago`,
-            views: video.stats.playCount,
-            likes: video.stats.likeCount,
-            comments: video.stats.commentCount,
-            shares: video.stats.shareCount || 0,
-            tags: extractTags(video.description),
-            engagement: video.stats.playCount > 0 ? 
-              ((video.stats.likeCount + video.stats.commentCount) / video.stats.playCount * 100).toFixed(1).toString() : 
-              '0'
-          }))
-          
-          allContent.push(...tiktokContent)
-          console.log(`✅ Fetched ${tiktokContent.length} TikTok videos`)
-        } catch (error) {
-          console.error('❌ Error fetching TikTok content:', error)
-        }
-      }
-      
       // Fetch from Instagram (if connected)
       if (connectedAccounts.includes('Instagram')) {
         try {

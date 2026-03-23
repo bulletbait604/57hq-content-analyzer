@@ -40,4 +40,5 @@ if (hasConflicts) {
   process.exit(1);
 } else {
   console.log('✅ OAuth structure is clean. Ready for deployment!');
+  process.exit(0);
 }

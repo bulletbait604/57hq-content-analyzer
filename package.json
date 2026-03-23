@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/validate-build.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "validate": "node scripts/validate-build.js",
+    "check-oauth": "node scripts/check-oauth-structure.js"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",

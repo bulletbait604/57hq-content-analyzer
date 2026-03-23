@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input-proper'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { KickAuth } from '@/components/KickAuth'
+import { YouTubeInfo } from '@/components/YouTubeInfo'
 import { generateTagsWithDeepSeek } from '@/lib/deepseek'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { PremiumAccess } from '@/lib/premium-access'
+import { EnhancedTagGenerator } from '@/lib/enhanced-tag-generator'
 import { 
   Upload, 
   Play, 
@@ -153,37 +155,67 @@ export default function Home() {
         )}
 
         <Tabs defaultValue="algorithm-info" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-black border border-green-500/50">
-            <TabsTrigger value="algorithm-info" className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300">Algorithm Info</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 bg-black/50 rounded-lg p-1">
+            <TabsTrigger 
+              value="algorithm-info" 
+              className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Algorithm Info
+            </TabsTrigger>
+            <TabsTrigger 
+              value="youtube-shorts" 
+              className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              YouTube Shorts
+            </TabsTrigger>
+            <TabsTrigger 
+              value="youtube-long" 
+              className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
+            >
+              <Video className="w-4 h-4 mr-2" />
+              YouTube Long
+            </TabsTrigger>
             <TabsTrigger 
               value="clip-analysis" 
               className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
             >
+              <Upload className="w-4 h-4 mr-2" />
               Clip Analysis
             </TabsTrigger>
             <TabsTrigger 
               value="tag-generator" 
               className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
             >
+              <Hash className="w-4 h-4 mr-2" />
               Tag Generator
             </TabsTrigger>
             <TabsTrigger 
               value="content-analysis" 
               className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
             >
+              <Search className="w-4 h-4 mr-2" />
               Content Analysis
             </TabsTrigger>
-            <TabsTrigger value="legal" className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300">Legal</TabsTrigger>
             <TabsTrigger 
-              value="premium" 
+              value="legal" 
               className="text-white hover:bg-green-900 hover:text-green-400 data-[state=active]:bg-green-800 data-[state=active]:text-green-300"
             >
-              Premium
+              Settings
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="algorithm-info" className="mt-6">
             <AlgorithmInfo />
+          </TabsContent>
+
+          <TabsContent value="youtube-shorts" className="mt-6">
+            <YouTubeInfo type="shorts" />
+          </TabsContent>
+
+          <TabsContent value="youtube-long" className="mt-6">
+            <YouTubeInfo type="long" />
           </TabsContent>
 
           <TabsContent value="clip-analysis" className="mt-6">
@@ -593,8 +625,11 @@ function TagGenerator({ user, hasPremium }: { user: any, hasPremium: boolean }) 
   // Debug logging
   console.log(`🔍 TagGenerator - KICK User: ${user?.username || 'Not logged in'} | Premium Access: ${hasPremiumAccess ? '✅' : '❌'}`)
 
-  // Free tag database (updated monthly)
-  const freeTagDatabase = [
+  // Enhanced free tag database (research-based)
+  const enhancedGenerator = EnhancedTagGenerator.getInstance()
+  
+  // Original simple tag database (fallback)
+  const simpleTagDatabase = [
     'viral', 'trending', 'fyp', 'foryou', 'explore', 'contentcreator', 'video', 'new', 'latest', 'popular',
     'amazing', 'incredible', 'awesome', 'best', 'top', 'mustsee', 'share', 'like', 'comment', 'follow',
     'creator', 'influencer', 'socialmedia', 'digital', 'online', 'viralvideo', 'trendingnow', 'viralpost',
@@ -604,16 +639,31 @@ function TagGenerator({ user, hasPremium }: { user: any, hasPremium: boolean }) 
   const generateFreeTags = () => {
     if (!content.trim()) return
     
-    const keywords = content.toLowerCase().split(' ').filter(word => word.length > 3)
-    const relevantTags = freeTagDatabase.filter(tag => 
-      keywords.some(keyword => tag.includes(keyword) || keyword.includes(tag))
-    )
-    const randomTags = freeTagDatabase
-      .filter(tag => !relevantTags.includes(tag))
-      .sort(() => Math.random() - 0.5)
-      .slice(0, Math.max(0, freeCount - relevantTags.length))
-    
-    setFreeTags([...relevantTags.slice(0, freeCount), ...randomTags])
+    try {
+      // Use enhanced tag generator
+      const result = enhancedGenerator.generateEnhancedTags(content, selectedPlatform, freeCount)
+      setFreeTags(result.tags)
+      
+      console.log(`🎯 Enhanced Free Tags Generated:`, {
+        categories: result.categories,
+        confidence: result.confidence,
+        suggestions: result.suggestions
+      })
+    } catch (error) {
+      console.error('Error with enhanced generator, using fallback:', error)
+      
+      // Fallback to simple algorithm
+      const keywords = content.toLowerCase().split(' ').filter(word => word.length > 3)
+      const relevantTags = simpleTagDatabase.filter(tag => 
+        keywords.some(keyword => tag.includes(keyword) || keyword.includes(tag))
+      )
+      const randomTags = simpleTagDatabase
+        .filter(tag => !relevantTags.includes(tag))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.max(0, freeCount - relevantTags.length))
+      
+      setFreeTags([...relevantTags.slice(0, freeCount), ...randomTags])
+    }
   }
 
   const generatePremiumTags = async () => {
@@ -765,6 +815,15 @@ function TagGenerator({ user, hasPremium }: { user: any, hasPremium: boolean }) 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="text-center mb-4">
+            <Badge className="bg-blue-600/20 text-blue-400 border-blue-500 mb-2">
+              🎯 Enhanced Algorithm - Research-Based Tag Generation
+            </Badge>
+            <p className="text-sm text-gray-400">
+              Advanced analysis across 6 categories with 200+ specialized tags
+            </p>
+          </div>
+
           <div className="flex items-center gap-4">
             <Label className="text-green-400">Number of tags:</Label>
             <select
@@ -776,6 +835,7 @@ function TagGenerator({ user, hasPremium }: { user: any, hasPremium: boolean }) 
               <option value={5}>5 tags</option>
               <option value={8}>8 tags</option>
               <option value={10}>10 tags</option>
+              <option value={15}>15 tags</option>
             </select>
           </div>
           
@@ -785,18 +845,61 @@ function TagGenerator({ user, hasPremium }: { user: any, hasPremium: boolean }) 
             className="w-full bg-green-600 hover:bg-green-500 text-black"
           >
             <Hash className="w-4 h-4 mr-2" />
-            Generate Free Tags
+            Generate Enhanced Tags
           </Button>
 
           {freeTags.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-green-400">Generated Tags:</Label>
-              <div className="flex flex-wrap gap-2">
-                {freeTags.map((tag, index) => (
-                  <Badge key={index} className="bg-green-600/20 text-green-400 border-green-500">
-                    #{tag}
-                  </Badge>
-                ))}
+            <div className="space-y-4">
+              <div className="mb-4">
+                <Label className="text-green-400">Generated Tags:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {freeTags.map((tag, index) => (
+                    <Badge key={index} className="bg-green-600/20 text-green-400 border-green-500">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Enhanced Features */}
+              <div className="bg-black/50 rounded-lg p-4 border border-green-500/30">
+                <h4 className="text-green-400 font-medium mb-3">🎯 Enhanced Analysis Results</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">Categories Matched:</span>
+                    <div className="text-white font-medium">
+                      {(() => {
+                        const result = enhancedGenerator.generateEnhancedTags(content, selectedPlatform, freeCount)
+                        return result.categories.join(', ')
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Confidence Score:</span>
+                    <div className="text-white font-medium">
+                      {(() => {
+                        const result = enhancedGenerator.generateEnhancedTags(content, selectedPlatform, freeCount)
+                        return `${result.confidence}%`
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Suggestions */}
+              <div className="bg-black/50 rounded-lg p-4 border border-blue-500/30">
+                <h4 className="text-blue-400 font-medium mb-3">💡 Content Optimization Suggestions</h4>
+                <div className="space-y-2 text-sm">
+                  {(() => {
+                    const result = enhancedGenerator.generateEnhancedTags(content, selectedPlatform, freeCount)
+                    return result.suggestions.map((suggestion, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="text-blue-400">•</div>
+                        <div className="text-gray-300">{suggestion}</div>
+                      </div>
+                    ))
+                  })()}
+                </div>
               </div>
             </div>
           )}

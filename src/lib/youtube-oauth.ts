@@ -176,6 +176,9 @@ export class YouTubeOAuth {
       throw error
     }
   }
+
+  // Generate authorization URL
+  getAuthUrl(): string {
     const params = new URLSearchParams({
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
