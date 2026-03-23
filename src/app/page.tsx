@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input-proper'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { KickAuth } from '@/components/KickAuth'
+import { generateTagsWithDeepSeek } from '@/lib/deepseek'
+import { AlgorithmUpdater } from '@/lib/algorithm-updater'
+import { PremiumAccess } from '@/lib/premium-access'
 import { 
   Upload, 
   Play, 
@@ -27,11 +30,13 @@ import {
   MessageSquare,
   Eye,
   Heart,
-  Share2
+  Share2,
+  Crown
 } from 'lucide-react'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
+  const [hasPremium, setHasPremium] = useState(false)
 
   // Check for existing session on mount
   useEffect(() => {
@@ -42,14 +47,48 @@ export default function Home() {
         try {
           const parsedUser = JSON.parse(storedUser)
           setUser(parsedUser)
-          console.log(`✅ Restored user session: ${parsedUser.display_name}`)
+          
+          // Check premium access based on KICK API username
+          if (parsedUser.username) {
+            const premiumAccess = PremiumAccess.getInstance()
+            premiumAccess.initialize()
+            const hasPremium = premiumAccess.hasPremiumAccess(parsedUser.username)
+            setHasPremium(hasPremium)
+            
+            console.log(`🔍 KICK User: ${parsedUser.username} | Premium Access: ${hasPremium ? '✅' : '❌'}`)
+          }
         } catch (error) {
-          console.error('❌ Error parsing stored user:', error)
+          console.error('Error parsing stored user:', error)
           localStorage.removeItem('kickUser')
         }
       }
     }
   }, [])
+
+  const handleUserChange = (newUser: any) => {
+    setUser(newUser)
+    
+    // Check premium access when user changes based on KICK API username
+    if (newUser && newUser.username) {
+      const premiumAccess = PremiumAccess.getInstance()
+      premiumAccess.initialize()
+      const hasPremium = premiumAccess.hasPremiumAccess(newUser.username)
+      setHasPremium(hasPremium)
+      
+      console.log(`🔍 KICK User: ${newUser.username} | Premium Access: ${hasPremium ? '✅' : '❌'}`)
+      
+      // Store user session
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kickUser', JSON.stringify(newUser))
+      }
+    } else {
+      setHasPremium(false)
+      // Clear user session
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kickUser')
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-4">
@@ -76,8 +115,19 @@ export default function Home() {
                     className="w-10 h-10 rounded-full border-2 border-green-400/50"
                   />
                   <div>
-                    <div className="text-green-400 text-sm font-medium">Logged in as</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-green-400 text-sm font-medium">Logged in as</div>
+                      {hasPremium && (
+                        <div className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full px-2 py-1">
+                          <Crown className="w-3 h-3 text-yellow-400" />
+                          <span className="text-yellow-400 text-xs font-medium">PREMIUM</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="text-white font-semibold">{user.display_name}</div>
+                    {hasPremium && (
+                      <div className="text-yellow-400 text-xs">All premium features unlocked</div>
+                    )}
                   </div>
                 </div>
                 
@@ -141,7 +191,7 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="tag-generator" className="mt-6">
-            <TagGenerator />
+            <TagGenerator user={user} hasPremium={hasPremium} />
           </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
@@ -165,8 +215,7 @@ export default function Home() {
 function AlgorithmInfo() {
   const [lastRefresh, setLastRefresh] = useState<string>('2024-03-23 10:00:00')
   const [isRefreshing, setIsRefreshing] = useState(false)
-
-  const platforms = [
+  const [platforms, setPlatforms] = useState([
     {
       name: 'YouTube',
       icon: '🎥',
@@ -277,15 +326,33 @@ function AlgorithmInfo() {
         'Share to Facebook Groups for extra reach'
       ]
     }
-  ]
+  ])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    // Simulate API call to refresh algorithm data
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setLastRefresh(new Date().toLocaleString())
-    setIsRefreshing(false)
+    try {
+      // Use AlgorithmUpdater with DeepSeek AI
+      const updater = AlgorithmUpdater.getInstance()
+      const updatedAlgorithms = await updater.updateAllAlgorithms()
+      setPlatforms(updatedAlgorithms)
+      setLastRefresh(new Date().toLocaleString())
+    } catch (error) {
+      console.error('Error refreshing algorithms:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
+
+  // Check for auto-update on component mount
+  useEffect(() => {
+    const updater = AlgorithmUpdater.getInstance()
+    updater.performAutoUpdateIfNeeded().then(updatedAlgorithms => {
+      if (updatedAlgorithms) {
+        setPlatforms(updatedAlgorithms)
+        setLastRefresh(new Date().toLocaleString())
+      }
+    })
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -510,13 +577,21 @@ function ClipAnalysis() {
 }
 
 // Tag Generator Component
-function TagGenerator() {
+function TagGenerator({ user, hasPremium }: { user: any, hasPremium: boolean }) {
   const [content, setContent] = useState('')
   const [premiumTags, setPremiumTags] = useState<string[]>([])
   const [freeTags, setFreeTags] = useState<string[]>([])
   const [premiumCount, setPremiumCount] = useState(10)
   const [freeCount, setFreeCount] = useState(5)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedPlatform, setSelectedPlatform] = useState('youtube')
+  
+  // Get premium access status based on KICK API username
+  const premiumAccess = PremiumAccess.getInstance()
+  const hasPremiumAccess = user?.username ? premiumAccess.hasPremiumAccess(user.username) : false
+  
+  // Debug logging
+  console.log(`🔍 TagGenerator - KICK User: ${user?.username || 'Not logged in'} | Premium Access: ${hasPremiumAccess ? '✅' : '❌'}`)
 
   // Free tag database (updated monthly)
   const freeTagDatabase = [
@@ -542,14 +617,18 @@ function TagGenerator() {
   }
 
   const generatePremiumTags = async () => {
+    if (!content.trim()) return
+    
     setIsGenerating(true)
-    // Simulate AI call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setPremiumTags([
-      '#aioptimized', '#viralcontent', '#trending2024', '#engagementboost', 
-      '#algorithmfriendly', '#discovermore', '#contentstrategy', '#socialgrowth',
-      '#viralmarketing', '#digitalcreator', '#influencerlife', '#contenttips'
-    ].slice(0, premiumCount))
+    try {
+      // Use real DeepSeek API
+      const tags = await generateTagsWithDeepSeek(content, selectedPlatform, 'content')
+      setPremiumTags(tags.slice(0, premiumCount))
+    } catch (error) {
+      console.error('Error generating premium tags:', error)
+      // Fallback to basic tags if API fails
+      setPremiumTags(['#aioptimized', '#viralcontent', '#trending2024', '#engagementboost'].slice(0, premiumCount))
+    }
     setIsGenerating(false)
   }
 
@@ -575,27 +654,54 @@ function TagGenerator() {
             placeholder="Describe your video, image, or content..."
             className="w-full h-32 bg-black border border-green-500/50 rounded-lg p-3 text-white placeholder-gray-500 focus:border-green-400 focus:outline-none"
           />
+          
+          {/* Platform Selection */}
+          <div className="flex items-center gap-4">
+            <Label className="text-green-400">Select Platform:</Label>
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+              className="bg-black border border-green-500/50 rounded px-3 py-1 text-white"
+            >
+              <option value="youtube">YouTube</option>
+              <option value="tiktok">TikTok</option>
+              <option value="instagram">Instagram</option>
+              <option value="twitter">Twitter</option>
+              <option value="facebook">Facebook Reels</option>
+            </select>
+          </div>
         </CardContent>
       </Card>
 
       {/* Premium Tag Generator */}
-      <Card className="bg-black border-yellow-500/30">
+      <Card className={`${hasPremiumAccess ? 'bg-black border-green-500/50' : 'bg-black border-yellow-500/30'}`}>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-yellow-400" />
-            <CardTitle className="text-yellow-400">AI Tag Generator (Premium)</CardTitle>
+            {hasPremiumAccess ? (
+              <>
+                <Crown className="w-5 h-5 text-green-400" />
+                <CardTitle className="text-green-400">AI Tag Generator (Premium Unlocked)</CardTitle>
+              </>
+            ) : (
+              <>
+                <Lock className="w-5 h-5 text-yellow-400" />
+                <CardTitle className="text-yellow-400">AI Tag Generator (Premium)</CardTitle>
+              </>
+            )}
           </div>
           <CardDescription className="text-gray-400">
-            AI-powered tag generation with real-time trend analysis
+            {hasPremiumAccess 
+              ? "AI-powered tag generation with real-time trend analysis - UNLOCKED!" 
+              : "AI-powered tag generation with real-time trend analysis"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <Label className="text-yellow-400">Number of tags:</Label>
+            <Label className={hasPremiumAccess ? "text-green-400" : "text-yellow-400"}>Number of tags:</Label>
             <select
               value={premiumCount}
               onChange={(e) => setPremiumCount(Number(e.target.value))}
-              className="bg-black border border-yellow-500/50 rounded px-3 py-1 text-white"
+              className={`bg-black ${hasPremiumAccess ? 'border-green-500/50' : 'border-yellow-500/50'} rounded px-3 py-1 text-white`}
             >
               <option value={5}>5 tags</option>
               <option value={10}>10 tags</option>
@@ -606,28 +712,33 @@ function TagGenerator() {
           
           <Button
             onClick={generatePremiumTags}
-            disabled={!content.trim() || isGenerating}
-            className="w-full bg-yellow-600 hover:bg-yellow-500 text-black"
+            disabled={!content.trim() || isGenerating || !hasPremiumAccess}
+            className={`w-full ${hasPremiumAccess ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-600 hover:bg-gray-500 text-gray-300'}`}
           >
             {isGenerating ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                 Generating AI Tags...
               </>
-            ) : (
+            ) : hasPremiumAccess ? (
               <>
                 <Star className="w-4 h-4 mr-2" />
-                Generate AI Tags (Premium)
+                Generate AI Tags
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4 mr-2" />
+                Upgrade to Premium
               </>
             )}
           </Button>
 
           {premiumTags.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-yellow-400">Generated Tags:</Label>
+              <Label className={hasPremiumAccess ? "text-green-400" : "text-yellow-400"}>Generated Tags:</Label>
               <div className="flex flex-wrap gap-2">
                 {premiumTags.map((tag, index) => (
-                  <Badge key={index} className="bg-yellow-600/20 text-yellow-400 border-yellow-500">
+                  <Badge key={index} className={hasPremiumAccess ? "bg-green-600/20 text-green-400 border-green-500" : "bg-yellow-600/20 text-yellow-400 border-yellow-500"}>
                     {tag}
                   </Badge>
                 ))}
@@ -635,11 +746,13 @@ function TagGenerator() {
             </div>
           )}
 
-          <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-3">
-            <p className="text-yellow-400 text-sm">
-              Premium features include real-time trend analysis, platform-specific optimization, and AI-powered relevance scoring.
-            </p>
-          </div>
+          {!hasPremiumAccess && (
+            <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-3">
+              <p className="text-yellow-400 text-sm">
+                Premium features include real-time trend analysis, platform-specific optimization, and AI-powered relevance scoring.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -707,8 +820,6 @@ function ContentAnalysis() {
 
   const platforms = [
     { name: 'YouTube', icon: '🎥', color: 'border-red-500' },
-    { name: 'TikTok', icon: '🎵', color: 'border-black' },
-    { name: 'Instagram', icon: '📷', color: 'border-pink-500' },
     { name: 'Facebook', icon: '👥', color: 'border-blue-600' },
     { name: 'KICK', icon: '🎮', color: 'border-green-500' },
     { name: 'Twitch', icon: '📺', color: 'border-purple-500' }

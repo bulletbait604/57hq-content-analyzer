@@ -1,5 +1,7 @@
-// Algorithm Update System - Researches and updates platform algorithm information
-// This system scrapes official sources and updates algorithm data weekly
+// Algorithm Update System - Researches and updates platform algorithm information using DeepSeek AI
+// This system uses AI research to update algorithm data weekly on Sundays
+
+import { analyzeContentWithDeepSeek, DeepSeekAnalysis } from './deepseek'
 
 export interface AlgorithmChange {
   date: string
@@ -10,316 +12,269 @@ export interface AlgorithmChange {
   url?: string
 }
 
-export interface PlatformSources {
-  [platform: string]: {
-    blogs: string[]
-    developerDocs: string[]
-    newsrooms: string[]
-    industryNews: string[]
-  }
+export interface PlatformAlgorithm {
+  name: string
+  platform: string
+  icon: string
+  color: string
+  bgColor: string
+  lastUpdate: string
+  factors: string[]
+  tips: string[]
 }
 
 export class AlgorithmUpdater {
-  private sources: PlatformSources = {
-    tiktok: {
-      blogs: [
-        'https://newsroom.tiktok.com/',
-        'https://developers.tiktok.com/blog/',
-        'https://creators.tiktok.com/'
-      ],
-      developerDocs: [
-        'https://developers.tiktok.com/docs/',
-        'https://developers.tiktok.com/api-reference/'
-      ],
-      newsrooms: [
-        'https://newsroom.tiktok.com/'
-      ],
-      industryNews: [
-        'https://socialmediaexaminer.com/tag/tiktok/',
-        'https://www.socialmediatoday.com/topic/tiktok/',
-        'https://blog.hootsuite.com/tiktok/'
-      ]
-    },
-    instagram: {
-      blogs: [
-        'https://business.instagram.com/blog/',
-        'https://about.instagram.com/blog/',
-        'https://developers.facebook.com/blog/'
-      ],
-      developerDocs: [
-        'https://developers.facebook.com/docs/instagram/',
-        'https://developers.facebook.com/docs/graph-api/'
-      ],
-      newsrooms: [
-        'https://about.instagram.com/news/'
-      ],
-      industryNews: [
-        'https://socialmediaexaminer.com/tag/instagram/',
-        'https://www.socialmediatoday.com/topic/instagram/',
-        'https://blog.hootsuite.com/instagram/'
-      ]
-    },
-    youtube: {
-      blogs: [
-        'https://blog.youtube/',
-        'https://creator.youtube.com/blog/',
-        'https://developers.google.com/youtube/blog/'
-      ],
-      developerDocs: [
-        'https://developers.google.com/youtube/',
-        'https://support.google.com/youtube/'
-      ],
-      newsrooms: [
-        'https://blog.youtube/news/'
-      ],
-      industryNews: [
-        'https://www.tubefilter.com/',
-        'https://www.socialmediaexaminer.com/tag/youtube/',
-        'https://vidooly.com/blog/youtube-algorithm/'
-      ]
-    },
-    twitter: {
-      blogs: [
-        'https://blog.x.com/',
-        'https://developers.x.com/blog/',
-        'https://about.x.com/en/blog'
-      ],
-      developerDocs: [
-        'https://developers.x.com/',
-        'https://developer.twitter.com/en/docs'
-      ],
-      newsrooms: [
-        'https://about.x.com/en/news'
-      ],
-      industryNews: [
-        'https://www.socialmediaexaminer.com/tag/twitter/',
-        'https://www.socialmediatoday.com/topic/twitter/',
-        'https://blog.hootsuite.com/twitter/'
-      ]
+  private static instance: AlgorithmUpdater
+  private lastUpdate: string
+
+  private constructor() {
+    this.lastUpdate = this.getLastUpdateFromStorage()
+  }
+
+  static getInstance(): AlgorithmUpdater {
+    if (!AlgorithmUpdater.instance) {
+      AlgorithmUpdater.instance = new AlgorithmUpdater()
+    }
+    return AlgorithmUpdater.instance
+  }
+
+  private getLastUpdateFromStorage(): string {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('algorithmLastUpdate')
+      return stored || new Date().toISOString()
+    }
+    return new Date().toISOString()
+  }
+
+  private saveLastUpdateToStorage(date: string): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('algorithmLastUpdate', date)
+    }
+    this.lastUpdate = date
+  }
+
+  getLastUpdate(): string {
+    return this.lastUpdate
+  }
+
+  shouldAutoUpdate(): boolean {
+    const now = new Date()
+    const lastUpdate = new Date(this.lastUpdate)
+    const daysSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24)
+    
+    // Check if it's Sunday and at least 7 days have passed
+    const isSunday = now.getDay() === 0 // 0 = Sunday
+    const isPastMidnight = now.getHours() >= 0 // After midnight
+    
+    return isSunday && isPastMidnight && daysSinceUpdate >= 7
+  }
+
+  async updateAlgorithmWithAI(platform: string): Promise<PlatformAlgorithm> {
+    try {
+      console.log(`🤖 Using DeepSeek AI to research ${platform} algorithm...`)
+      
+      const systemPrompt = `You are an expert social media algorithm researcher specializing in 2026 platform updates. 
+      
+Research the latest algorithm changes and factors for ${platform} as of March 2024. Focus on:
+1. Current ranking factors and their importance
+2. Recent algorithm updates and changes
+3. Best practices for content creators
+4. Engagement metrics that matter most
+5. Content optimization strategies
+
+Provide specific, actionable insights that content creators can use immediately.
+
+Format your response as JSON with this structure:
+{
+  "factors": ["factor1", "factor2", "factor3", ...],
+  "tips": ["tip1", "tip2", "tip3", ...]
+}
+
+Be thorough and provide 6-8 factors and 5-7 tips for each platform.`
+
+      const userPrompt = `Research and analyze the current ${platform} algorithm for 2024. 
+      Focus on the latest trends, ranking factors, and optimization strategies that content creators need to know.`
+
+      // Use DeepSeek API for research
+      const analysis = await analyzeContentWithDeepSeek(
+        'algorithm_research',
+        platform,
+        `${platform} Algorithm Analysis 2024`,
+        userPrompt,
+        systemPrompt
+      )
+
+      // Create platform algorithm object
+      const platformConfig = this.getPlatformConfig(platform)
+      
+      return {
+        name: platform,
+        platform,
+        icon: platformConfig.icon,
+        color: platformConfig.color,
+        bgColor: platformConfig.bgColor,
+        lastUpdate: new Date().toISOString(),
+        factors: analysis.factors && analysis.factors.length > 0 ? analysis.factors : platformConfig.defaultFactors,
+        tips: analysis.tips && analysis.tips.length > 0 ? analysis.tips : platformConfig.defaultTips
+      }
+    } catch (error) {
+      console.error(`Error updating ${platform} algorithm with AI:`, error)
+      // Return fallback data
+      return this.getFallbackAlgorithm(platform)
     }
   }
 
-  private keywordPatterns = {
-    algorithm: ['algorithm', 'algorithm update', 'algorithm change', 'recommendation'],
-    update: ['update', 'new feature', 'change', 'improvement', 'enhancement'],
-    impact: ['launch', 'rollout', 'release', 'beta', 'test', 'experiment'],
-    high: ['major', 'significant', 'important', 'critical', 'game-changing'],
-    medium: ['update', 'improvement', 'enhancement', 'optimization'],
-    low: ['minor', 'small', 'tweak', 'adjustment', 'fix']
-  }
-
-  async checkForUpdates(platform?: string): Promise<AlgorithmChange[]> {
-    console.log(`🔍 Checking algorithm updates for ${platform || 'all platforms'}...`)
+  async updateAllAlgorithms(): Promise<PlatformAlgorithm[]> {
+    console.log('🔄 Starting weekly algorithm update with DeepSeek AI...')
     
-    const allChanges: AlgorithmChange[] = []
-    const platforms = platform ? [platform] : Object.keys(this.sources)
+    const platforms = ['YouTube', 'TikTok', 'Instagram', 'Twitter', 'Facebook Reels']
+    const updatedAlgorithms: PlatformAlgorithm[] = []
     
-    for (const platformName of platforms) {
+    for (const platform of platforms) {
       try {
-        const changes = await this.checkPlatformUpdates(platformName)
-        allChanges.push(...changes)
+        const algorithm = await this.updateAlgorithmWithAI(platform)
+        updatedAlgorithms.push(algorithm)
+        console.log(`✅ Updated ${platform} algorithm with AI research`)
       } catch (error) {
-        console.error(`❌ Failed to check ${platformName} updates:`, error)
+        console.error(`❌ Failed to update ${platform}:`, error)
+        // Add fallback algorithm
+        updatedAlgorithms.push(this.getFallbackAlgorithm(platform))
       }
     }
     
-    // Sort by date (most recent first)
-    allChanges.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    // Save update timestamp
+    this.saveLastUpdateToStorage(new Date().toISOString())
     
-    console.log(`✅ Found ${allChanges.length} algorithm updates`)
-    return allChanges
+    console.log('✅ Algorithm update complete!')
+    return updatedAlgorithms
   }
 
-  private async checkPlatformUpdates(platform: string): Promise<AlgorithmChange[]> {
-    console.log(`🔍 Checking ${platform} algorithm updates...`)
-    
-    const sources = this.sources[platform]
-    const changes: AlgorithmChange[] = []
-    
-    // In a real implementation, this would:
-    // 1. Scrape the URLs for algorithm-related content
-    // 2. Parse and categorize the changes
-    // 3. Determine impact levels
-    // 4. Return structured data
-    
-    // For now, return mock recent changes based on real 2026 trends
-    const mockChanges = this.getMock2026Changes(platform)
-    
-    return mockChanges
-  }
-
-  private getMock2026Changes(platform: string): AlgorithmChange[] {
-    const today = new Date()
-    const changes: AlgorithmChange[] = []
-
-    switch (platform) {
-      case 'tiktok':
-        changes.push(
-          {
-            date: '2026-03-22',
-            platform: 'TikTok',
-            changes: [
-              'New "AI Content Quality" scoring system implemented',
-              'Enhanced long-form video recommendations (3+ minutes)',
-              'Updated creator collaboration algorithm'
-            ],
-            impact: 'high',
-            source: 'TikTok Creator Portal',
-            url: 'https://creators.tiktok.com/'
-          },
-          {
-            date: '2026-03-15',
-            platform: 'TikTok',
-            changes: [
-              'Improved "For You" page personalization',
-              'New sound discovery algorithm'
-            ],
-            impact: 'medium',
-            source: 'TikTok Newsroom',
-            url: 'https://newsroom.tiktok.com/'
-          }
-        )
-        break
-        
-      case 'instagram':
-        changes.push(
-          {
-            date: '2026-03-20',
-            platform: 'Instagram',
-            changes: [
-              'Reels algorithm now prioritizes educational content',
-              'New "Close Friends" engagement boost',
-              'Enhanced hashtag relevance scoring'
-            ],
-            impact: 'high',
-            source: 'Instagram Business Blog',
-            url: 'https://business.instagram.com/blog/'
-          }
-        )
-        break
-        
-      case 'youtube':
-        changes.push(
-          {
-            date: '2026-03-18',
-            platform: 'YouTube',
-            changes: [
-              'Shorts algorithm updated for better content discovery',
-              'New "Session Watch Time" metric prioritization',
-              'Enhanced metadata importance for search'
-            ],
-            impact: 'high',
-            source: 'YouTube Creator Blog',
-            url: 'https://creator.youtube.com/blog/'
-          }
-        )
-        break
-        
-      case 'twitter':
-        changes.push(
-          {
-            date: '2026-03-22',
-            platform: 'Twitter/X',
-            changes: [
-              'New "Community Notes" algorithm integration',
-              'Enhanced video content prioritization',
-              'Updated Spaces discovery system'
-            ],
-            impact: 'high',
-            source: 'X Developer Blog',
-            url: 'https://developers.x.com/blog/'
-          },
-          {
-            date: '2026-03-10',
-            platform: 'Twitter/X',
-            changes: [
-              'Algorithm favors longer-form content',
-              'New "Grok AI" content analysis'
-            ],
-            impact: 'medium',
-            source: 'X Newsroom',
-            url: 'https://about.x.com/en/news'
-          }
-        )
-        break
-    }
-
-    return changes
-  }
-
-  async scheduleWeeklyUpdates(): Promise<void> {
-    console.log('📅 Scheduling weekly algorithm updates...')
-    
-    // This would be implemented with a cron job or similar scheduling system
-    // For now, we'll just log that it's scheduled
-    
-    const schedule = {
-      frequency: 'weekly',
-      dayOfWeek: 'Monday',
-      time: '09:00 UTC',
-      platforms: ['tiktok', 'instagram', 'youtube', 'twitter'],
-      sources: Object.keys(this.sources).length * 4, // 4 sources per platform
-      nextRun: this.getNextMonday()
+  private getPlatformConfig(platform: string) {
+    const configs = {
+      'YouTube': {
+        icon: '🎥',
+        color: 'border-red-500',
+        bgColor: 'bg-red-500/10',
+        defaultFactors: [
+          'Watch time retention (first 30 seconds critical)',
+          'Click-through rate from thumbnails',
+          'Session watch time contribution',
+          'User engagement (likes, comments, shares)',
+          'Video upload consistency and timing',
+          'Keyword optimization in titles and descriptions'
+        ],
+        defaultTips: [
+          'Create compelling thumbnails with high contrast',
+          'Hook viewers in first 15 seconds',
+          'Use end screens to promote other content',
+          'Post during peak audience hours (6-9 PM local time)',
+          'Include relevant keywords in first 2 lines of description'
+        ]
+      },
+      'TikTok': {
+        icon: '🎵',
+        color: 'border-black',
+        bgColor: 'bg-black/20',
+        defaultFactors: [
+          'Video completion rate (critical for virality)',
+          'Re-watch value and loop potential',
+          'User engagement velocity (first hour)',
+          'Trending sound usage',
+          'Video resolution and quality',
+          'Posting frequency and consistency'
+        ],
+        defaultTips: [
+          'Use trending sounds but add unique twist',
+          'Keep videos under 30 seconds for max reach',
+          'Text overlays should be readable without sound',
+          'Post 3-5 times daily during peak hours',
+          'Engage with comments within first hour'
+        ]
+      },
+      'Instagram': {
+        icon: '📷',
+        color: 'border-pink-500',
+        bgColor: 'bg-pink-500/10',
+        defaultFactors: [
+          'Engagement rate (likes + comments ÷ followers)',
+          'Story completion rate',
+          'Reels share velocity',
+          'Hashtag relevance and mix',
+          'Posting consistency',
+          'User interaction speed'
+        ],
+        defaultTips: [
+          'Mix popular and niche hashtags (10-15 total)',
+          'Post Reels with trending audio',
+          'Use Instagram Stories for behind-the-scenes',
+          'Engage with comments within 30 minutes',
+          'Post during 7-9 PM for maximum reach'
+        ]
+      },
+      'Twitter': {
+        icon: '🐦',
+        color: 'border-blue-500',
+        bgColor: 'bg-blue-500/10',
+        defaultFactors: [
+          'Tweet engagement rate',
+          'Retweet velocity',
+          'Reply thread engagement',
+          'Hashtag performance',
+          'Posting timing',
+          'Media attachment performance'
+        ],
+        defaultTips: [
+          'Post threads for increased engagement',
+          'Use 2-3 relevant hashtags maximum',
+          'Include high-quality images or videos',
+          'Post during 8-10 AM and 2-4 PM',
+          'Engage with replies quickly'
+        ]
+      },
+      'Facebook Reels': {
+        icon: '👥',
+        color: 'border-blue-600',
+        bgColor: 'bg-blue-600/10',
+        defaultFactors: [
+          'Video completion rate',
+          'Share velocity',
+          'Comment engagement',
+          'Original content vs reposts',
+          'Audio usage trends',
+          'Cross-platform performance'
+        ],
+        defaultTips: [
+          'Keep Reels under 30 seconds',
+          'Use trending audio from Facebook library',
+          'Add captions for silent viewing',
+          'Post 1-2 Reels daily',
+          'Share to Facebook Groups for extra reach'
+        ]
+      }
     }
     
-    console.log('✅ Weekly update schedule configured:', schedule)
+    return configs[platform as keyof typeof configs] || configs['YouTube']
   }
 
-  private getNextMonday(): string {
-    const today = new Date()
-    const daysUntilMonday = (8 - today.getDay()) % 7 || 7
-    const nextMonday = new Date(today)
-    nextMonday.setDate(today.getDate() + daysUntilMonday)
-    nextMonday.setHours(9, 0, 0, 0) // 9:00 UTC
-    
-    return nextMonday.toISOString()
+  private getFallbackAlgorithm(platform: string): PlatformAlgorithm {
+    const config = this.getPlatformConfig(platform)
+    return {
+      name: platform,
+      platform,
+      icon: config.icon,
+      color: config.color,
+      bgColor: config.bgColor,
+      lastUpdate: new Date().toISOString(),
+      factors: config.defaultFactors,
+      tips: config.defaultTips
+    }
   }
 
-  async getUpdateHistory(days: number = 30): Promise<AlgorithmChange[]> {
-    console.log(`📚 Getting update history for last ${days} days...`)
-    
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - days)
-    
-    // In a real implementation, this would query a database
-    // For now, return recent mock changes
-    const allChanges = await this.checkForUpdates()
-    
-    return allChanges.filter(change => 
-      new Date(change.date) >= cutoffDate
-    )
-  }
-
-  generateWeeklyReport(): string {
-    const report = `
-# Weekly Algorithm Update Report
-Generated: ${new Date().toLocaleDateString()}
-
-## Summary
-This report summarizes algorithm changes across all major social media platforms in the past week.
-
-## Key Updates
-- TikTok: Enhanced AI content quality scoring
-- Instagram: Reels educational content prioritization  
-- YouTube: Shorts discovery algorithm improvements
-- Twitter/X: Community Notes integration
-
-## Recommendations
-- Focus on authentic, high-quality content
-- Leverage new algorithm features
-- Monitor platform-specific changes
-- Adjust content strategy accordingly
-
-## Next Update
-${this.getNextMonday()}
-
----
-*This report is automatically generated weekly from official platform sources.*
-    `
-    
-    return report.trim()
+  async performAutoUpdateIfNeeded(): Promise<PlatformAlgorithm[] | null> {
+    if (this.shouldAutoUpdate()) {
+      console.log('🤖 Triggering automatic Sunday algorithm update with DeepSeek AI...')
+      return await this.updateAllAlgorithms()
+    }
+    return null
   }
 }
-
-// Export singleton instance
-export const algorithmUpdater = new AlgorithmUpdater()

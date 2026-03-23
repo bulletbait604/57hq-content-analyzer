@@ -9,6 +9,8 @@ export interface DeepSeekAnalysis {
   insights: string[]
   algorithmScore: number
   recommendations: string[]
+  factors?: string[]
+  tips?: string[]
 }
 
 export async function analyzeContentWithDeepSeek(
