@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { KickAuth } from '@/components/KickAuth'
 import { ClipAnalysis } from '@/components/ClipAnalysis'
+import { Settings as SettingsComponent } from '@/components/Settings'
+import { Footer } from '@/components/Footer'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { PremiumAccess } from '@/lib/premium-access'
 import { 
@@ -31,17 +33,28 @@ import {
   Eye,
   Heart,
   Share2,
-  Crown
+  Crown,
+  Zap
 } from 'lucide-react'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [hasPremium, setHasPremium] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
 
   // Check for existing session on mount
   useEffect(() => {
+    // Initialize premium access system
+    PremiumAccess.getInstance().initialize()
+    
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('kickUser')
+      const storedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null
+      
+      if (storedTheme) {
+        setTheme(storedTheme)
+        applyTheme(storedTheme)
+      }
       
       if (storedUser) {
         try {
@@ -55,6 +68,21 @@ export default function Home() {
       }
     }
   }, [])
+
+  // Apply theme to document
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  const applyTheme = (newTheme: 'dark' | 'light') => {
+    if (newTheme === 'light') {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
+    } else {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    }
+  }
 
   const handleUserChange = (userData: any) => {
     setUser(userData)
@@ -144,13 +172,13 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="legal" className="mt-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-green-400 mb-2">Settings</h2>
-              <p className="text-gray-300">Manage your account and preferences</p>
-            </div>
+            <SettingsComponent user={user} hasPremium={hasPremium} />
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Footer */}
+      <Footer language={user ? localStorage.getItem('language') || 'en' : 'en'} />
     </div>
   )
 }
