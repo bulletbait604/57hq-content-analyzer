@@ -400,18 +400,6 @@ export default function Home() {
     }
   }
 
-  // Load user badges when user logs in
-  useEffect(() => {
-    if (user) {
-      getUserBadges(user.username).then(badges => {
-        setUserBadges(badges)
-        console.log('🏅 User badges from bulletbait604:', badges)
-      }).catch(error => {
-        console.error('❌ Badge fetch error:', error)
-      })
-    }
-  }, [user])
-
   // Check if user has subscriber badge
   const hasSubscriberBadge = userBadges.some((badge: any) => 
     badge.type === 'subscriber' || 
