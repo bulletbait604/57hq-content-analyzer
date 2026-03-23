@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input-proper'
 import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { KickAuth } from '@/components/KickAuth'
-import { YouTubeInfo } from '@/components/YouTubeInfo'
+import { ClipAnalysis } from '@/components/ClipAnalysis'
 import { generateTagsWithDeepSeek } from '@/lib/deepseek'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { PremiumAccess } from '@/lib/premium-access'
@@ -205,15 +205,24 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
-            <ContentAnalysis />
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-green-400 mb-2">Content Analysis</h2>
+              <p className="text-gray-300">Analyze your content performance across platforms</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="legal" className="mt-6">
-            <Legal />
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-green-400 mb-2">Settings</h2>
+              <p className="text-gray-300">Manage your account and preferences</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="premium" className="mt-6">
-            <Premium />
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-green-400 mb-2">Premium</h2>
+              <p className="text-gray-300">Premium features and benefits</p>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
@@ -221,7 +230,91 @@ export default function Home() {
   )
 }
 
-// Algorithm Info Component
+// Tag Generator Component
+function TagGenerator({ user, hasPremium }: { user: any; hasPremium: boolean }) {
+  const [content, setContent] = useState('')
+  const [freeTags, setFreeTags] = useState<string[]>([])
+  const [premiumTags, setPremiumTags] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedPlatform, setSelectedPlatform] = useState('youtube shorts')
+  
+  const enhancedGenerator = EnhancedTagGenerator.getInstance()
+  
+  const generateFreeTags = () => {
+    if (!content.trim()) return
+    
+    try {
+      const result = enhancedGenerator.generateEnhancedTags(content, selectedPlatform, 10)
+      setFreeTags(result.tags)
+    } catch (error) {
+      console.error('Error generating tags:', error)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-green-400 mb-2">Tag Generator</h2>
+        <p className="text-gray-300">Generate optimized tags for your content</p>
+      </div>
+      
+      <Card className="bg-black border-green-500/30">
+        <CardHeader>
+          <CardTitle className="text-green-400">Free Tag Generator</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-green-400">Content Description</Label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full bg-black border border-green-500/50 rounded p-3 text-white"
+              rows={3}
+              placeholder="Describe your content..."
+            />
+          </div>
+          
+          <div>
+            <Label className="text-green-400">Platform</Label>
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+              className="w-full bg-black border border-green-500/50 rounded p-2 text-white"
+            >
+              <option value="youtube shorts">YouTube Shorts</option>
+              <option value="youtube long">YouTube Long</option>
+              <option value="tiktok">TikTok</option>
+              <option value="instagram">Instagram</option>
+              <option value="twitter">Twitter</option>
+              <option value="facebook reels">Facebook Reels</option>
+            </select>
+          </div>
+          
+          <Button
+            onClick={generateFreeTags}
+            disabled={!content.trim()}
+            className="w-full bg-green-600 hover:bg-green-500 text-black"
+          >
+            Generate Tags
+          </Button>
+          
+          {freeTags.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-green-400">Generated Tags:</Label>
+              <div className="flex flex-wrap gap-2">
+                {freeTags.map((tag, index) => (
+                  <Badge key={index} className="bg-green-600/20 text-green-400 border-green-500">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
 function AlgorithmInfo() {
   const [lastRefresh, setLastRefresh] = useState<string>('2024-03-23 10:00:00')
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -509,26 +602,185 @@ function AlgorithmInfo() {
       <Card className="bg-black border-green-500/30">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 text-green-400">
-            <RefreshCw className="w-5 h-5" />
-            <span className="font-semibold">Auto-Update Schedule</span>
-          </div>
-          <p className="text-gray-300 mt-2">
-            Algorithm data is automatically refreshed every Sunday at 12:00 AM UTC using AI research to ensure you always have the latest insights.
-          </p>
-        </CardContent>
-      </Card>
     </div>
-  )
-}
+
+    {/* Platform Cards */}
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {platforms.map((platform, index) => (
+        <Card key={index} className={`bg-black border ${platform.color} hover:${platform.color.replace('border-', 'bg-')}/20 transition-all duration-300`}>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className={`text-3xl p-2 rounded-lg ${platform.bgColor} border ${platform.color}`}>
+                {platform.icon}
+              </div>
+              <div>
+                <CardTitle className="text-green-400">{platform.name}</CardTitle>
+                <CardDescription className="text-gray-400 text-xs">
+                  Updated: {platform.lastUpdate}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="text-green-300 font-semibold mb-2 flex items-center">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Key Factors
+              </h4>
+              <ul className="space-y-1">
+                {platform.factors.map((factor, idx) => (
+                  <li key={idx} className="text-gray-300 text-sm flex items-start">
+                    <span className="text-green-400 mr-2">•</span>
+                    {factor}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-green-300 font-semibold mb-2 flex items-center">
+                <Star className="w-4 h-4 mr-2" />
+                Pro Tips
+              </h4>
+              <ul className="space-y-1">
+                {platform.tips.map((tip, idx) => (
+                  <li key={idx} className="text-gray-300 text-sm flex items-start">
+                    <span className="text-green-400 mr-2">✓</span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    {/* Auto-update notice */}
+    <Card className="bg-black border-green-500/30">
+      <CardContent className="pt-6">
+        <div className="flex items-center gap-2 text-green-400">
+          <RefreshCw className="w-5 h-5" />
+          <span className="font-semibold">Auto-Update Schedule</span>
+        </div>
+        <p className="text-gray-300 mt-2">
+          Algorithm data is automatically refreshed every Sunday at 12:00 AM UTC using AI research to ensure you always have the latest insights.
+        </p>
+      </CardContent>
+    </Card>
+
+    {/* Analysis Results */}
+    {analysisResult && (
+      <div className="space-y-6">
+        {/* Content Analysis */}
+        <Card className="bg-black border-green-500/30">
+          <CardHeader>
+            <CardTitle className="text-green-400 flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Content Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-300">{analysisResult.contentAnalysis}</p>
+          </CardContent>
+        </Card>
+
+        {/* Algorithm Analysis */}
+        <Card className="bg-black border-blue-500/30">
+          <CardHeader>
+            <CardTitle className="text-blue-400 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Platform Algorithm Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-300">{analysisResult.algorithmAnalysis}</p>
+          </CardContent>
+        </Card>
+
+        {/* Title Suggestions */}
+        <Card className="bg-black border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="text-purple-400 flex items-center gap-2">
+              <Hash className="w-5 h-5" />
+              Optimized Title Suggestions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {analysisResult.titleSuggestions.map((title: string, index: number) => (
+                <div key={index} className="flex items-center gap-2 p-3 bg-black/50 rounded-lg">
+                  <div className="text-purple-400 font-medium">{index + 1}.</div>
+                  <div className="text-white">{title}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tag Recommendations */}
+        <Card className="bg-black border-yellow-500/30">
+          <CardHeader>
+            <CardTitle className="text-yellow-400 flex items-center gap-2">
+              <Hash className="w-5 h-5" />
+              Tag Recommendations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {analysisResult.tagRecommendations.map((tag: string, index: number) => (
+                <Badge key={index} className="bg-yellow-600/20 text-yellow-400 border-yellow-500">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Description Optimization */}
+        <Card className="bg-black border-pink-500/30">
+          <CardHeader>
+            <CardTitle className="text-pink-400 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Optimized Description
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-300">{analysisResult.descriptionOptimization}</p>
+          </CardContent>
+        </Card>
+
+        {/* Editing Tips */}
+        <Card className="bg-black border-orange-500/30">
+          <CardHeader>
+            <CardTitle className="text-orange-400 flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              Editing Tips for Maximum Engagement
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {analysisResult.editingTips.map((tip: string, index: number) => (
+                <div key={index} className="flex items-start gap-2 p-3 bg-black/50 rounded-lg">
+                  <div className="text-orange-400">•</div>
+                  <div className="text-gray-300">{tip}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+  </div>
+)
 
 // Clip Analysis Component
 function ClipAnalysis() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('youtube')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('youtube shorts')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<any>(null)
 
   const platforms = [
-    { value: 'youtube', label: 'YouTube', icon: '🎥' },
     { value: 'youtube shorts', label: 'YouTube Shorts', icon: '⚡' },
     { value: 'youtube long', label: 'YouTube Long', icon: '📹' },
     { value: 'tiktok', label: 'TikTok', icon: '🎵' },
@@ -541,6 +793,7 @@ function ClipAnalysis() {
     const file = event.target.files?.[0]
     if (file) {
       setSelectedFile(file)
+      setAnalysisResult(null) // Reset previous results
     }
   }
 
@@ -548,9 +801,66 @@ function ClipAnalysis() {
     if (!selectedFile) return
     
     setIsAnalyzing(true)
-    // Simulate analysis
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    setIsAnalyzing(false)
+    
+    try {
+      // Use DeepSeek AI for comprehensive analysis
+      const analysisPrompt = `Analyze this uploaded video clip for ${selectedPlatform} optimization. 
+
+Please provide:
+1. Content Analysis: What the clip is about, key themes, visual elements, audio quality
+2. Platform Algorithm Analysis: How this content performs on ${selectedPlatform} based on current algorithm factors
+3. Title Suggestions: 5 optimized titles for maximum visibility and engagement
+4. Tag Recommendations: 15-20 highly relevant tags for ${selectedPlatform}
+5. Description Optimization: SEO-optimized description with relevant keywords
+6. Editing Tips: Specific recommendations to improve views and engagement for ${selectedPlatform}
+
+Format your response as JSON with these sections:
+{
+  "contentAnalysis": "...",
+  "algorithmAnalysis": "...",
+  "titleSuggestions": ["...", "...", "...", "...", "..."],
+  "tagRecommendations": ["...", "...", "..."],
+  "descriptionOptimization": "...",
+  "editingTips": ["...", "...", "...", "...", "..."]
+}`
+
+      // For now, simulate the analysis since we can't actually analyze video content
+      // In production, this would use the actual DeepSeek API with video analysis capabilities
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      
+      // Simulated DeepSeek AI response
+      const mockDeepSeekResponse = {
+        contentAnalysis: "This is a high-energy gaming clip featuring intense gameplay moments with fast-paced editing and engaging audio. The content shows skilled gameplay with impressive highlights and clutch moments.",
+        algorithmAnalysis: `For ${selectedPlatform}, this content performs well due to high engagement potential. The fast pace and visual appeal align with ${selectedPlatform === 'youtube shorts' ? 'the Shorts algorithm preference for quick, engaging content' : 'long-form content value and retention metrics'}.`,
+        titleSuggestions: [
+          "INSANE Gaming Moment You Won't Believe! 🎮",
+          "This Clip Changed Everything... 🤯",
+          "Most Satisfying Gaming Clip Ever! ✨",
+          "When Your Gaming Skills Are On Another Level 🔥",
+          "This Moment Was PURE INSANITY! 💥"
+        ],
+        tagRecommendations: [
+          'gaming', 'clips', 'highlights', 'insane', 'moments', 'epic', 'gamingclips',
+          'gameplay', 'skills', 'montage', 'best', 'viral', 'trending', 'awesome',
+          'incredible', 'unbelievable', 'mustsee', 'share', 'like', 'comment'
+        ],
+        descriptionOptimization: "Watch this incredible gaming moment that will blow your mind! 🎮 Epic gameplay highlights with insane skill moments. Don't forget to LIKE, COMMENT, and SUBSCRIBE for more amazing content! 🔥 #gaming #clips #highlights",
+        editingTips: [
+          "Add a stronger hook in the first 2 seconds to grab attention",
+          "Use trending audio to increase discoverability",
+          "Add text overlays for silent viewing",
+          "Optimize video length for platform (15-25 seconds ideal)",
+          "Include a clear call-to-action at the end"
+        ]
+      }
+      
+      setAnalysisResult(mockDeepSeekResponse)
+      
+    } catch (error) {
+      console.error('Analysis failed:', error)
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   return (
