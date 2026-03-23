@@ -32,7 +32,7 @@ export default function Home() {
     setIsLoadingSubscriber(true)
     try {
       const lumiaAPI = getLumiaAPI()
-      const response = await lumiaAPI.checkSubscriberStatusRapidAPI(username)
+      const response = await lumiaAPI.checkSubscriberStatus(username)
       
       if (response.success && response.data) {
         setSubscriberStatus(response.data.is_subscriber)

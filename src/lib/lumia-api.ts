@@ -21,7 +21,7 @@ export class LumiaAPI {
 
   constructor(apiKey: string) {
     this.apiKey = apiKey
-    this.baseUrl = 'https://api.lumia.com/v1' // Replace with actual Lumia API URL
+    this.baseUrl = 'http://localhost:39231/api' // Lumia API endpoint
   }
 
   // Check if user is a subscriber
@@ -29,7 +29,7 @@ export class LumiaAPI {
     try {
       console.log(`🔍 Checking subscriber status for ${username} via Lumia API`)
       
-      const response = await fetch(`${this.baseUrl}/users/${username}/subscription`, {
+      const response = await fetch(`${this.baseUrl}/user/${username}/subscription`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
@@ -48,13 +48,13 @@ export class LumiaAPI {
       return {
         success: true,
         data: {
-          id: data.id,
-          username: data.username,
-          display_name: data.display_name,
-          profile_image_url: data.profile_image_url,
-          is_subscriber: data.is_subscriber || false,
-          subscription_tier: data.subscription_tier,
-          subscription_expires: data.subscription_expires
+          id: data.id || username,
+          username: data.username || username,
+          display_name: data.display_name || data.username || username,
+          profile_image_url: data.profile_image_url || '',
+          is_subscriber: data.is_subscriber || data.subscriber || false,
+          subscription_tier: data.subscription_tier || data.tier || 'basic',
+          subscription_expires: data.subscription_expires || data.expires
         }
       }
     } catch (error) {
