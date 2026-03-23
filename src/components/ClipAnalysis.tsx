@@ -31,7 +31,7 @@ interface AnalysisResult {
   editingTips: string[]
   algorithmInsights: string[]
   researchTimestamp: Date
-  geminiInsights?: {
+  deepseekInsights?: {
     algorithmResearch: string
     trendingOpportunities: string
     engagementTriggers: string[]
@@ -70,8 +70,8 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
     }
   }
 
-  const analyzeWithGemini = async (content: string, platform: string) => {
-    const googlePrompt = `You are a senior social media algorithm researcher with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
+  const analyzeWithDeepSeek = async (content: string, platform: string) => {
+    const deepseekPrompt = `You are a senior social media algorithm researcher with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
 
 CONTENT: ${content}
 
@@ -195,60 +195,92 @@ RECENT ALGORITHM UPDATES:
 
 Based on this deep algorithm research, provide comprehensive optimization recommendations in JSON format:
 {
+  "clipTitle": "Extracted or suggested title",
+  "titleSuggestions": ["Title 1", "Title 2", "Title 3"],
+  "clipDescription": "Extracted or suggested description",
+  "descriptionSuggestions": ["Description 1", "Description 2", "Description 3"],
+  "tags": ["tag1", "tag2", "tag3", "..."],
+  "tagSuggestions": ["suggestion1", "suggestion2", "..."],
+  "editingTips": ["Tip 1", "Tip 2", "Tip 3"],
+  "algorithmInsights": ["Insight 1", "Insight 2"],
   "algorithmResearch": "Detailed analysis of current ${platform} algorithm factors and how this content aligns",
-  "titleOptimization": "Specific title strategy based on algorithm factors and trending patterns",
-  "descriptionOptimization": "Description strategy optimized for ${platform} discovery and engagement",
-  "tagStrategy": "Comprehensive tag strategy including trending, niche, and algorithm-specific tags",
-  "editingRecommendations": ["Specific edit recommendation 1", "Specific edit recommendation 2", "Specific edit recommendation 3"],
   "trendingOpportunities": "Current trending topics and hashtags that align with this content",
   "engagementTriggers": ["Psychological trigger 1", "Psychological trigger 2", "Psychological trigger 3"],
-  "algorithmInsights": ["Specific algorithm insight 1", "Specific algorithm insight 2"],
   "performancePrediction": "Predicted performance based on algorithm alignment and trending patterns"
 }`
 
-    // Check if Google API key is available
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY
-    if (!apiKey || apiKey === 'your_google_api_key_here') {
-      console.warn('Google AI API key not configured, skipping Gemini analysis')
-      return null
-    }
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || 'sk-670a1aa1928848fdaec6e9ce4aff2ee6'}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: googlePrompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
-        }
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert video content analyst. Always respond with valid JSON only.'
+          },
+          {
+            role: 'user',
+            content: deepseekPrompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
       })
     })
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('Google AI API Error:', response.status, errorData)
-      return null
+      console.error('DeepSeek API Error:', response.status, errorData)
+      throw new Error(`DeepSeek API request failed: ${response.status}`)
     }
 
     const data = await response.json()
-    const text = data.candidates[0].content.parts[0].text
-    console.log('Gemini Response:', text)
+    const analysisText = data.choices[0].message.content
+    console.log('DeepSeek Response:', analysisText)
     
+    // Parse the JSON response
     try {
-      return JSON.parse(text)
-    } catch (parseError) {
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0])
+      const parsed = JSON.parse(analysisText)
+      
+      // Ensure all required fields are present
+      return {
+        clipTitle: parsed.clipTitle || 'Untitled Video',
+        titleSuggestions: Array.isArray(parsed.titleSuggestions) ? parsed.titleSuggestions : [],
+        clipDescription: parsed.clipDescription || 'No description available',
+        descriptionSuggestions: Array.isArray(parsed.descriptionSuggestions) ? parsed.descriptionSuggestions : [],
+        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+        tagSuggestions: Array.isArray(parsed.tagSuggestions) ? parsed.tagSuggestions : [],
+        editingTips: Array.isArray(parsed.editingTips) ? parsed.editingTips : [],
+        algorithmInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights : [],
+        algorithmResearch: parsed.algorithmResearch || '',
+        trendingOpportunities: parsed.trendingOpportunities || '',
+        engagementTriggers: Array.isArray(parsed.engagementTriggers) ? parsed.engagementTriggers : [],
+        performancePrediction: parsed.performancePrediction || ''
       }
-      console.error('Could not parse Gemini response:', text)
+    } catch (parseError) {
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        return {
+          clipTitle: parsed.clipTitle || 'Untitled Video',
+          titleSuggestions: Array.isArray(parsed.titleSuggestions) ? parsed.titleSuggestions : [],
+          clipDescription: parsed.clipDescription || 'No description available',
+          descriptionSuggestions: Array.isArray(parsed.descriptionSuggestions) ? parsed.descriptionSuggestions : [],
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+          tagSuggestions: Array.isArray(parsed.tagSuggestions) ? parsed.tagSuggestions : [],
+          editingTips: Array.isArray(parsed.editingTips) ? parsed.editingTips : [],
+          algorithmInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights : [],
+          algorithmResearch: parsed.algorithmResearch || '',
+          trendingOpportunities: parsed.trendingOpportunities || '',
+          engagementTriggers: Array.isArray(parsed.engagementTriggers) ? parsed.engagementTriggers : [],
+          performancePrediction: parsed.performancePrediction || ''
+        }
+      }
+      console.error('Could not parse DeepSeek response:', analysisText)
       return null
     }
   }
@@ -298,30 +330,30 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
 - Generate trending hashtags and optimization strategies`
       }
 
-      // Analyze with Gemini API only - enhanced for actual content analysis
-      const geminiResult = await analyzeWithGemini(content, selectedPlatform)
+      // Analyze with DeepSeek API only - enhanced for actual content analysis
+      const deepseekResult = await analyzeWithDeepSeek(content, selectedPlatform)
       
-      if (!geminiResult) {
-        throw new Error('Gemini analysis failed')
+      if (!deepseekResult) {
+        throw new Error('DeepSeek analysis failed')
       }
       
-      // Process Gemini results
+      // Process DeepSeek results
       const analysisData = {
-        clipTitle: geminiResult.clipTitle || 'Untitled Video',
-        titleSuggestions: Array.isArray(geminiResult.titleSuggestions) ? geminiResult.titleSuggestions : [],
-        clipDescription: geminiResult.clipDescription || 'No description available',
-        descriptionSuggestions: Array.isArray(geminiResult.descriptionSuggestions) ? geminiResult.descriptionSuggestions : [],
-        tags: Array.isArray(geminiResult.tags) ? geminiResult.tags : [],
-        tagSuggestions: Array.isArray(geminiResult.tagSuggestions) ? geminiResult.tagSuggestions : [],
-        editingTips: Array.isArray(geminiResult.editingTips) ? geminiResult.editingTips : [],
-        algorithmInsights: Array.isArray(geminiResult.algorithmInsights) ? geminiResult.algorithmInsights : [],
+        clipTitle: deepseekResult.clipTitle || 'Untitled Video',
+        titleSuggestions: Array.isArray(deepseekResult.titleSuggestions) ? deepseekResult.titleSuggestions : [],
+        clipDescription: deepseekResult.clipDescription || 'No description available',
+        descriptionSuggestions: Array.isArray(deepseekResult.descriptionSuggestions) ? deepseekResult.descriptionSuggestions : [],
+        tags: Array.isArray(deepseekResult.tags) ? deepseekResult.tags : [],
+        tagSuggestions: Array.isArray(deepseekResult.tagSuggestions) ? deepseekResult.tagSuggestions : [],
+        editingTips: Array.isArray(deepseekResult.editingTips) ? deepseekResult.editingTips : [],
+        algorithmInsights: Array.isArray(deepseekResult.algorithmInsights) ? deepseekResult.algorithmInsights : [],
         researchTimestamp: new Date(),
-        // Additional Gemini insights
-        geminiInsights: {
-          algorithmResearch: geminiResult.algorithmResearch || '',
-          trendingOpportunities: geminiResult.trendingOpportunities || '',
-          engagementTriggers: Array.isArray(geminiResult.engagementTriggers) ? geminiResult.engagementTriggers : [],
-          performancePrediction: geminiResult.performancePrediction || ''
+        // Additional DeepSeek insights
+        deepseekInsights: {
+          algorithmResearch: deepseekResult.algorithmResearch || '',
+          trendingOpportunities: deepseekResult.trendingOpportunities || '',
+          engagementTriggers: Array.isArray(deepseekResult.engagementTriggers) ? deepseekResult.engagementTriggers : [],
+          performancePrediction: deepseekResult.performancePrediction || ''
         }
       }
 
@@ -354,7 +386,7 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
             <div className="space-y-2">
               <h4 className="text-green-400 font-semibold">Premium Features:</h4>
               <ul className="text-gray-300 text-sm space-y-1">
-                <li>• Google Gemini AI analysis</li>
+                <li>• DeepSeek AI analysis</li>
                 <li>• Advanced title optimization</li>
                 <li>• Algorithm-specific tags</li>
                 <li>• Editing recommendations</li>
@@ -465,7 +497,7 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
             {isAnalyzing ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing with Gemini AI...
+                Analyzing with DeepSeek AI...
               </>
             ) : (
               <>
