@@ -11,23 +11,60 @@ import { AlgorithmInfoEnhanced } from '@/components/AlgorithmInfoEnhanced'
 import { TagGenerator } from '@/components/TagGenerator'
 import { AIContentOptimizer } from '@/components/AIContentOptimizer'
 import { KickAuth } from '@/components/KickAuth'
+import { getSocialVerificationService } from '@/lib/social-verification'
+import { AICreditsManager } from '@/lib/ai-credits'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [channelSubscriptions, setChannelSubscriptions] = useState<any[]>([])
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState<boolean>(false)
+  const [socialVerification, setSocialVerification] = useState<any>(null)
+  const [isLoadingVerification, setIsLoadingVerification] = useState<boolean>(false)
+  const [aiCredits, setAiCredits] = useState<any>(null)
 
-  // Check channel subscriptions when user logs in
+  // Check user subscriptions when user logs in
   useEffect(() => {
     if (user && user.username) {
-      checkChannelSubscriptions(user.username)
+      checkUserSubscriptions(user.username)
+      checkSocialVerification(user.username)
+      updateAICredits(user.username)
     } else {
       setChannelSubscriptions([])
+      setSocialVerification(null)
+      setAiCredits(null)
     }
   }, [user])
 
-  // Function to check channel subscriptions
-  const checkChannelSubscriptions = async (username: string) => {
+  // Check social verification across platforms
+  const checkSocialVerification = async (username: string) => {
+    setIsLoadingVerification(true)
+    try {
+      const socialService = getSocialVerificationService()
+      const accessToken = typeof window !== 'undefined' ? localStorage.getItem('kickAccessToken') : null
+      
+      if (accessToken) {
+        socialService.setKickAccessToken(accessToken)
+      }
+      
+      const verification = await socialService.verifyAllPlatforms(username)
+      setSocialVerification(verification)
+      console.log(`✅ Social verification complete: ${verification.verifiedPlatforms}/${verification.totalPlatforms} platforms`)
+    } catch (error) {
+      console.error('❌ Social verification failed:', error)
+      setSocialVerification(null)
+    } finally {
+      setIsLoadingVerification(false)
+    }
+  }
+
+  // Update AI credits based on verification
+  const updateAICredits = (username: string) => {
+    const credits = AICreditsManager.getCreditsSummary(username)
+    setAiCredits(credits)
+  }
+
+  // Function to check user subscriptions
+  const checkUserSubscriptions = async (username: string) => {
     setIsLoadingSubscriptions(true)
     try {
       // Get access token from localStorage
@@ -39,11 +76,11 @@ export default function Home() {
         return
       }
 
-      console.log(`🔍 Checking channel subscriptions for ${username} via Kick API`)
+      console.log(`🔍 Checking user subscriptions for ${username} via Kick API`)
       
-      // Use bulletbait604 as the channel ID (you might need to get the actual channel ID)
-      const channelId = 'bulletbait604' // You may need to replace with actual channel ID
-      const response = await fetch(`https://api.kick.com/v1/channels/${channelId}/subscriptions`, {
+      // Use username as user_id (you might need to get the actual user ID)
+      const userId = user?.id || username // Use user ID from OAuth data or fallback to username
+      const response = await fetch(`https://api.kick.com/v1/users/${userId}/subscriptions`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -52,11 +89,11 @@ export default function Home() {
         }
       })
 
-      console.log(`Kick API subscriptions response status: ${response.status}`)
+      console.log(`Kick API user subscriptions response status: ${response.status}`)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Got channel subscriptions from Kick API:', data)
+        console.log('✅ Got user subscriptions from Kick API:', data)
         
         // Handle different response formats
         let subscriptions = []
@@ -69,14 +106,14 @@ export default function Home() {
         }
         
         setChannelSubscriptions(subscriptions)
-        console.log(`📊 Found ${subscriptions.length} channel subscriptions`)
+        console.log(`📊 Found ${subscriptions.length} user subscriptions`)
       } else {
         const errorText = await response.text()
-        console.log(`❌ Kick API subscriptions failed (${response.status}):`, errorText)
+        console.log(`❌ Kick API user subscriptions failed (${response.status}):`, errorText)
         setChannelSubscriptions([])
       }
     } catch (error) {
-      console.error('❌ Error checking channel subscriptions:', error)
+      console.error('❌ Error checking user subscriptions:', error)
       setChannelSubscriptions([])
     } finally {
       setIsLoadingSubscriptions(false)
@@ -129,15 +166,39 @@ export default function Home() {
                     <div className="text-cyan-300 text-sm font-medium">Logged in as</div>
                     <div className="text-white font-semibold">{user.display_name}</div>
                     
-                    {/* Channel Subscriptions Data */}
+                    {/* Social Verification Status */}
+                    <div className="mt-2">
+                      {isLoadingVerification ? (
+                        <div className="text-yellow-400 text-xs">Checking social verification...</div>
+                      ) : socialVerification ? (
+                        <div className="text-xs">
+                          <div className="text-cyan-400 font-semibold mb-1">Social Verification:</div>
+                          <div className="text-gray-300">
+                            <div>✅ Verified: {socialVerification.verifiedPlatforms}/{socialVerification.totalPlatforms} platforms</div>
+                            <div>🎯 AI Credits: {aiCredits?.remaining || 0}/{aiCredits?.maxPerDay || 0} per day</div>
+                            {socialVerification.socialStatus.map((status: any, index: number) => (
+                              <div key={index} className="flex items-center gap-1 mt-1">
+                                <div className={`w-2 h-2 rounded-full ${status.isFollowing || status.isSubscribed ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                                <span className="text-gray-400">
+                                  {status.platform}: {status.isFollowing || status.isSubscribed ? '✅' : '❌'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-400">Social verification not available</div>
+                      )}
+                    </div>
+
+                    {/* User Subscriptions Data */}
                     <div className="mt-2">
                       {isLoadingSubscriptions ? (
-                        <div className="text-yellow-400 text-xs">Loading channel data...</div>
+                        <div className="text-yellow-400 text-xs">Loading user subscriptions...</div>
                       ) : (
                         <div className="text-xs">
-                          <div className="text-cyan-400 font-semibold mb-1">Channel API Data:</div>
+                          <div className="text-cyan-400 font-semibold mb-1">User Subscriptions API Data:</div>
                           <div className="text-gray-300">
-                            <div>📊 Subscriptions: {channelSubscriptions.length}</div>
                             {channelSubscriptions.length > 0 && (
                               <div className="mt-1">
                                 <div className="text-gray-400">Sample data:</div>
@@ -145,6 +206,9 @@ export default function Home() {
                                   {JSON.stringify(channelSubscriptions[0], null, 2).substring(0, 200)}...
                                 </div>
                               </div>
+                            )}
+                            {channelSubscriptions.length === 0 && (
+                              <div className="text-gray-400 text-xs mt-1">No active subscriptions found</div>
                             )}
                           </div>
                         </div>
@@ -215,45 +279,72 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
-            <Card className="bg-black border border-red-500">
-              <CardContent className="text-center py-8">
-                <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
-                <p className="text-gray-300 mb-4">
-                  Content Analysis requires a subscription to bulletbait604
-                </p>
-                <p className="text-cyan-300 text-sm">
-                  Subscribe to unlock AI-powered content analysis features
-                </p>
-              </CardContent>
-            </Card>
+            {socialVerification?.isVerified && aiCredits?.remaining > 0 ? (
+              <ContentAnalyzerEnhanced />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Social Verification Required</div>
+                  <p className="text-gray-300 mb-4">
+                    Content Analysis requires verification on at least 2 social platforms
+                  </p>
+                  <p className="text-cyan-300 text-sm mb-2">
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                  </p>
+                  {aiCredits && (
+                    <p className="text-yellow-400 text-sm">
+                      Your AI Credits: {aiCredits.remaining}/{aiCredits.maxPerDay} per day
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="clip-analysis" className="mt-6">
-            <Card className="bg-black border border-red-500">
-              <CardContent className="text-center py-8">
-                <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
-                <p className="text-gray-300 mb-4">
-                  Clip Analysis requires a subscription to bulletbait604
-                </p>
-                <p className="text-cyan-300 text-sm">
-                  Subscribe to unlock AI-powered clip analysis features
-                </p>
-              </CardContent>
-            </Card>
+            {socialVerification?.isVerified && aiCredits?.remaining > 0 ? (
+              <ClipAnalyzerEnhanced />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Social Verification Required</div>
+                  <p className="text-gray-300 mb-4">
+                    Clip Analysis requires verification on at least 2 social platforms
+                  </p>
+                  <p className="text-cyan-300 text-sm mb-2">
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                  </p>
+                  {aiCredits && (
+                    <p className="text-yellow-400 text-sm">
+                      Your AI Credits: {aiCredits.remaining}/{aiCredits.maxPerDay} per day
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="platform-optimizer" className="mt-6">
-            <Card className="bg-black border border-red-500">
-              <CardContent className="text-center py-8">
-                <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
-                <p className="text-gray-300 mb-4">
-                  Platform Optimizer requires a subscription to bulletbait604
-                </p>
-                <p className="text-cyan-300 text-sm">
-                  Subscribe to unlock AI-powered platform optimization features
-                </p>
-              </CardContent>
-            </Card>
+            {socialVerification?.isVerified && aiCredits?.remaining > 0 ? (
+              <PlatformOptimizer />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Social Verification Required</div>
+                  <p className="text-gray-300 mb-4">
+                    Platform Optimizer requires verification on at least 2 social platforms
+                  </p>
+                  <p className="text-cyan-300 text-sm mb-2">
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                  </p>
+                  {aiCredits && (
+                    <p className="text-yellow-400 text-sm">
+                      Your AI Credits: {aiCredits.remaining}/{aiCredits.maxPerDay} per day
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="connections" className="mt-6">
@@ -261,31 +352,49 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="tag-generator" className="mt-6">
-            <Card className="bg-black border border-red-500">
-              <CardContent className="text-center py-8">
-                <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
-                <p className="text-gray-300 mb-4">
-                  Tag Generator requires a subscription to bulletbait604
-                </p>
-                <p className="text-cyan-300 text-sm">
-                  Subscribe to unlock AI-powered tag generation features
-                </p>
-              </CardContent>
-            </Card>
+            {socialVerification?.isVerified && aiCredits?.remaining > 0 ? (
+              <TagGenerator />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Social Verification Required</div>
+                  <p className="text-gray-300 mb-4">
+                    Tag Generator requires verification on at least 2 social platforms
+                  </p>
+                  <p className="text-cyan-300 text-sm mb-2">
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                  </p>
+                  {aiCredits && (
+                    <p className="text-yellow-400 text-sm">
+                      Your AI Credits: {aiCredits.remaining}/{aiCredits.maxPerDay} per day
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="ai-optimizer" className="mt-6">
-            <Card className="bg-black border border-red-500">
-              <CardContent className="text-center py-8">
-                <div className="text-red-400 text-lg font-semibold mb-4">🔒 Subscriber Only Feature</div>
-                <p className="text-gray-300 mb-4">
-                  AI Content Optimizer requires a subscription to bulletbait604
-                </p>
-                <p className="text-cyan-300 text-sm">
-                  Subscribe to unlock AI-powered content optimization features
-                </p>
-              </CardContent>
-            </Card>
+            {socialVerification?.isVerified && aiCredits?.remaining > 0 ? (
+              <AIContentOptimizer />
+            ) : (
+              <Card className="bg-black border border-red-500">
+                <CardContent className="text-center py-8">
+                  <div className="text-red-400 text-lg font-semibold mb-4">🔒 Social Verification Required</div>
+                  <p className="text-gray-300 mb-4">
+                    AI Content Optimizer requires verification on at least 2 social platforms
+                  </p>
+                  <p className="text-cyan-300 text-sm mb-2">
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                  </p>
+                  {aiCredits && (
+                    <p className="text-yellow-400 text-sm">
+                      Your AI Credits: {aiCredits.remaining}/{aiCredits.maxPerDay} per day
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
