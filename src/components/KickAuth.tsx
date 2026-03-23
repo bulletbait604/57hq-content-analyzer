@@ -297,12 +297,13 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
             </div>
           </div>
 
-          <div className="flex gap-2 mb-4">
+          <div className="flex justify-end">
             <Button
               onClick={handleLogout}
-              className="flex-1 bg-red-500 hover:bg-red-600"
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm"
+              size="sm"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-3 h-3 mr-1" />
               Logout
             </Button>
           </div>

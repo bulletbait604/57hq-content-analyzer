@@ -9,10 +9,8 @@ import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { KickAuth } from '@/components/KickAuth'
 import { ClipAnalysis } from '@/components/ClipAnalysis'
-import { generateTagsWithDeepSeek } from '@/lib/deepseek'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { PremiumAccess } from '@/lib/premium-access'
-import { EnhancedTagGenerator } from '@/lib/enhanced-tag-generator'
 import { 
   Upload, 
   Play, 
@@ -121,13 +119,6 @@ export default function Home() {
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </TabsTrigger>
-            <TabsTrigger 
-              value="premium" 
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-black text-gray-400 border border-green-500/30"
-            >
-              <Crown className="w-4 h-4 mr-2" />
-              Premium
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="algorithm-info" className="mt-6">
@@ -139,7 +130,10 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="tag-generator" className="mt-6">
-            <TagGenerator user={user} hasPremium={hasPremium} />
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-green-400 mb-2">Tag Generator</h2>
+              <p className="text-gray-300">Generate optimized tags for your content</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="content-analysis" className="mt-6">
@@ -153,13 +147,6 @@ export default function Home() {
             <div className="text-center">
               <h2 className="text-2xl font-bold text-green-400 mb-2">Settings</h2>
               <p className="text-gray-300">Manage your account and preferences</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="premium" className="mt-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-green-400 mb-2">Premium</h2>
-              <p className="text-gray-300">Premium features and benefits</p>
             </div>
           </TabsContent>
         </Tabs>
@@ -510,88 +497,3 @@ function AlgorithmInfo() {
   )
 }
 
-// Tag Generator Component
-function TagGenerator({ user, hasPremium }: { user: any; hasPremium: boolean }) {
-  const [content, setContent] = useState('')
-  const [freeTags, setFreeTags] = useState<string[]>([])
-  const [premiumTags, setPremiumTags] = useState<string[]>([])
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [selectedPlatform, setSelectedPlatform] = useState('youtube shorts')
-  
-  const enhancedGenerator = EnhancedTagGenerator.getInstance()
-  
-  const generateFreeTags = () => {
-    if (!content.trim()) return
-    
-    try {
-      const result = enhancedGenerator.generateEnhancedTags(content, selectedPlatform, 10)
-      setFreeTags(result.tags)
-    } catch (error) {
-      console.error('Error generating tags:', error)
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-green-400 mb-2">Tag Generator</h2>
-        <p className="text-gray-300">Generate optimized tags for your content</p>
-      </div>
-      
-      <Card className="bg-black border-green-500/30">
-        <CardHeader>
-          <CardTitle className="text-green-400">Free Tag Generator</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-green-400">Content Description</Label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-black border border-green-500/50 rounded p-3 text-white"
-              rows={3}
-              placeholder="Describe your content..."
-            />
-          </div>
-          
-          <div>
-            <Label className="text-green-400">Platform</Label>
-            <select
-              value={selectedPlatform}
-              onChange={(e) => setSelectedPlatform(e.target.value)}
-              className="w-full bg-black border border-green-500/50 rounded p-2 text-white"
-            >
-              <option value="youtube shorts">YouTube Shorts</option>
-              <option value="youtube long">YouTube Long</option>
-              <option value="tiktok">TikTok</option>
-              <option value="instagram">Instagram</option>
-              <option value="twitter">Twitter</option>
-              <option value="facebook reels">Facebook Reels</option>
-            </select>
-          </div>
-          
-          <Button
-            onClick={generateFreeTags}
-            disabled={!content.trim()}
-            className="w-full bg-green-600 hover:bg-green-500 text-black"
-          >
-            Generate Tags
-          </Button>
-          
-          {freeTags.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-green-400">Generated Tags:</Label>
-              <div className="flex flex-wrap gap-2">
-                {freeTags.map((tag, index) => (
-                  <Badge key={index} className="bg-green-600/20 text-green-400 border-green-500">
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
