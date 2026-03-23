@@ -27,97 +27,6 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
     process.env.NEXT_PUBLIC_KICK_CLIENT_SECRET || ''
   )
 
-  // Get user badges from bulletbait604 using correct Kick API
-  const getUserBadges = async (username: string) => {
-    try {
-      console.log(`🔍 Looking for badges for @${username} in bulletbait604`)
-      
-      // Try the correct Kick API endpoint for channel data
-      const channelResponse = await fetch(`https://kick.com/api/v2/channels/bulletbait604`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
-          'Origin': 'https://kick.com',
-          'Referer': 'https://kick.com'
-        }
-      })
-
-      if (channelResponse.ok) {
-        const channelData = await channelResponse.json()
-        console.log('📺 Channel data:', channelData)
-        
-        if (channelData.chatroom) {
-          const chatroomId = channelData.chatroom.id
-          console.log(`💬 Found chatroom ID: ${chatroomId}`)
-          
-          // Get recent chat messages to find user's badges
-          const messagesResponse = await fetch(`https://kick.com/api/v2/chatrooms/${chatroomId}/messages`, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 (KHTML, like Gecko) Edge/91.0.864.59',
-              'Origin': 'https://kick.com',
-              'Referer': 'https://kick.com'
-            }
-          })
-
-          if (messagesResponse.ok) {
-            const messagesData = await messagesResponse.json()
-            console.log('📋 Chat messages data:', messagesData)
-            
-            if (messagesData.data && Array.isArray(messagesData.data)) {
-              const userMessages = messagesData.data.filter((message: any) => 
-                message.sender && 
-                message.sender.username && 
-                message.sender.username.toLowerCase() === username.toLowerCase()
-              )
-              
-              console.log(`📋 Found ${userMessages.length} messages from ${username}`)
-              
-              if (userMessages.length > 0) {
-                const latestMessage = userMessages[0]
-                const badges = latestMessage.sender.badges || []
-                console.log(`🏅 User badges found:`, badges)
-                return badges
-              }
-            }
-          }
-        }
-      } else {
-        console.log(`❌ Channel API failed: ${channelResponse.status}`)
-      }
-    } catch (error) {
-      console.error('Failed to get user badges from Kick API:', error)
-    }
-    
-    console.log('🏅 No badges found, returning empty array')
-    return []
-  }
-
-  const [userBadges, setUserBadges] = useState<any[]>([])
-
-  // Load user badges when user logs in
-  useEffect(() => {
-    if (user) {
-      getUserBadges(user.username).then(badges => {
-        // If API fails, show test badges for demonstration
-        if (badges.length === 0) {
-          console.log('🏅 API returned no badges, showing test badges for demo')
-          setUserBadges([
-            { type: 'subscriber', name: 'Subscriber' },
-            { type: 'moderator', name: 'Moderator' }
-          ])
-        } else {
-          setUserBadges(badges)
-        }
-        console.log('🏅 User badges from bulletbait604:', badges)
-      })
-    }
-  }, [user])
-
   const handleLogin = async () => {
     setIsLoading(true)
     setError(null)
@@ -279,21 +188,6 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
             <div>
               <div className="text-cyan-300 text-sm font-medium">Logged in as</div>
               <div className="text-white font-semibold">{user.display_name}</div>
-              
-              {/* User Badges */}
-              {userBadges && userBadges.length > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  {userBadges.map((badge: any, index: number) => (
-                    <div 
-                      key={index}
-                      className="px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs text-white font-semibold"
-                      title={badge.name || badge.type || 'Badge'}
-                    >
-                      {badge.name || badge.type || 'Badge'}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
@@ -321,14 +215,14 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
           Connect Your Kick Account
         </CardTitle>
         <CardDescription className="text-cyan-300">
-          Login to display your profile and badges from bulletbait604
+          Login to display your profile from bulletbait604
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="text-center">
             <p className="text-sm text-cyan-300 mb-4">
-              Connect with Kick to see your profile and badges
+              Connect with Kick to see your profile
             </p>
           </div>
           
