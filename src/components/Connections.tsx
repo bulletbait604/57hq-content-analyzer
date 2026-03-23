@@ -42,8 +42,10 @@ export function Connections() {
     
     switch (platform) {
       case 'TikTok':
-        // Redirect to TikTok OAuth (using RapidAPI for now since official TikTok API is complex)
-        oauthUrl = `https://www.tiktok.com/@bulletbait604`
+        // Use proper TikTok OAuth
+        const tiktokClientId = process.env.NEXT_PUBLIC_TIKTOK_CLIENT_ID
+        const tiktokRedirectUri = process.env.NEXT_PUBLIC_TIKTOK_REDIRECT_URI || 'https://sdhq-content-analyzer.vercel.app/auth/tiktok/callback'
+        oauthUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${tiktokClientId}&redirect_uri=${encodeURIComponent(tiktokRedirectUri)}&scope=user.info.basic,user.info.profile,user.info.stats&response_type=code`
         break
         
       case 'Instagram':

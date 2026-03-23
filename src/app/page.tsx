@@ -289,7 +289,7 @@ export default function Home() {
                     Content Analysis requires verification on at least 2 social platforms
                   </p>
                   <p className="text-cyan-300 text-sm mb-2">
-                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), YouTube (bulletbait604)
                   </p>
                   {aiCredits && (
                     <p className="text-yellow-400 text-sm">
@@ -312,7 +312,7 @@ export default function Home() {
                     Clip Analysis requires verification on at least 2 social platforms
                   </p>
                   <p className="text-cyan-300 text-sm mb-2">
-                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), YouTube (bulletbait604)
                   </p>
                   {aiCredits && (
                     <p className="text-yellow-400 text-sm">
@@ -335,7 +335,7 @@ export default function Home() {
                     Platform Optimizer requires verification on at least 2 social platforms
                   </p>
                   <p className="text-cyan-300 text-sm mb-2">
-                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), YouTube (bulletbait604)
                   </p>
                   {aiCredits && (
                     <p className="text-yellow-400 text-sm">
@@ -362,7 +362,7 @@ export default function Home() {
                     Tag Generator requires verification on at least 2 social platforms
                   </p>
                   <p className="text-cyan-300 text-sm mb-2">
-                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), YouTube (bulletbait604)
                   </p>
                   {aiCredits && (
                     <p className="text-yellow-400 text-sm">
@@ -385,7 +385,7 @@ export default function Home() {
                     AI Content Optimizer requires verification on at least 2 social platforms
                   </p>
                   <p className="text-cyan-300 text-sm mb-2">
-                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), Instagram (@bulletbait604), YouTube (bulletbait604)
+                    Follow/Subscribe on: Kick (bulletbait604), TikTok (@thebulletbait), YouTube (bulletbait604)
                   </p>
                   {aiCredits && (
                     <p className="text-yellow-400 text-sm">

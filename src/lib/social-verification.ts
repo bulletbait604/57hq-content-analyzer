@@ -237,11 +237,11 @@ export class SocialVerificationService {
     
     socialStatus.forEach(status => {
       if (status.isFollowing || status.isSubscribed) {
-        credits += 5 // 5 credits per verified platform
+        credits += 10 // 10 credits per verified platform
       }
     })
     
-    return Math.min(credits, 25) // Max 25 credits per day
+    return Math.min(credits, 30) // Max 30 credits per day (3 platforms × 10)
   }
 
   // Complete verification for all platforms
@@ -251,7 +251,6 @@ export class SocialVerificationService {
     const platforms = [
       () => this.checkKickFollow(username),
       () => this.checkTikTokFollow(username),
-      () => this.checkInstagramFollow(username),
       () => this.checkYouTubeSubscribe(username)
     ]
     
@@ -265,7 +264,7 @@ export class SocialVerificationService {
       if (result.status === 'fulfilled') {
         results.push(result.value)
       } else {
-        const platformNames = ['Kick', 'TikTok', 'Instagram', 'YouTube']
+        const platformNames = ['Kick', 'TikTok', 'YouTube']
         results.push({
           platform: platformNames[index],
           isFollowing: false,
