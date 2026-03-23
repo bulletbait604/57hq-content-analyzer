@@ -444,7 +444,7 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
         algorithmInsights: [
           ...(deepseekData.algorithmInsights || []),
           ...(googleData?.algorithmResearch ? [`🔬 Gemini Research: ${googleData.algorithmResearch}`] : []),
-          ...(googleData?.algorithmInsights || []).map(insight => `🔬 Gemini: ${insight}`),
+          ...(googleData?.algorithmInsights || []).map((insight: string) => `🔬 Gemini: ${insight}`),
           ...(googleData?.trendingOpportunities ? [`📈 Trending: ${googleData.trendingOpportunities}`] : []),
           ...(googleData?.performancePrediction ? [`🎯 Prediction: ${googleData.performancePrediction}`] : [])
         ].filter(Boolean),
