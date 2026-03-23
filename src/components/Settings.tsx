@@ -7,9 +7,7 @@ import { Label } from '@/components/ui/label-simple'
 import { Badge } from '@/components/ui/badge'
 import { 
   Settings as SettingsIcon, 
-  Moon, 
-  Sun, 
-  Globe, 
+  Globe,
   Shield,
   FileText,
   Mail
@@ -128,47 +126,23 @@ const translations = {
 }
 
 type Language = keyof typeof translations
-type Theme = 'dark' | 'light'
 
 interface SettingsProps {
   user: any
 }
 
 export function Settings({ user }: SettingsProps) {
-  const [theme, setTheme] = useState<Theme>('dark')
   const [language, setLanguage] = useState<Language>('en')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
 
   const t = (key: keyof typeof translations.en) => translations[language][key] || translations.en[key]
 
-  // Load settings from localStorage on mount
+  // Load language from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme
     const savedLanguage = localStorage.getItem('language') as Language
-    
-    if (savedTheme) setTheme(savedTheme)
     if (savedLanguage) setLanguage(savedLanguage)
-    
-    // Apply theme to document
-    applyTheme(savedTheme || 'dark')
   }, [])
-
-  const applyTheme = (newTheme: Theme) => {
-    if (newTheme === 'light') {
-      document.documentElement.classList.add('light')
-      document.documentElement.classList.remove('dark')
-    } else {
-      document.documentElement.classList.add('dark')
-      document.documentElement.classList.remove('light')
-    }
-  }
-
-  const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme)
-    applyTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-  }
 
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage)
@@ -239,39 +213,6 @@ export function Settings({ user }: SettingsProps) {
         <p className="text-gray-300">Customize your experience and preferences</p>
       </div>
       
-      {/* Theme Settings */}
-      <Card className="bg-black border-green-500/30">
-        <CardHeader>
-          <CardTitle className="text-green-400 flex items-center gap-2">
-            {theme === 'light' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            {t('theme')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-green-400">{t('selectTheme')}</Label>
-            <div className="flex gap-2 mt-2">
-              <Button
-                variant={theme === 'dark' ? 'default' : 'outline'}
-                onClick={() => handleThemeChange('dark')}
-                className="flex-1"
-              >
-                <Moon className="w-4 h-4 mr-2" />
-                {t('dark')}
-              </Button>
-              <Button
-                variant={theme === 'light' ? 'default' : 'outline'}
-                onClick={() => handleThemeChange('light')}
-                className="flex-1"
-              >
-                <Sun className="w-4 h-4 mr-2" />
-                {t('light')}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Language Settings */}
       <Card className="bg-black border-green-500/30">
         <CardHeader>
