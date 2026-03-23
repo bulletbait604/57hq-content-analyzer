@@ -376,27 +376,22 @@ export default function Home() {
             } catch (jsonError) {
               console.log('❌ Failed to parse messages JSON:', jsonError);
               setVerificationStatus('❌ API Error - Failed to parse chat messages');
-              setTimeout(checkVerificationStatus, 3000);
             }
           } else {
             console.log(`❌ Messages API failed: ${messagesResponse.status}`);
             setVerificationStatus('❌ API Error - Could not fetch chat messages');
-            setTimeout(checkVerificationStatus, 3000);
           }
         } catch (jsonError) {
           console.log('❌ Failed to parse channel JSON:', jsonError);
           setVerificationStatus('❌ API Error - Failed to parse channel data');
-          setTimeout(checkVerificationStatus, 3000);
         }
       } else {
         console.log(`❌ Channel API failed: ${channelResponse.status}`);
         setVerificationStatus('❌ API Error - Could not fetch channel info');
-        setTimeout(checkVerificationStatus, 3000);
       }
     } catch (error) {
       console.error('❌ Verification check failed:', error);
       setVerificationStatus('❌ Verification Error - Network error');
-      setTimeout(checkVerificationStatus, 3000);
     }
   }
 
