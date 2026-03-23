@@ -70,140 +70,7 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
     }
   }
 
-  const analyzeWithDeepSeek = async (content: string, platform: string) => {
-    const deepseekPrompt = `You are an expert video content analyst specializing in social media optimization. 
-
-Analyze this content for ${platform} optimization:
-
-CONTENT: ${content}
-
-Current ${platform} Algorithm Factors (2026):
-${platform === 'youtube shorts' ? `
-- Watch time retention (first 3 seconds critical)
-- Swipe-up rate and vertical engagement
-- Video completion rate (15-25 seconds optimal)
-- Comments-to-views ratio
-- Share velocity and re-watch value
-- Audio trending score
-- Session time contribution` : platform === 'youtube long' ? `
-- Total watch time & audience retention
-- Click-through rate (CTR) from thumbnails
-- Session time contribution
-- Engagement velocity (likes, comments)
-- Subscriber conversion rate
-- Video SEO & keywords
-- Content consistency score` : platform === 'tiktok' ? `
-- Video completion rate
-- Re-watch value and share velocity
-- Comments-to-views ratio
-- Trending audio usage
-- User interaction speed
-- Session time contribution` : platform === 'instagram' ? `
-- Reels completion rate
-- Share & save metrics
-- Comments-to-impressions ratio
-- Profile visit rate
-- Hashtag relevance
-- Story interaction rate` : platform === 'twitter' ? `
-- Retweet velocity and quote engagement
-- Reply thread depth
-- Hashtag trending potential
-- Link click-through rate
-- Follower growth rate` : `
-- Video completion rate
-- Share velocity
-- Comments-to-views ratio
-- Audio trending score
-- Cross-platform engagement`}
-
-Research from VidIQ, TubeBuddy, and other tag optimization tools shows these ${platform} optimization strategies:
-- Use platform-specific trending hashtags
-- Include keywords from top-performing content
-- Optimize title length for platform character limits
-- Include emotional triggers and curiosity gaps
-- Use numbers and power words strategically
-- Include time-sensitive and trending topics
-
-Provide a comprehensive analysis in this exact JSON format:
-{
-  "clipTitle": "Extracted or suggested title",
-  "titleSuggestions": ["Title 1", "Title 2", "Title 3"],
-  "clipDescription": "Extracted or suggested description",
-  "descriptionSuggestions": ["Description 1", "Description 2", "Description 3"],
-  "tags": ["tag1", "tag2", "tag3", "..."],
-  "tagSuggestions": ["suggestion1", "suggestion2", "..."],
-  "editingTips": ["Tip 1", "Tip 2", "Tip 3"],
-  "algorithmInsights": ["Insight 1", "Insight 2"]
-}`
-
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || 'sk-670a1aa1928848fdaec6e9ce4aff2ee6'}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert video content analyst. Always respond with valid JSON only.'
-          },
-          {
-            role: 'user',
-            content: deepseekPrompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('DeepSeek API Error:', response.status, errorData)
-      throw new Error(`DeepSeek API request failed: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const analysisText = data.choices[0].message.content
-    console.log('DeepSeek Response:', analysisText)
-    
-    // Parse the JSON response
-    try {
-      const parsed = JSON.parse(analysisText)
-      
-      // Ensure all required fields are present
-      return {
-        clipTitle: parsed.clipTitle || 'Untitled Video',
-        titleSuggestions: Array.isArray(parsed.titleSuggestions) ? parsed.titleSuggestions : [],
-        clipDescription: parsed.clipDescription || 'No description available',
-        descriptionSuggestions: Array.isArray(parsed.descriptionSuggestions) ? parsed.descriptionSuggestions : [],
-        tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-        tagSuggestions: Array.isArray(parsed.tagSuggestions) ? parsed.tagSuggestions : [],
-        editingTips: Array.isArray(parsed.editingTips) ? parsed.editingTips : [],
-        algorithmInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights : []
-      }
-    } catch (parseError) {
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
-        return {
-          clipTitle: parsed.clipTitle || 'Untitled Video',
-          titleSuggestions: Array.isArray(parsed.titleSuggestions) ? parsed.titleSuggestions : [],
-          clipDescription: parsed.clipDescription || 'No description available',
-          descriptionSuggestions: Array.isArray(parsed.descriptionSuggestions) ? parsed.descriptionSuggestions : [],
-          tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-          tagSuggestions: Array.isArray(parsed.tagSuggestions) ? parsed.tagSuggestions : [],
-          editingTips: Array.isArray(parsed.editingTips) ? parsed.editingTips : [],
-          algorithmInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights : []
-        }
-      }
-      throw new Error('Could not parse AI response')
-    }
-  }
-
-  const analyzeWithGoogleAI = async (content: string, platform: string) => {
+  const analyzeWithGemini = async (content: string, platform: string) => {
     const googlePrompt = `You are a senior social media algorithm researcher with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
 
 CONTENT: ${content}
@@ -403,62 +270,62 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
         // Extract basic info from file
         content = `File: ${selectedFile.name}, Size: ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
       } else if (videoUrl) {
+        // Enhanced content extraction for URLs
         content = `URL: ${videoUrl}`
+        
+        // Extract platform-specific information from URL
+        const urlLower = videoUrl.toLowerCase()
+        if (urlLower.includes('tiktok.com')) {
+          content += `\nPlatform: TikTok\nType: Video URL\nAnalysis Focus: TikTok algorithm optimization`
+        } else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
+          content += `\nPlatform: YouTube\nType: Video URL\nAnalysis Focus: YouTube algorithm optimization`
+        } else if (urlLower.includes('instagram.com')) {
+          content += `\nPlatform: Instagram\nType: Video URL\nAnalysis Focus: Instagram Reels algorithm optimization`
+        } else if (urlLower.includes('twitter.com') || urlLower.includes('x.com')) {
+          content += `\nPlatform: Twitter/X\nType: Video URL\nAnalysis Focus: Twitter algorithm optimization`
+        } else if (urlLower.includes('facebook.com') || urlLower.includes('fb.com')) {
+          content += `\nPlatform: Facebook\nType: Video URL\nAnalysis Focus: Facebook Reels algorithm optimization`
+        } else {
+          content += `\nPlatform: General\nType: Video URL\nAnalysis Focus: ${selectedPlatform} algorithm optimization`
+        }
+        
+        // Add analysis context
+        content += `\n\nANALYSIS REQUIREMENTS:
+- Analyze this ${selectedPlatform} content for algorithm optimization
+- Extract any available metadata from the URL structure
+- Provide platform-specific recommendations
+- Focus on ${selectedPlatform} algorithm factors
+- Generate trending hashtags and optimization strategies`
       }
 
-      // Analyze with both DeepSeek and Gemini APIs
-      const [deepseekResult, googleResult] = await Promise.allSettled([
-        analyzeWithDeepSeek(content, selectedPlatform),
-        analyzeWithGoogleAI(content, selectedPlatform)
-      ])
+      // Analyze with Gemini API only - enhanced for actual content analysis
+      const geminiResult = await analyzeWithGemini(content, selectedPlatform)
       
-      // Process DeepSeek result (always available)
-      const deepseekData = deepseekResult.status === 'fulfilled' ? deepseekResult.value : null
-      const googleData = googleResult.status === 'fulfilled' ? googleResult.value : null
-      
-      if (!deepseekData) {
-        throw new Error('DeepSeek analysis failed')
+      if (!geminiResult) {
+        throw new Error('Gemini analysis failed')
       }
       
-      // Combine results from both AIs with enhanced Gemini data
-      const combinedAnalysis = {
-        clipTitle: deepseekData.clipTitle || 'Untitled Video',
-        titleSuggestions: [
-          ...(deepseekData.titleSuggestions || []),
-          ...(googleData?.titleOptimization ? [googleData.titleOptimization] : [])
-        ].slice(0, 5), // Limit to 5 suggestions
-        clipDescription: deepseekData.clipDescription || 'No description available',
-        descriptionSuggestions: [
-          ...(deepseekData.descriptionSuggestions || []),
-          ...(googleData?.descriptionOptimization ? [googleData.descriptionOptimization] : [])
-        ].slice(0, 3), // Limit to 3 suggestions
-        tags: [
-          ...(deepseekData.tags || []),
-          ...(googleData?.tagStrategy ? [googleData.tagStrategy] : [])
-        ].slice(0, 10), // Limit to 10 tags
-        tagSuggestions: deepseekData.tagSuggestions || [],
-        editingTips: [
-          ...(deepseekData.editingTips || []),
-          ...(googleData?.editingRecommendations || [])
-        ].slice(0, 8), // Limit to 8 tips
-        algorithmInsights: [
-          ...(deepseekData.algorithmInsights || []),
-          ...(googleData?.algorithmResearch ? [`🔬 Gemini Research: ${googleData.algorithmResearch}`] : []),
-          ...(googleData?.algorithmInsights || []).map((insight: string) => `🔬 Gemini: ${insight}`),
-          ...(googleData?.trendingOpportunities ? [`📈 Trending: ${googleData.trendingOpportunities}`] : []),
-          ...(googleData?.performancePrediction ? [`🎯 Prediction: ${googleData.performancePrediction}`] : [])
-        ].filter(Boolean),
+      // Process Gemini results
+      const analysisData = {
+        clipTitle: geminiResult.clipTitle || 'Untitled Video',
+        titleSuggestions: Array.isArray(geminiResult.titleSuggestions) ? geminiResult.titleSuggestions : [],
+        clipDescription: geminiResult.clipDescription || 'No description available',
+        descriptionSuggestions: Array.isArray(geminiResult.descriptionSuggestions) ? geminiResult.descriptionSuggestions : [],
+        tags: Array.isArray(geminiResult.tags) ? geminiResult.tags : [],
+        tagSuggestions: Array.isArray(geminiResult.tagSuggestions) ? geminiResult.tagSuggestions : [],
+        editingTips: Array.isArray(geminiResult.editingTips) ? geminiResult.editingTips : [],
+        algorithmInsights: Array.isArray(geminiResult.algorithmInsights) ? geminiResult.algorithmInsights : [],
         researchTimestamp: new Date(),
         // Additional Gemini insights
-        geminiInsights: googleData ? {
-          algorithmResearch: googleData.algorithmResearch || '',
-          trendingOpportunities: googleData.trendingOpportunities || '',
-          engagementTriggers: googleData.engagementTriggers || [],
-          performancePrediction: googleData.performancePrediction || ''
-        } : null
+        geminiInsights: {
+          algorithmResearch: geminiResult.algorithmResearch || '',
+          trendingOpportunities: geminiResult.trendingOpportunities || '',
+          engagementTriggers: Array.isArray(geminiResult.engagementTriggers) ? geminiResult.engagementTriggers : [],
+          performancePrediction: geminiResult.performancePrediction || ''
+        }
       }
 
-      setAnalysisResult(combinedAnalysis)
+      setAnalysisResult(analysisData)
       
     } catch (error) {
       console.error('Analysis failed:', error)
@@ -487,12 +354,11 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
             <div className="space-y-2">
               <h4 className="text-green-400 font-semibold">Premium Features:</h4>
               <ul className="text-gray-300 text-sm space-y-1">
-                <li>• DeepSeek AI analysis</li>
-                <li>• Google Gemini integration</li>
+                <li>• Google Gemini AI analysis</li>
                 <li>• Advanced title optimization</li>
                 <li>• Algorithm-specific tags</li>
                 <li>• Editing recommendations</li>
-                <li>• Dual AI insights</li>
+                <li>• Platform-specific insights</li>
               </ul>
             </div>
             <div className="text-yellow-400 text-sm">
@@ -599,7 +465,7 @@ Based on this deep algorithm research, provide comprehensive optimization recomm
             {isAnalyzing ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing with DeepSeek & Gemini...
+                Analyzing with Gemini AI...
               </>
             ) : (
               <>
