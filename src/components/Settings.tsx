@@ -28,8 +28,6 @@ const translations = {
     terms: 'Terms of Service',
     account: 'Account Settings',
     username: 'Username',
-    email: 'Email',
-    joined: 'Joined',
     premium: 'Premium Status',
     active: 'Active',
     inactive: 'Inactive',
@@ -55,8 +53,8 @@ const translations = {
     active: 'Activo',
     inactive: 'Inactivo',
     save: 'Guardar Configuración',
-    saved: '¡Configuración guardada exitosamente!',
-    error: 'Error al guardar configuración',
+    saved: '¡Configuración guardada con éxito!',
+    error: 'Error al guardar la configuración',
     selectLanguage: 'Seleccionar Idioma',
     selectTheme: 'Seleccionar Tema'
   },
@@ -70,8 +68,6 @@ const translations = {
     terms: 'Conditions d\'Utilisation',
     account: 'Paramètres du Compte',
     username: 'Nom d\'Utilisateur',
-    email: 'Adresse E-mail',
-    joined: 'Rejoint',
     premium: 'Statut Premium',
     active: 'Actif',
     inactive: 'Inactif',
@@ -91,8 +87,6 @@ const translations = {
     terms: 'Nutzungsbedingungen',
     account: 'Kontoeinstellungen',
     username: 'Benutzername',
-    email: 'E-Mail-Adresse',
-    joined: 'Beigetreten',
     premium: 'Premium-Status',
     active: 'Aktiv',
     inactive: 'Inaktiv',
@@ -112,8 +106,6 @@ const translations = {
     terms: '利用規約',
     account: 'アカウント設定',
     username: 'ユーザー名',
-    email: 'メールアドレス',
-    joined: '参加',
     premium: 'プレミアムステータス',
     active: 'アクティブ',
     inactive: '非アクティブ',
@@ -125,18 +117,26 @@ const translations = {
   }
 }
 
+interface SettingsProps {
+  user: any
+  language: 'en' | 'es' | 'fr' | 'de' | 'ja'
+  onLanguageChange: (newLanguage: 'en' | 'es' | 'fr' | 'de' | 'ja') => void
+}
+
 type Language = keyof typeof translations
 
 interface SettingsProps {
   user: any
+  language: 'en' | 'es' | 'fr' | 'de' | 'ja'
+  onLanguageChange: (newLanguage: 'en' | 'es' | 'fr' | 'de' | 'ja') => void
 }
 
-export function Settings({ user }: SettingsProps) {
-  const [language, setLanguage] = useState<Language>('en')
+export function Settings({ user, language, onLanguageChange }: SettingsProps) {
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(language)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
 
-  const t = (key: keyof typeof translations.en) => translations[language][key] || translations.en[key]
+  const t = (key: keyof typeof translations.en) => translations[currentLanguage][key] || translations.en[key]
 
   // Load language from localStorage on mount
   useEffect(() => {
@@ -145,8 +145,9 @@ export function Settings({ user }: SettingsProps) {
   }, [])
 
   const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage)
+    setCurrentLanguage(newLanguage)
     localStorage.setItem('language', newLanguage)
+    onLanguageChange(newLanguage)
   }
 
   const handleSaveSettings = async () => {
@@ -252,16 +253,6 @@ export function Settings({ user }: SettingsProps) {
             <div>
               <Label className="text-green-400">{t('username')}</Label>
               <p className="text-white p-2 bg-black/50 rounded">{user.username}</p>
-            </div>
-            <div>
-              <Label className="text-green-400">{t('email')}</Label>
-              <p className="text-white p-2 bg-black/50 rounded">{user.email || 'Not available'}</p>
-            </div>
-            <div>
-              <Label className="text-green-400">{t('joined')}</Label>
-              <p className="text-white p-2 bg-black/50 rounded">
-                {user.created_at ? formatDate(user.created_at) : 'Not available'}
-              </p>
             </div>
             <div>
               <Label className="text-green-400">{t('premium')}</Label>

@@ -41,6 +41,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [hasPremium, setHasPremium] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [language, setLanguage] = useState<'en' | 'es' | 'fr' | 'de' | 'ja'>('en')
 
   // Check for existing session on mount
   useEffect(() => {
@@ -50,10 +51,15 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('kickUser')
       const storedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null
+      const storedLanguage = localStorage.getItem('language') as 'en' | 'es' | 'fr' | 'de' | 'ja' | null
       
       if (storedTheme) {
         setTheme(storedTheme)
         applyTheme(storedTheme)
+      }
+      
+      if (storedLanguage) {
+        setLanguage(storedLanguage)
       }
       
       if (storedUser) {
@@ -93,6 +99,11 @@ export default function Home() {
       localStorage.removeItem('kickUser')
       setHasPremium(false)
     }
+  }
+
+  const handleLanguageChange = (newLanguage: 'en' | 'es' | 'fr' | 'de' | 'ja') => {
+    setLanguage(newLanguage)
+    localStorage.setItem('language', newLanguage)
   }
 
   return (
@@ -175,7 +186,7 @@ export default function Home() {
 
           <TabsContent value="legal" className="mt-6">
             {user ? (
-              <SettingsComponent user={user} />
+              <SettingsComponent user={user} language={language} onLanguageChange={handleLanguageChange} />
             ) : (
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-green-400 mb-2">Settings</h2>
