@@ -121,31 +121,44 @@ class TikTokMetadataService {
     }
   }
 
-  // Method 3: TikWM.com API (Free, No API Key Required)
+  // Method 3: TikWM.com API (Free, No API Key Required, No CORS Issues)
   async getMetadataTikWM(videoUrl: string): Promise<TikTokMetadata | null> {
     try {
-      // TikWM.com free API - no API key required
+      // TikWM.com free API - no API key required, no CORS issues
       const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}&hd=1`, {
+        method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Language': 'en-US,en;q=0.9,en;q=0.8',
           'Accept-Encoding': 'gzip, deflate, br',
           'Referer': 'https://www.tikwm.com/',
-          'Origin': 'https://www.tikwm.com'
-        }
+          'Origin': 'https://www.tikwm.com',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'same-site',
+          'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"Windows"'
+        },
+        mode: 'cors'
       })
 
-      if (!response.ok) return null
+      if (!response.ok) {
+        console.warn(`TikWM API responded with status: ${response.status}`)
+        return null
+      }
 
       const data = await response.json()
       
       // TikWM returns different structure, format it
       if (data.code === 0 && data.data) {
         const videoData = data.data
+        console.log('TikWM API success:', videoData.title)
+        
         return {
           id: videoData.id,
-          title: videoData.title || videoData.desc,
+          title: videoData.title || videoData.desc || 'Untitled Video',
           description: videoData.desc || '',
           author: {
             username: videoData.author?.unique_id || videoData.author?.name || '',
@@ -165,9 +178,10 @@ class TikTokMetadataService {
             author: videoData.music.author || ''
           } : undefined
         }
+      } else {
+        console.warn('TikWM API returned no data:', data)
+        return null
       }
-
-      return null
     } catch (error) {
       console.error('TikWM API error:', error)
       return null
@@ -223,13 +237,13 @@ class TikTokMetadataService {
     }
   }
 
-  // Try multiple methods in order of preference (TikSave.io First)
+  // Try multiple methods in order of preference (TikWM.com First - No CORS Issues)
   async getMetadata(videoUrl: string): Promise<TikTokMetadata | null> {
     const methods = [
-      () => this.getMetadataTikSave(videoUrl),      // Method 2: TikSave.io - Free, no API key (Primary)
-      () => this.getMetadataTikWM(videoUrl),        // Method 3: TikWM.com - Free, no API key (Backup)
+      () => this.getMetadataTikWM(videoUrl),        // Method 3: TikWM.com - Free, no API key, no CORS issues (Primary)
       () => this.getMetadataOfficial(videoUrl),      // Method 1: Official API (requires key)
-      () => this.getMetadataScraping(videoUrl)       // Fallback: Web scraping
+      () => this.getMetadataScraping(videoUrl),      // Fallback: Web scraping
+      () => this.getMetadataTikSave(videoUrl)        // Method 2: TikSave.io - Has CORS issues (Last resort)
     ]
 
     for (const method of methods) {
