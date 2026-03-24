@@ -25,7 +25,7 @@ class YouTubeMetadataService {
   private apiKey: string
 
   private constructor() {
-    this.apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || ''
+    this.apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || ''
   }
 
   static getInstance(): YouTubeMetadataService {
@@ -67,9 +67,28 @@ class YouTubeMetadataService {
 
   // Extract hashtags from description
   private extractHashtags(description: string): string[] {
+    // Extract hashtags with # symbol
     const hashtagRegex = /#\w+/g
-    const matches = description.match(hashtagRegex) || []
-    return matches.map(tag => tag.substring(1)) // Remove # symbol
+    const hashtagMatches = description.match(hashtagRegex) || []
+    const hashtags = hashtagMatches.map(tag => tag.substring(1)) // Remove # symbol
+    
+    // Extract comma-separated tags and space-separated keywords
+    const commaTags = description.split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0 && tag.length < 50 && !tag.includes('http'))
+      .slice(0, 10) // Limit to first 10 comma-separated tags
+    
+    const spaceTags = description.split(' ')
+      .map(tag => tag.trim().replace(/[^\w\s]/g, ''))
+      .filter(tag => tag.length > 2 && tag.length < 30 && !tag.toLowerCase().includes('http'))
+      .slice(0, 15) // Limit to first 15 space-separated keywords
+    
+    // Combine and remove duplicates
+    const allTags = [...hashtags, ...commaTags, ...spaceTags]
+    const uniqueTags = [...new Set(allTags.map(tag => tag.toLowerCase()))]
+    
+    // Return top 20 most relevant tags
+    return uniqueTags.slice(0, 20)
   }
 
   // Method 1: YouTube Data API v3 (Primary)
@@ -82,6 +101,10 @@ class YouTubeMetadataService {
 
     if (!this.apiKey) {
       console.warn('YouTube API key not configured, falling back to scraping')
+      console.log('Available API keys:', {
+        NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? 'Present' : 'Missing',
+        NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'
+      })
       return this.getMetadataFromScraping(videoUrl)
     }
 
@@ -147,7 +170,13 @@ class YouTubeMetadataService {
         thumbnail: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || ''
       }
 
-      console.log('YouTube API success:', metadata.title)
+      console.log('YouTube API success:', {
+        title: metadata.title,
+        descriptionLength: metadata.description.length,
+        hashtagsCount: metadata.hashtags.length,
+        descriptionPreview: metadata.description.substring(0, 100) + '...',
+        extractedHashtags: metadata.hashtags.slice(0, 10)
+      })
       return metadata
 
     } catch (error) {
