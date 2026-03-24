@@ -72,7 +72,7 @@ class YouTubeMetadataService {
   }
 
   // Extract hashtags from description
-  private extractHashtags(description: string): string[] {
+  private extractHashtags(description: string, contentDetailsTags?: string[], snippetTags?: string[]): string[] {
     if (!description) return []
     
     console.log('🔍 Analyzing YouTube description for hashtags:', {
@@ -80,19 +80,30 @@ class YouTubeMetadataService {
       descriptionPreview: description.substring(0, 150) + '...'
     })
     
-    // Extract ONLY hashtags with # symbol (YouTube format)
+    // Extract hashtags from description text
     const hashtagRegex = /#([a-zA-Z0-9_\u4e00-\u9fff]+)/g
-    const hashtagMatches = description.match(hashtagRegex) || []
-    const hashtags = hashtagMatches.map(tag => tag.replace('#', '').trim())
+    const descriptionMatches = description.match(hashtagRegex) || []
+    const descriptionHashtags = descriptionMatches.map(tag => tag.replace('#', '').trim())
+    
+    // Extract tags from YouTube API fields (contentDetails.tags and snippet.tags)
+    const apiTags = [...(contentDetailsTags || []), ...(snippetTags || [])]
+      .filter(tag => tag && typeof tag === 'string')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+    
+    // Combine all tags and remove duplicates
+    const allTags = [...descriptionHashtags, ...apiTags]
+    const uniqueTags = [...new Set(allTags.map(tag => tag.toLowerCase()))]
     
     console.log('🏷️ YouTube hashtag extraction results:', {
-      rawMatches: hashtagMatches,
-      cleanedHashtags: hashtags,
-      hashtagCount: hashtags.length
+      descriptionHashtags: descriptionHashtags,
+      apiTags: apiTags,
+      combinedTags: allTags,
+      uniqueTags: uniqueTags,
+      hashtagCount: uniqueTags.length
     })
     
-    // Return only the actual hashtags, no other processing
-    return hashtags.filter(tag => tag.length > 0)
+    return uniqueTags
   }
 
   // Method 1: YouTube Data API v3 (Primary)
@@ -185,7 +196,7 @@ class YouTubeMetadataService {
           likes: parseInt(statistics.likeCount || '0'),
           comments: parseInt(statistics.commentCount || '0')
         },
-        hashtags: this.extractHashtags(snippet.description),
+        hashtags: this.extractHashtags(snippet.description, contentDetails.tags, snippet.tags),
         duration: this.parseDuration(contentDetails.duration),
         createTime: snippet.publishedAt,
         thumbnail: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || ''
