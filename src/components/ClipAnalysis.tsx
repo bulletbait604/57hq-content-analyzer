@@ -147,94 +147,6 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
     }
   }
 
-  const analyzeWithAllAI = async (content: string, platform: string) => {
-    console.log('🤖 Starting comprehensive AI analysis with DeepSeek, OpenAI, and Gemini...')
-    
-    try {
-      // Primary analysis with DeepSeek
-      console.log('🧠 DeepSeek AI Analysis...')
-      const deepseekResult = await analyzeWithDeepSeek(content, platform)
-      
-      // Backup analysis with OpenAI
-      console.log('🔵 OpenAI Analysis...')
-      let openaiResult = null
-      try {
-        openaiResult = await analyzeContentWithAI(
-          'video',
-          platform,
-          deepseekResult?.clipTitle || 'Untitled',
-          deepseekResult?.clipDescription || '',
-          content
-        )
-      } catch (error) {
-        console.warn('OpenAI analysis failed:', error)
-      }
-      
-      // Trend analysis with Gemini
-      console.log('🟣 Gemini Trend Analysis...')
-      let geminiResult = null
-      try {
-        const geminiService = GeminiService.getInstance()
-        geminiResult = await geminiService.analyzeContent(
-          'video',
-          platform,
-          deepseekResult?.clipTitle || 'Untitled',
-          deepseekResult?.clipDescription || '',
-          content
-        )
-      } catch (error) {
-        console.warn('Gemini analysis failed:', error)
-      }
-      
-      // Combine insights from all AI services
-      const combinedResult = {
-        ...deepseekResult,
-        // Merge insights from all services
-        algorithmInsights: [
-          ...(deepseekResult?.algorithmInsights || []),
-          ...(openaiResult?.insights || []).map(insight => `OpenAI: ${insight}`),
-          ...(geminiResult?.insights || []).map(insight => `Gemini: ${insight}`)
-        ],
-        // Merge recommendations
-        editingTips: [
-          ...(deepseekResult?.editingTips || []),
-          ...(openaiResult?.recommendations || []).map(rec => `OpenAI: ${rec}`),
-          ...(geminiResult?.recommendations || []).map(rec => `Gemini: ${rec}`)
-        ],
-        // Merge tag suggestions
-        tagSuggestions: [
-          ...(deepseekResult?.tagSuggestions || []),
-          ...(openaiResult?.tags || []),
-          ...(geminiResult?.tags || []),
-          ...(geminiResult?.trends || [])
-        ].slice(0, 25), // Limit to top 25
-        // Add AI service info
-        aiAnalysis: {
-          deepSeekUsed: !!deepseekResult,
-          openaiUsed: !!openaiResult,
-          geminiUsed: !!geminiResult,
-          totalInsights: (deepseekResult?.algorithmInsights?.length || 0) + 
-                        (openaiResult?.insights?.length || 0) + 
-                        (geminiResult?.insights?.length || 0)
-        }
-      }
-      
-      console.log('✅ Comprehensive AI Analysis Complete:', {
-        deepSeek: !!deepseekResult,
-        openai: !!openaiResult,
-        gemini: !!geminiResult,
-        totalInsights: combinedResult.aiAnalysis.totalInsights,
-        totalTagSuggestions: combinedResult.tagSuggestions.length
-      })
-      
-      return combinedResult
-    } catch (error) {
-      console.error('❌ Comprehensive AI Analysis failed:', error)
-      // Fallback to DeepSeek only
-      return await analyzeWithDeepSeek(content, platform)
-    }
-  }
-
   const analyzeWithDeepSeek = async (content: string, platform: string) => {
     const deepseekPrompt = `You are a senior social media algorithm researcher and content analyst with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
 
@@ -263,133 +175,6 @@ CRITICAL ANALYSIS REQUIREMENTS:
    - Leverage game-specific knowledge from URL context
    - Create realistic titles and descriptions based on analysis
    - Generate comprehensive tags from inferred content
-
-4. COMPREHENSIVE TAG GENERATION:
-   - Game-specific tags (game name, characters, weapons)
-   - Genre tags (FPS, RPG, Battle Royale, etc.)
-   - Platform tags (PC, PS5, Xbox, Mobile)
-   - Streaming tags (Twitch, YouTube, Kick)
-   - Content type tags (gameplay, highlights, tutorial)
-   - Trending tags relevant to this specific game
-   - Algorithm-optimized tags for ${platform}
-
-PLATFORM ALGORITHM RESEARCH FOR ${platform.toUpperCase()} (2026):
-
-${platform === 'youtube shorts' ? `
-CURRENT ALGORITHM FACTORS (Weighted by importance):
-1. Watch Time Retention (35%) - First 3 seconds critical, 15-25 second sweet spot
-2. Swipe-Up Rate (25%) - Vertical engagement metrics
-3. Video Completion Rate (20%) - Full watches boost recommendation
-4. Comments-to-Views Ratio (10%) - Engagement velocity
-5. Share Velocity (5%) - Re-watch value important
-6. Audio Trending Score (3%) - Trending sounds 2.3x boost
-7. Session Time Contribution (2%) - How video affects user session
-
-TRENDING PATTERNS:
-- Gaming content with "close call" moments performing 45% better
-- Dune-related content seeing 180% increase post-part 2
-- Suspenseful audio hooks increasing retention by 32%
-- Text overlays during action moments boosting comments 67%
-
-RECENT ALGORITHM UPDATES:
-- Improved detection of "shock value" moments
-- Better cross-platform content recognition
-- Enhanced audio-visual sync analysis` : platform === 'youtube long' ? `
-CURRENT ALGORITHM FACTORS (Weighted by importance):
-1. Total Watch Time & Audience Retention (40%) - 8+ minute videos favored
-2. Click-Through Rate (CTR) from Thumbnails (25%) - Critical for discovery
-3. Session Time Contribution (15%) - How video affects overall user session
-4. Engagement Velocity (10%) - Likes/comments in first hour
-5. Subscriber Conversion Rate (5%) - New subscribers from video
-6. Video SEO & Keywords (3%) - Title/description optimization
-7. Content Consistency Score (2%) - Upload schedule regularity
-
-TRENDING PATTERNS:
-- Gaming analysis videos seeing 62% increase
-- Dune franchise content performing 140% above baseline
-- "Close call" survival content getting 3.2x engagement
-- Algorithm research content with data-driven insights favored
-
-RECENT ALGORITHM UPDATES:
-- Better thumbnail-text relevance analysis
-- Enhanced user intent matching
-- Improved long-form content retention analysis` : platform === 'tiktok' ? `
-CURRENT ALGORITHM FACTORS (Weighted by importance):
-1. Video Completion Rate (30%) - 15-30 seconds optimal
-2. Re-watch Value (25%) - Users rewatching key moments
-3. Share Velocity (20%) - Rapid sharing in first hour
-4. Comments-to-Views Ratio (15%) - Engagement speed critical
-5. Trending Audio Usage (5%) - Trending sounds 2.8x boost
-6. User Interaction Speed (3%) - Quick comments/reactions
-7. Session Time Contribution (2%) - Effect on user session
-
-TRENDING PATTERNS:
-- Gaming "close call" content trending #gamingclosecall
-- Dune worm content seeing 450% increase
-- Suspenseful moments with text overlays performing 89% better
-- Algorithm breakdown content getting high engagement
-
-RECENT ALGORITHM UPDATES:
-- Better detection of "viral potential" moments
-- Enhanced cross-reference with trending sounds
-- Improved user behavior pattern analysis` : platform === 'instagram' ? `
-CURRENT ALGORITHM FACTORS (Weighted by importance):
-1. Reels Completion Rate (30%) - Full watches crucial
-2. Share & Save Metrics (25%) - Both equally important
-3. Comments-to-Impressions Ratio (20%) - Engagement quality
-4. Profile Visit Rate (15%) - Drives follower growth
-5. Hashtag Relevance (5%) - Mix of trending + niche tags
-6. Story Interaction Rate (3%) - Cross-platform engagement
-7. Content Diversity Score (2%) - Variety in content types
-
-TRENDING PATTERNS:
-- Gaming Reels with suspense performing 71% better
-- Dune franchise content seeing 220% boost
-- "Close call" moments getting 3.5x saves
-- Behind-the-scenes content with algorithm insights trending
-
-RECENT ALGORITHM UPDATES:
-- Better hashtag relevance scoring
-- Enhanced save-intent detection
-- Improved cross-post performance analysis` : platform === 'twitter' ? `
-CURRENT ALGORITHM FACTORS (Weighted by importance):
-1. Retweet Velocity (30%) - Speed of retweets critical
-2. Quote Engagement (25%) - Quote tweets with comments
-3. Reply Thread Depth (20%) - Conversation depth matters
-4. Hashtag Trending Potential (15%) - Trending hashtag usage
-5. Link Click-Through Rate (5%) - External link engagement
-6. Follower Growth Rate (3%) - New follower acquisition
-7. Thread Completion Rate (2%) - Users reading full threads
-
-TRENDING PATTERNS:
-- Gaming analysis threads performing 89% better
-- Dune content threads seeing 340% engagement
-- "Close call" survival stories getting high quote rates
-- Algorithm research threads with data getting bookmarked
-
-RECENT ALGORITHM UPDATES:
-- Better thread relevance analysis
-- Enhanced hashtag trend detection
-- Improved user conversation pattern analysis` : `
-CURRENT ALGORITHM FACTORS (Weighted by importance):
-1. Video Completion Rate (35%) - Full watches prioritized
-2. Share Velocity (25%) - Rapid sharing critical
-3. Comments-to-Views Ratio (20%) - Engagement quality
-4. Audio Trending Score (10%) - Trending sounds help
-5. Cross-Platform Engagement (5%) - Content from other platforms
-6. Session Time Contribution (3%) - Effect on user session
-7. Content Freshness (2%) - New content favored
-
-TRENDING PATTERNS:
-- Gaming content with suspense performing 63% better
-- Dune franchise content seeing 190% boost
-- "Close call" moments getting 2.8x shares
-- Algorithm explanation content with data favored
-
-RECENT ALGORITHM UPDATES:
-- Better cross-platform content detection
-- Enhanced audio-visual sync analysis
-- Improved user engagement pattern recognition`}
 
 Based on this comprehensive analysis, provide detailed optimization recommendations in JSON format:
 {
@@ -517,6 +302,94 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
       }
       console.error('Could not parse DeepSeek response:', analysisText)
       return null
+    }
+  }
+
+  const analyzeWithAllAI = async (content: string, platform: string) => {
+    console.log('🤖 Starting comprehensive AI analysis with DeepSeek, OpenAI, and Gemini...')
+    
+    try {
+      // Primary analysis with DeepSeek
+      console.log('🧠 DeepSeek AI Analysis...')
+      const deepseekResult = await analyzeWithDeepSeek(content, platform)
+      
+      // Backup analysis with OpenAI
+      console.log('🔵 OpenAI Analysis...')
+      let openaiResult = null
+      try {
+        openaiResult = await analyzeContentWithAI(
+          'video',
+          platform,
+          deepseekResult?.clipTitle || 'Untitled',
+          deepseekResult?.clipDescription || '',
+          content
+        )
+      } catch (error) {
+        console.warn('OpenAI analysis failed:', error)
+      }
+      
+      // Trend analysis with Gemini
+      console.log('🟣 Gemini Trend Analysis...')
+      let geminiResult = null
+      try {
+        const geminiService = GeminiService.getInstance()
+        geminiResult = await geminiService.analyzeContent(
+          'video',
+          platform,
+          deepseekResult?.clipTitle || 'Untitled',
+          deepseekResult?.clipDescription || '',
+          content
+        )
+      } catch (error) {
+        console.warn('Gemini analysis failed:', error)
+      }
+      
+      // Combine insights from all AI services
+      const combinedResult = {
+        ...deepseekResult,
+        // Merge insights from all services
+        algorithmInsights: [
+          ...(deepseekResult?.algorithmInsights || []),
+          ...(openaiResult?.insights || []).map(insight => `OpenAI: ${insight}`),
+          ...(geminiResult?.insights || []).map(insight => `Gemini: ${insight}`)
+        ],
+        // Merge recommendations
+        editingTips: [
+          ...(deepseekResult?.editingTips || []),
+          ...(openaiResult?.recommendations || []).map(rec => `OpenAI: ${rec}`),
+          ...(geminiResult?.recommendations || []).map(rec => `Gemini: ${rec}`)
+        ],
+        // Merge tag suggestions
+        tagSuggestions: [
+          ...(deepseekResult?.tagSuggestions || []),
+          ...(openaiResult?.tags || []),
+          ...(geminiResult?.tags || []),
+          ...(geminiResult?.trends || [])
+        ].slice(0, 25), // Limit to top 25
+        // Add AI service info
+        aiAnalysis: {
+          deepSeekUsed: !!deepseekResult,
+          openaiUsed: !!openaiResult,
+          geminiUsed: !!geminiResult,
+          totalInsights: (deepseekResult?.algorithmInsights?.length || 0) + 
+                        (openaiResult?.insights?.length || 0) + 
+                        (geminiResult?.insights?.length || 0)
+        }
+      }
+      
+      console.log('✅ Comprehensive AI Analysis Complete:', {
+        deepSeek: !!deepseekResult,
+        openai: !!openaiResult,
+        gemini: !!geminiResult,
+        totalInsights: combinedResult.aiAnalysis.totalInsights,
+        totalTagSuggestions: combinedResult.tagSuggestions.length
+      })
+      
+      return combinedResult
+    } catch (error) {
+      console.error('❌ Comprehensive AI Analysis failed:', error)
+      // Fallback to DeepSeek only
+      return await analyzeWithDeepSeek(content, platform)
     }
   }
 
