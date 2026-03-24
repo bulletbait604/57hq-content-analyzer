@@ -580,7 +580,7 @@ VIDEO METADATA EXTRACTION:
         tagSuggestions: Array.isArray(deepseekResult.tagSuggestions) ? deepseekResult.tagSuggestions : [],
         editingTips: Array.isArray(deepseekResult.editingTips) ? deepseekResult.editingTips : [],
         algorithmInsights: Array.isArray(deepseekResult.algorithmInsights) ? deepseekResult.algorithmInsights : [],
-        researchTimestamp: new Date(),
+        researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'), // Use consistent date for SSR
         // Additional DeepSeek insights
         deepseekInsights: {
           algorithmResearch: deepseekResult.algorithmResearch || '',

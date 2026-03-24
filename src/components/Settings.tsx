@@ -323,6 +323,11 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   }
 
   const formatDate = (dateString: string) => {
+    // Only format dates on client-side to avoid hydration mismatch
+    if (typeof window === 'undefined') {
+      return dateString // Return raw date string during SSR
+    }
+    
     const date = new Date(dateString)
     return date.toLocaleDateString(language === 'en' ? 'en-US' : language, {
       year: 'numeric',
