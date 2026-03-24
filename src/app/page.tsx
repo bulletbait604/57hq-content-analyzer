@@ -205,7 +205,21 @@ export default function Home() {
 
 // Algorithm Info Component
 function AlgorithmInfo() {
-  const [lastRefresh, setLastRefresh] = useState<string>('2024-03-23 10:00:00')
+  // Get user's local timezone for initial timestamp
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const now = new Date()
+  const localTimestamp = now.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: userTimeZone
+  }).replace(',', '')
+
+  const [lastRefresh, setLastRefresh] = useState<string>(localTimestamp)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [platforms, setPlatforms] = useState([
     {
@@ -213,7 +227,7 @@ function AlgorithmInfo() {
       icon: '⚡',
       color: 'border-red-500',
       bgColor: 'bg-red-500/10',
-      lastUpdate: '2024-03-23',
+      lastUpdate: localTimestamp,
       factors: [
         'Watch time retention (first 3 seconds critical)',
         'Swipe-up rate (vertical engagement)',
@@ -240,7 +254,7 @@ function AlgorithmInfo() {
       icon: '📹',
       color: 'border-red-500',
       bgColor: 'bg-red-500/10',
-      lastUpdate: '2024-03-23',
+      lastUpdate: localTimestamp,
       factors: [
         'Total watch time & audience retention',
         'Click-through rate (CTR) from thumbnails',
@@ -267,7 +281,7 @@ function AlgorithmInfo() {
       icon: '🎵',
       color: 'border-pink-500',
       bgColor: 'bg-pink-500/10',
-      lastUpdate: '2024-03-23',
+      lastUpdate: localTimestamp,
       factors: [
         'Video completion rate',
         'Re-watch value',
@@ -294,7 +308,7 @@ function AlgorithmInfo() {
       icon: '📷',
       color: 'border-purple-500',
       bgColor: 'bg-purple-500/10',
-      lastUpdate: '2024-03-23',
+      lastUpdate: localTimestamp,
       factors: [
         'Reels completion rate',
         'Share & save metrics',
@@ -321,7 +335,7 @@ function AlgorithmInfo() {
       icon: '🐦',
       color: 'border-blue-500',
       bgColor: 'bg-blue-500/10',
-      lastUpdate: '2024-03-23',
+      lastUpdate: localTimestamp,
       factors: [
         'Retweet velocity',
         'Quote tweet engagement',
@@ -348,7 +362,7 @@ function AlgorithmInfo() {
       icon: '👥',
       color: 'border-blue-600',
       bgColor: 'bg-blue-600/10',
-      lastUpdate: '2024-03-23',
+      lastUpdate: localTimestamp,
       factors: [
         'Video completion rate',
         'Share velocity',

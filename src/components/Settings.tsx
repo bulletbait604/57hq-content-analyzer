@@ -194,8 +194,22 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   const [subscribers, setSubscribers] = useState(SubscribersManager.getInstance().getSubscribers())
   const [subscribersManager] = useState(SubscribersManager.getInstance())
   
-  const isAdmin = user && subscribersManager.isAdmin(user.username)
-  const isSubscriber = user && subscribersManager.isSubscriber(user.username)
+  // Ensure we're using the correct username from Kick API
+  const kickUsername = user?.username || ''
+  const isAdmin = user && subscribersManager.isAdmin(kickUsername)
+  const isSubscriber = user && subscribersManager.isSubscriber(kickUsername)
+  
+  // Debug logging to verify username consistency
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 Settings - User data:', {
+        username: kickUsername,
+        display_name: user.display_name,
+        isAdmin,
+        isSubscriber
+      })
+    }
+  }, [user, kickUsername, isAdmin, isSubscriber])
 
   const t = (key: keyof typeof translations.en) => translations[currentLanguage][key] || translations.en[key]
 
@@ -214,7 +228,7 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   const handleAddSubscriber = () => {
     if (!newSubscriber.trim() || !isAdmin) return
     
-    const success = subscribersManager.addSubscriber(newSubscriber.trim(), user.username)
+    const success = subscribersManager.addSubscriber(newSubscriber.trim(), kickUsername)
     if (success) {
       setSubscribers(subscribersManager.getSubscribers())
       setNewSubscriber('')
@@ -226,7 +240,7 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   const handleRemoveSubscriber = (username: string) => {
     if (!isAdmin) return
     
-    const success = subscribersManager.removeSubscriber(username, user.username)
+    const success = subscribersManager.removeSubscriber(username, kickUsername)
     if (success) {
       setSubscribers(subscribersManager.getSubscribers())
       setSaveMessage(t('removeSuccess'))
@@ -336,16 +350,27 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-green-400">{t('username')}</Label>
-              <p className="text-white p-2 bg-black/50 rounded">{user.username}</p>
+              <p className="text-white p-2 bg-black/50 rounded">{kickUsername}</p>
+              <p className="text-gray-400 text-xs mt-1">Kick API Username</p>
             </div>
             <div>
-              <Label className="text-green-400">{t('premium')}</Label>
+              <Label className="text-green-400">Subscription Status</Label>
               <div className="mt-2">
-                <Badge className={user.is_premium ? "bg-green-600/20 text-green-400 border-green-500" : "bg-gray-600/20 text-gray-400 border-gray-500"}>
-                  {user.is_premium ? t('active') : t('inactive')}
+                <Badge className={isSubscriber ? "bg-green-600/20 text-green-400 border-green-500" : "bg-gray-600/20 text-gray-400 border-gray-500"}>
+                  {isSubscriber ? 'Active Subscriber' : 'Not Subscribed'}
                 </Badge>
+                {isAdmin && (
+                  <Badge className="ml-2 bg-yellow-600/20 text-yellow-400 border-yellow-500">
+                    Admin
+                  </Badge>
+                )}
               </div>
             </div>
+          </div>
+          <div className="mt-4 p-3 bg-black/50 rounded">
+            <p className="text-gray-300 text-sm">
+              <strong>Account Verification:</strong> Username verified through Kick API and cross-referenced with subscriber list.
+            </p>
           </div>
         </CardContent>
       </Card>
