@@ -473,6 +473,13 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
           gamingPlatform: 'Unknown',
           streamingPlatform: 'Unknown',
           contentFocus: 'Unknown'
+        },
+        // Add aiAnalysis for compatibility with multi-AI system
+        aiAnalysis: {
+          deepSeekUsed: true,
+          openaiUsed: false,
+          geminiUsed: false,
+          totalInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights.length : 0
         }
       }
     } catch (parseError) {
@@ -498,6 +505,13 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
             gamingPlatform: 'Unknown',
             streamingPlatform: 'Unknown',
             contentFocus: 'Unknown'
+          },
+          // Add aiAnalysis for compatibility with multi-AI system
+          aiAnalysis: {
+            deepSeekUsed: true,
+            openaiUsed: false,
+            geminiUsed: false,
+            totalInsights: Array.isArray(parsed.algorithmInsights) ? parsed.algorithmInsights.length : 0
           }
         }
       }
