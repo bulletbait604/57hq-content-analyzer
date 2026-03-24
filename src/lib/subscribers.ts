@@ -69,13 +69,23 @@ class SubscribersManager {
   }
 
   isSubscriber(username: string): boolean {
+    console.log('🔍 isSubscriber called for:', username)
+    console.log('🔍 Current subscriber list:', this.subscribers)
+    
     const result = this.subscribers.some(
       sub => sub.username.toLowerCase() === username.toLowerCase() && sub.status === 'active'
     )
     
     console.log('🔍 Subscription Check:', {
       checkingUsername: username,
+      checkingUsernameLower: username.toLowerCase(),
       allSubscribers: this.subscribers,
+      subscriberMatches: this.subscribers.map(sub => ({
+        username: sub.username,
+        usernameLower: sub.username.toLowerCase(),
+        status: sub.status,
+        matches: sub.username.toLowerCase() === username.toLowerCase() && sub.status === 'active'
+      })),
       isSubscriber: result
     })
     
@@ -173,6 +183,30 @@ class SubscribersManager {
 
   canAccessClipAnalysis(username: string): boolean {
     return this.isSubscriber(username) || this.isAdmin(username)
+  }
+
+  // Manual test function for debugging
+  testRemoval(username: string): void {
+    console.log('🧪 Testing removal process:', {
+      username,
+      beforeRemoval: this.subscribers,
+      subscriberCount: this.subscribers.length
+    })
+    
+    const index = this.subscribers.findIndex(
+      sub => sub.username.toLowerCase() === username.toLowerCase()
+    )
+    
+    console.log('🧪 Found subscriber at index:', index)
+    if (index >= 0) {
+      console.log('🧪 Subscriber to remove:', this.subscribers[index])
+    }
+    
+    // Test the removal
+    const result = this.removeSubscriber(username, 'test')
+    console.log('🧪 Removal result:', result)
+    console.log('🧪 After removal:', this.subscribers)
+    console.log('🧪 Final count:', this.subscribers.length)
   }
 }
 

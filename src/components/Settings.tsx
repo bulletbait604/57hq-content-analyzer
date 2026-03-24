@@ -201,6 +201,31 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
       
       // Debug storage contents
       subscribersManager.debugStorage()
+      
+      // Add test function to window for manual testing
+      if (typeof window !== 'undefined') {
+        (window as any).testSubscriberRemoval = (username: string) => {
+          subscribersManager.testRemoval(username)
+        }
+        (window as any).testSubscriptionCheck = (username: string) => {
+          console.log('🧪 Manual subscription check for:', username)
+          const result = subscribersManager.isSubscriber(username)
+          console.log('🧪 Subscription result:', result)
+          console.log('🧪 Current subscriber list:', subscribersManager.getSubscribers())
+          subscribersManager.debugStorage()
+          return result
+        }
+        (window as any).forcePremiumUpdate = () => {
+          console.log('🧪 Forcing premium status update...')
+          window.dispatchEvent(new CustomEvent('subscriberListUpdated', {
+            detail: { subscribers: subscribersManager.getSubscribers() }
+          }))
+        }
+        console.log('🧪 Test functions available:')
+        console.log('  - window.testSubscriberRemoval("username")')
+        console.log('  - window.testSubscriptionCheck("username")')
+        console.log('  - window.forcePremiumUpdate()')
+      }
     }
   }, [user, kickUsername, isAdmin, isSubscriber])
 
@@ -245,19 +270,37 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   }
 
   const handleRemoveSubscriber = (username: string) => {
-    if (!isAdmin) return
+    console.log('🗑️ Settings.handleRemoveSubscriber called:', {
+      username,
+      isAdmin,
+      kickUsername,
+      currentSubscribers: subscribers
+    })
     
+    if (!isAdmin) {
+      console.log('❌ Not admin, cannot remove subscriber')
+      return
+    }
+    
+    console.log('🗑️ Calling subscribersManager.removeSubscriber...')
     const success = subscribersManager.removeSubscriber(username, kickUsername)
+    console.log('🗑️ removeSubscriber result:', success)
+    
     if (success) {
       const updatedSubscribers = subscribersManager.getSubscribers()
+      console.log('🗑️ Got updated subscribers:', updatedSubscribers)
       setSubscribers(updatedSubscribers)
       setSaveMessage(t('removeSuccess'))
       setTimeout(() => setSaveMessage(''), 3000)
       
       // Trigger a re-check of the current user's premium status
+      console.log('🗑️ Dispatching subscriberListUpdated event...')
       window.dispatchEvent(new CustomEvent('subscriberListUpdated', {
         detail: { subscribers: updatedSubscribers }
       }))
+      console.log('🗑️ Event dispatched successfully')
+    } else {
+      console.log('❌ Failed to remove subscriber')
     }
   }
 

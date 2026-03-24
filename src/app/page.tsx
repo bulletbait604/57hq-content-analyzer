@@ -151,12 +151,18 @@ export default function Home() {
       localStorage.setItem('kickUser', JSON.stringify(userData))
       // Use SubscribersManager instead of PremiumAccess
       const subscribersManager = SubscribersManager.getInstance()
+      console.log('🔍 Checking subscription for user:', userData.username)
+      console.log('🔍 Available subscribers:', subscribersManager.getSubscribers())
       const isSub = subscribersManager.isSubscriber(userData.username)
       console.log('🔍 Setting premium status:', {
         username: userData.username,
-        isSubscriber: isSub
+        isSubscriber: isSub,
+        subscribersList: subscribersManager.getSubscribers()
       })
       setHasPremium(isSub)
+      
+      // Debug storage
+      subscribersManager.debugStorage()
     } else {
       localStorage.removeItem('kickUser')
       setHasPremium(false)
