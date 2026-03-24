@@ -491,7 +491,7 @@ VIDEO METADATA EXTRACTION:
       const currentTags = youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || []
       
       // Detect if it's a TikTok URL for UI customization
-      const isTikTok = !!(tiktokMetadata) || (videoUrl && videoUrl.includes('tiktok.com'))
+      const isTikTok = !!(tiktokMetadata) || !!(videoUrl && videoUrl.includes('tiktok.com'))
       
       // Display current metadata immediately (before DeepSeek analysis)
       const analysisData = {
