@@ -200,8 +200,9 @@ class YouTubeMetadataService {
         fullDescription: metadata.description,
         apiResponse: {
           snippetTitle: snippet.title,
-          snippetDescriptionLength: snippet.description?.length || 0,
-          snippetDescriptionPreview: snippet.description?.substring(0, 100) + '...'
+          snippetDescription: snippet.description,
+          contentDetailsTags: contentDetails.tags,
+          snippetTags: snippet.tags
         }
       })
       return metadata

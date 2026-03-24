@@ -143,6 +143,8 @@ class TikTokMetadataService {
   // Method 3: TikWM.com API (Free, No API Key Required, No CORS Issues)
   async getMetadataTikWM(videoUrl: string): Promise<TikTokMetadata | null> {
     try {
+      console.log('🎵 Attempting TikWM.com API for:', videoUrl)
+      
       // TikWM.com free API - no API key required, no CORS issues
       const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}&hd=1`, {
         method: 'GET',
@@ -157,22 +159,32 @@ class TikTokMetadataService {
           'sec-fetch-mode': 'cors',
           'sec-fetch-site': 'same-site',
           'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"Windows"'
-        },
-        mode: 'cors'
+          'sec-ch-ua-mobile': '?1',
+          'sec-ch-ua-platform': '"iOS"'
+        }
       })
 
+      console.log('🎵 TikWM.com API response status:', response.status)
+      
       if (!response.ok) {
-        console.warn(`TikWM API responded with status: ${response.status}`)
+        console.error('🎵 TikWM.com API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: videoUrl
+        })
         return null
       }
 
       const data = await response.json()
+      console.log('🎵 TikWM.com API response:', {
+        success: data?.success,
+        dataKeys: data?.data ? Object.keys(data.data) : 'no data',
+        hasVideoData: !!data?.data?.video,
+        videoId: data?.data?.video?.id
+      })
       
-      // TikWM returns different structure, format it
-      if (data.code === 0 && data.data) {
-        const videoData = data.data
+      if (!data.success || !data.data?.video) {
+        console.error('🎵 TikWM.com API returned invalid data:', data)
         console.log('TikWM API success:', videoData.title)
         
         return {
@@ -190,16 +202,6 @@ class TikTokMetadataService {
             shares: videoData.stats?.share_count || 0
           },
           hashtags: videoData.hashtags?.map((tag: any) => tag.name) || [],
-          duration: videoData.duration || 0,
-          createTime: videoData.create_time || Date.now(),
-          music: videoData.music ? {
-            title: videoData.music.title || '',
-            author: videoData.music.author || ''
-          } : undefined
-        }
-      } else {
-        console.warn('TikWM API returned no data:', data)
-        return null
       }
     } catch (error) {
       console.error('TikWM API error:', error)
