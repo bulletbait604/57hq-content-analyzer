@@ -131,34 +131,42 @@ class YouTubeMetadataService {
       envKeys: {
         NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.substring(0, 10) + '...' : 'Missing',
         NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? process.env.NEXT_PUBLIC_GOOGLE_API_KEY.substring(0, 10) + '...' : 'Missing'
-      }
-    })
-
     try {
-      // Get video details
-      const videoResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey}`
+      console.log('🎬 Attempting YouTube Data API v3 for:', videoUrl)
+      
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey}`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }
       )
 
-      console.log('📡 YouTube API response:', {
-        status: videoResponse.status,
-        statusText: videoResponse.statusText,
-        url: `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey.substring(0, 10)}...`
-      })
-
-      if (!videoResponse.ok) {
-        console.error('YouTube API error:', videoResponse.status, 'Falling back to scraping method')
-        return this.getMetadataFromScraping(videoUrl)
-      }
-
-      const videoData = await videoResponse.json()
-
-      if (!videoData.items || videoData.items.length === 0) {
-        console.error('Video not found')
+      if (!response.ok) {
+        console.error('YouTube API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          videoId: videoId
+        })
         return null
       }
 
-      const video = videoData.items[0]
+      const data = await response.json()
+      console.log('🎬 YouTube API raw response:', {
+        videoId,
+        hasItems: !!data.items,
+        itemCount: data.items?.length || 0,
+        firstItemKeys: data.items?.[0] ? Object.keys(data.items[0]) : []
+      })
+
+      if (!data.items || data.items.length === 0) {
+        console.error('YouTube API: No video data found for video ID:', videoId)
+        return null
+      }
+
+      const video = data.items[0]
       const snippet = video.snippet
       const statistics = video.statistics
       const contentDetails = video.contentDetails
@@ -169,7 +177,13 @@ class YouTubeMetadataService {
 
       try {
         const channelResponse = await fetch(
-          `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${snippet.channelId}&key=${this.apiKey}`
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${snippet.channelId}&key=${this.apiKey}`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          }
         )
 
         if (channelResponse.ok) {
@@ -202,7 +216,7 @@ class YouTubeMetadataService {
         thumbnail: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || ''
       }
 
-      console.log('YouTube API success:', {
+      console.log('🎬 YouTube API success:', {
         title: metadata.title,
         descriptionLength: metadata.description.length,
         hashtagsCount: metadata.hashtags.length,
@@ -216,8 +230,8 @@ class YouTubeMetadataService {
           snippetTags: snippet.tags
         }
       })
+      
       return metadata
-
     } catch (error) {
       console.error('YouTube API error:', error)
       return this.getMetadataFromScraping(videoUrl)
