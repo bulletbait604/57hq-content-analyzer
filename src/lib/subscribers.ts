@@ -131,21 +131,40 @@ class SubscribersManager {
   }
 
   removeSubscriber(username: string, removedBy: string): boolean {
+    console.log('🗑️ SubscribersManager.removeSubscriber called:', {
+      username,
+      removedBy,
+      currentSubscribers: this.subscribers
+    })
+    
     const index = this.subscribers.findIndex(
       sub => sub.username.toLowerCase() === username.toLowerCase()
     )
 
     if (index >= 0) {
-      this.subscribers[index].status = 'inactive'
+      console.log('🗑️ Removing subscriber:', this.subscribers[index])
+      // Actually remove from array instead of just setting inactive
+      this.subscribers.splice(index, 1)
+      console.log('💾 Saving updated subscribers list:', this.subscribers)
       this.saveSubscribers()
+      console.log('✅ Subscriber removed successfully')
       return true
+    } else {
+      console.log('❌ Subscriber not found for removal:', username)
     }
 
     return false
   }
 
   getSubscribers(): Subscriber[] {
-    return this.subscribers
+    // Return only active subscribers
+    const activeSubscribers = this.subscribers.filter(sub => sub.status === 'active')
+    console.log('📋 getSubscribers called:', {
+      totalSubscribers: this.subscribers.length,
+      activeSubscribers: activeSubscribers.length,
+      activeList: activeSubscribers
+    })
+    return activeSubscribers
   }
 
   getAllSubscribers(): Subscriber[] {
