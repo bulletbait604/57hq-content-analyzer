@@ -189,12 +189,20 @@ class TikTokMetadataService {
       }
 
       const videoData = data.data.video
-      console.log('🎵 TikWM API success:', videoData.title)
+      console.log('🎵 TikWM API success:', {
+        title: videoData.title,
+        desc: videoData.desc,
+        hashtags: videoData.hashtags,
+        text: videoData.text,
+        hashtagsExtra: videoData.hashtags_extra,
+        author: videoData.author,
+        stats: videoData.stats
+      })
       
       return {
         id: videoData.id,
         title: videoData.title || videoData.desc || 'Untitled Video',
-        description: videoData.desc || '',
+        description: videoData.desc || videoData.text || '',
         author: {
           username: videoData.author?.unique_id || videoData.author?.name || '',
           displayName: videoData.author?.nickname || videoData.author?.name || ''
@@ -205,7 +213,7 @@ class TikTokMetadataService {
           comments: videoData.stats?.comment_count || 0,
           shares: videoData.stats?.share_count || 0
         },
-        hashtags: videoData.hashtags?.map((tag: any) => tag.name) || [],
+        hashtags: videoData.hashtags?.map((tag: any) => tag.name) || videoData.hashtags_extra || [],
         duration: videoData.duration || 0,
         createTime: videoData.create_time || Date.now(),
         music: videoData.music ? {
