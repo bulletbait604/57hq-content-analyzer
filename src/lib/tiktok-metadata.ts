@@ -194,16 +194,27 @@ class TikTokMetadataService {
       console.log('🎵 TikWM API video data:', {
         title: videoData.title,
         desc: videoData.desc,
+        content_desc: videoData.content_desc,
         hashtags: videoData.hashtags,
         text: videoData.text,
         author: videoData.author,
         stats: videoData.stats
       })
       
+      // Handle TikTok description - it can be in content_desc (array) or desc (string)
+      let description = ''
+      if (Array.isArray(videoData.content_desc)) {
+        description = videoData.content_desc.join(' ')
+      } else if (typeof videoData.desc === 'string') {
+        description = videoData.desc
+      } else if (typeof videoData.text === 'string') {
+        description = videoData.text
+      }
+      
       return {
         id: videoData.id,
         title: videoData.title || videoData.desc || 'Untitled Video',
-        description: videoData.desc || videoData.text || '',
+        description: description,
         author: {
           username: videoData.author?.unique_id || videoData.author?.name || '',
           displayName: videoData.author?.nickname || videoData.author?.name || ''
