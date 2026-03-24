@@ -56,9 +56,17 @@ class SubscribersManager {
   }
 
   isSubscriber(username: string): boolean {
-    return this.subscribers.some(
+    const result = this.subscribers.some(
       sub => sub.username.toLowerCase() === username.toLowerCase() && sub.status === 'active'
     )
+    
+    console.log('🔍 Subscription Check:', {
+      checkingUsername: username,
+      allSubscribers: this.subscribers,
+      isSubscriber: result
+    })
+    
+    return result
   }
 
   addSubscriber(username: string, addedBy: string): boolean {

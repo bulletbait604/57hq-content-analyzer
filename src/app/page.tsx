@@ -66,10 +66,16 @@ export default function Home() {
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser)
+          console.log('🔄 Loading stored user:', parsedUser)
           setUser(parsedUser)
           // Use SubscribersManager instead of PremiumAccess
           const subscribersManager = SubscribersManager.getInstance()
-          setHasPremium(subscribersManager.isSubscriber(parsedUser.username))
+          const isSub = subscribersManager.isSubscriber(parsedUser.username)
+          console.log('🔍 Initial premium status:', {
+            username: parsedUser.username,
+            isSubscriber: isSub
+          })
+          setHasPremium(isSub)
         } catch (error) {
           console.error('Error parsing stored user:', error)
           localStorage.removeItem('kickUser')
@@ -94,12 +100,18 @@ export default function Home() {
   }
 
   const handleUserChange = (userData: any) => {
+    console.log('👤 User change detected:', userData)
     setUser(userData)
     if (userData) {
       localStorage.setItem('kickUser', JSON.stringify(userData))
       // Use SubscribersManager instead of PremiumAccess
       const subscribersManager = SubscribersManager.getInstance()
-      setHasPremium(subscribersManager.isSubscriber(userData.username))
+      const isSub = subscribersManager.isSubscriber(userData.username)
+      console.log('🔍 Setting premium status:', {
+        username: userData.username,
+        isSubscriber: isSub
+      })
+      setHasPremium(isSub)
     } else {
       localStorage.removeItem('kickUser')
       setHasPremium(false)

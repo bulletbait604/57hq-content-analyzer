@@ -218,9 +218,17 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
   const handleAddSubscriber = () => {
     if (!newSubscriber.trim() || !isAdmin) return
     
+    console.log('➕ Adding subscriber:', {
+      newUsername: newSubscriber.trim(),
+      addedBy: kickUsername,
+      currentSubscribers: subscribers
+    })
+    
     const success = subscribersManager.addSubscriber(newSubscriber.trim(), kickUsername)
     if (success) {
-      setSubscribers(subscribersManager.getSubscribers())
+      const updatedSubscribers = subscribersManager.getSubscribers()
+      console.log('✅ Subscriber added, new list:', updatedSubscribers)
+      setSubscribers(updatedSubscribers)
       setNewSubscriber('')
       setSaveMessage(t('addSuccess'))
       setTimeout(() => setSaveMessage(''), 3000)
