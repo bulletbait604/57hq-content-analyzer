@@ -11,31 +11,31 @@ const translations = {
   en: {
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
-    rights: '© 2024 SDHQ Content Analyzer. All rights reserved.',
+    rights: '© 2026 SDHQ Content Analyzer. All rights reserved.',
     powered: 'Powered by AI'
   },
   es: {
     privacy: 'Política de Privacidad',
     terms: 'Términos de Servicio',
-    rights: '© 2024 SDHQ Content Analyzer. Todos los derechos reservados.',
+    rights: '© 2026 SDHQ Content Analyzer. Todos los derechos reservados.',
     powered: 'Impulsado por IA'
   },
   fr: {
     privacy: 'Politique de Confidentialité',
     terms: 'Conditions d\'Utilisation',
-    rights: ' 2024 SDHQ Content Analyzer. Tous droits réservés.',
+    rights: ' 2026 SDHQ Content Analyzer. Tous droits réservés.',
     powered: 'Alimenté par IA'
   },
   de: {
     privacy: 'Datenschutzerklärung',
     terms: 'Nutzungsbedingungen',
-    rights: ' 2024 SDHQ Content Analyzer. Alle Rechte vorbehalten.',
+    rights: ' 2026 SDHQ Content Analyzer. Alle Rechte vorbehalten.',
     powered: 'Angetrieben von KI'
   },
   ja: {
     privacy: 'プライバシーポリシー',
     terms: '利用規約',
-    rights: ' 2024 SDHQ Content Analyzer. 全権利留保。',
+    rights: ' 2026 SDHQ Content Analyzer. 全権利留保。',
     powered: 'AI駆動'
   }
 }
@@ -61,7 +61,7 @@ export function Footer({ language = 'en' }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-green-400 font-semibold mb-4">57HQ</h3>
+            <h3 className="text-green-400 font-semibold mb-4">SDHQ - Stream Dreams HQ</h3>
             <p className="text-gray-300 text-sm mb-2">
               {t('powered')}
             </p>
@@ -95,11 +95,11 @@ export function Footer({ language = 'en' }: FooterProps) {
           <div>
             <h3 className="text-green-400 font-semibold mb-4">Support</h3>
             <a
-              href="mailto:support@57hq.com"
+              href="mailto:bulletbait604@gmail.com"
               className="flex items-center gap-2 text-gray-300 hover:text-green-400 transition-colors text-sm"
             >
               <Mail className="w-4 h-4" />
-              support@57hq.com
+              bulletbait604@gmail.com
             </a>
           </div>
         </div>
