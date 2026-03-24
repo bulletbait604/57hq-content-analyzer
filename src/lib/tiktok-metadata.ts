@@ -185,26 +185,36 @@ class TikTokMetadataService {
       
       if (!data.success || !data.data?.video) {
         console.error('🎵 TikWM.com API returned invalid data:', data)
-        console.log('TikWM API success:', videoData.title)
-        
-        return {
-          id: videoData.id,
-          title: videoData.title || videoData.desc || 'Untitled Video',
-          description: videoData.desc || '',
-          author: {
-            username: videoData.author?.unique_id || videoData.author?.name || '',
-            displayName: videoData.author?.nickname || videoData.author?.name || ''
-          },
-          stats: {
-            views: videoData.stats?.play_count || 0,
-            likes: videoData.stats?.digg_count || 0,
-            comments: videoData.stats?.comment_count || 0,
-            shares: videoData.stats?.share_count || 0
-          },
-          hashtags: videoData.hashtags?.map((tag: any) => tag.name) || [],
+        return null
+      }
+
+      const videoData = data.data.video
+      console.log('🎵 TikWM API success:', videoData.title)
+      
+      return {
+        id: videoData.id,
+        title: videoData.title || videoData.desc || 'Untitled Video',
+        description: videoData.desc || '',
+        author: {
+          username: videoData.author?.unique_id || videoData.author?.name || '',
+          displayName: videoData.author?.nickname || videoData.author?.name || ''
+        },
+        stats: {
+          views: videoData.stats?.play_count || 0,
+          likes: videoData.stats?.digg_count || 0,
+          comments: videoData.stats?.comment_count || 0,
+          shares: videoData.stats?.share_count || 0
+        },
+        hashtags: videoData.hashtags?.map((tag: any) => tag.name) || [],
+        duration: videoData.duration || 0,
+        createTime: videoData.create_time || Date.now(),
+        music: videoData.music ? {
+          title: videoData.music.title || '',
+          author: videoData.music.author || ''
+        } : undefined
       }
     } catch (error) {
-      console.error('TikWM API error:', error)
+      console.error('🎵 TikWM.com API error:', error)
       return null
     }
   }
@@ -220,41 +230,42 @@ class TikTokMetadataService {
         }
       })
 
-      if (!response.ok) return null
-
-      const data = await response.json()
-      
-      // Format TikSave.io response
-      if (data.success && data.data) {
-        const videoData = data.data
-        return {
-          id: videoData.id || this.extractVideoId(videoUrl) || '',
-          title: videoData.title || videoData.caption || '',
-          description: videoData.caption || videoData.description || '',
-          author: {
-            username: videoData.author?.unique_id || videoData.author?.username || '',
-            displayName: videoData.author?.nickname || videoData.author?.display_name || ''
-          },
-          stats: {
-            views: videoData.stats?.play_count || videoData.play_count || 0,
-            likes: videoData.stats?.digg_count || videoData.likes || 0,
-            comments: videoData.stats?.comment_count || videoData.comment_count || 0,
-            shares: videoData.stats?.share_count || videoData.share_count || 0
-          },
-          hashtags: videoData.hashtags || videoData.tags || [],
-          duration: videoData.duration || 0,
-          createTime: videoData.create_time || Date.now(),
-          music: videoData.music ? {
-            title: videoData.music.title || '',
-            author: videoData.music.author || ''
-          } : undefined
-        }
+      if (!response.ok) {
+        console.error('TikSave API error:', response.status)
+        return null
       }
 
-      return null
+      const data = await response.json()
+      return this.formatMetadataTikSave(data)
     } catch (error) {
       console.error('TikSave API error:', error)
       return null
+    }
+  }
+
+  // Format metadata from TikSave.io API
+  private formatMetadataTikSave(data: any): TikTokMetadata {
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      author: {
+        username: data.author?.unique_id || data.author?.name || '',
+        displayName: data.author?.nickname || data.author?.name || ''
+      },
+      stats: {
+        views: data.views || 0,
+        likes: data.likes || 0,
+        comments: data.comments || 0,
+        shares: data.shares || 0
+      },
+      hashtags: data.hashtags || [],
+      duration: data.duration || 0,
+      createTime: data.create_time || Date.now(),
+      music: data.music ? {
+        title: data.music.title || '',
+        author: data.music.author || ''
+      } : undefined
     }
   }
 
