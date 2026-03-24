@@ -1,7 +1,26 @@
 // TikTok Metadata Extraction Service
-// Multiple methods for getting TikTok video metadata
+// Multiple methods for getting TikTok// YouTube metadata interface
+export interface YouTubeMetadata {
+  id: string
+  title: string
+  description: string
+  author: {
+    username: string
+    displayName: string
+  }
+  stats: {
+    views: number
+    likes: number
+    comments: number
+  }
+  hashtags: string[]
+  duration: string // ISO 8601 duration format
+  createTime: string
+  thumbnail: string
+}
 
-interface TikTokMetadata {
+// TikTok metadata interface
+export interface TikTokMetadata {
   id: string
   title: string
   description: string

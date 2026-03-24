@@ -28,6 +28,7 @@ import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { PremiumAccess } from '@/lib/premium-access'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
+import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
 
 interface AnalysisResult {
   clipTitle: string
@@ -51,6 +52,24 @@ interface AnalysisResult {
     gamingPlatform: string
     streamingPlatform: string
     contentFocus: string
+  }
+  tiktokStats?: {
+    viewCount: number
+    likeCount: number
+    commentCount: number
+    shareCount: number
+    originalAuthor: string
+    originalHashtags: string[]
+    videoDuration: number
+  }
+  youtubeStats?: {
+    viewCount: number
+    likeCount: number
+    commentCount: number
+    originalAuthor: string
+    originalHashtags: string[]
+    videoDuration: string
+    thumbnail: string
   }
 }
 
@@ -368,6 +387,8 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
     
     try {
       let content = ''
+      let tiktokMetadata = null
+      let youtubeMetadata = null
       
       if (selectedFile) {
         // Extract basic info from file
@@ -383,7 +404,6 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
         let videoId = ''
         let platform = 'Unknown'
         let contentType = 'Video'
-        let tiktokMetadata = null
         
         if (urlLower.includes('tiktok.com') || urlLower.includes('tiktok')) {
           platform = 'TikTok'
@@ -422,10 +442,37 @@ ${tiktokMetadata.music ? `Music: ${tiktokMetadata.music.title} - ${tiktokMetadat
         } else if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
           platform = 'YouTube'
           contentType = videoUrl.includes('shorts') ? 'Short' : 'Long-form Video'
-          // Extract YouTube video ID
-          const youtubeMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]+)/)
-          if (youtubeMatch) videoId = youtubeMatch[1]
-          content += `\nPlatform: YouTube\nVideo ID: ${videoId}\nType: ${contentType}\nAnalysis Focus: YouTube algorithm optimization`
+          
+          // Try YouTube metadata extraction
+          try {
+            const youtubeService = YouTubeMetadataService.getInstance()
+            youtubeMetadata = await youtubeService.getMetadata(videoUrl)
+            
+            if (youtubeMetadata) {
+              content += `\nPlatform: YouTube\nVideo ID: ${youtubeMetadata.id}\nType: ${contentType}\nAnalysis Focus: YouTube algorithm optimization`
+              content += `\n\nYOUTUBE METADATA:
+Title: ${youtubeMetadata.title}
+Description: ${youtubeMetadata.description}
+Author: ${youtubeMetadata.author.displayName} (@${youtubeMetadata.author.username})
+Views: ${youtubeMetadata.stats.views.toLocaleString()}
+Likes: ${youtubeMetadata.stats.likes.toLocaleString()}
+Comments: ${youtubeMetadata.stats.comments.toLocaleString()}
+Duration: ${youtubeMetadata.duration}
+Hashtags: ${youtubeMetadata.hashtags.join(', ')}
+Published: ${new Date(youtubeMetadata.createTime).toLocaleDateString()}
+Thumbnail: ${youtubeMetadata.thumbnail}`
+            } else {
+              // Fallback to URL extraction
+              const youtubeMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]+)/)
+              if (youtubeMatch) videoId = youtubeMatch[1]
+              content += `\nPlatform: YouTube\nVideo ID: ${videoId}\nType: ${contentType}\nAnalysis Focus: YouTube algorithm optimization\nNote: YouTube metadata extraction failed, using URL analysis`
+            }
+          } catch (error) {
+            console.warn('YouTube metadata extraction failed:', error)
+            const youtubeMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]+)/)
+            if (youtubeMatch) videoId = youtubeMatch[1]
+            content += `\nPlatform: YouTube\nVideo ID: ${videoId}\nType: ${contentType}\nAnalysis Focus: YouTube algorithm optimization\nNote: YouTube metadata extraction failed, using URL analysis`
+          }
         } else if (urlLower.includes('instagram.com')) {
           platform = 'Instagram'
           contentType = 'Reel'
@@ -460,11 +507,11 @@ ${tiktokMetadata.music ? `Music: ${tiktokMetadata.music.title} - ${tiktokMetadat
 - Video ID: ${videoId || 'Not extractable'}
 - Target Platform: ${selectedPlatform}
 - URL Structure: ${new URL(videoUrl).pathname}
-- Metadata Available: ${tiktokMetadata ? 'Yes' : 'No'}
+- Metadata Available: ${tiktokMetadata || youtubeMetadata ? 'Yes' : 'No'}
 
 CONTENT ANALYSIS REQUIREMENTS:
 - Analyze this ${contentType.toLowerCase()} for actual video content
-- ${tiktokMetadata ? 'USE THE EXTRACTED TIKTOK METADATA ABOVE' : 'Extract any game-related information from the URL structure'}
+- ${tiktokMetadata ? 'USE THE EXTRACTED TIKTOK METADATA ABOVE' : youtubeMetadata ? 'USE THE EXTRACTED YOUTUBE METADATA ABOVE' : 'Extract any game-related information from the URL structure'}
 - Identify the game being played from context clues
 - Determine gaming platform (PC, PlayStation, Xbox, Mobile)
 - Identify streaming platform from URL patterns
@@ -473,7 +520,7 @@ CONTENT ANALYSIS REQUIREMENTS:
 - Create platform-specific optimization strategies
 
 VIDEO METADATA EXTRACTION:
-- ${tiktokMetadata ? 'USE REAL TIKTOK DATA: title, description, hashtags, stats' : 'Attempt to determine the actual video title from URL patterns'}
+- ${tiktokMetadata ? 'USE REAL TIKTOK DATA: title, description, hashtags, stats' : youtubeMetadata ? 'USE REAL YOUTUBE DATA: title, description, hashtags, stats' : 'Attempt to determine the actual video title from URL patterns'}
 - Extract any visible game information from the URL
 - Identify content type (gameplay, highlights, tutorial, etc.)
 - Analyze for game-specific elements and mechanics
@@ -512,7 +559,27 @@ VIDEO METADATA EXTRACTION:
           gamingPlatform: 'Unknown',
           streamingPlatform: 'Unknown',
           contentFocus: 'Unknown'
-        }
+        },
+        // TikTok Stats (if available)
+        tiktokStats: tiktokMetadata ? {
+          viewCount: tiktokMetadata.stats.views,
+          likeCount: tiktokMetadata.stats.likes,
+          commentCount: tiktokMetadata.stats.comments,
+          shareCount: tiktokMetadata.stats.shares,
+          originalAuthor: tiktokMetadata.author.displayName,
+          originalHashtags: tiktokMetadata.hashtags,
+          videoDuration: tiktokMetadata.duration
+        } : undefined,
+        // YouTube Stats (if available)
+        youtubeStats: youtubeMetadata ? {
+          viewCount: youtubeMetadata.stats.views,
+          likeCount: youtubeMetadata.stats.likes,
+          commentCount: youtubeMetadata.stats.comments,
+          originalAuthor: youtubeMetadata.author.displayName,
+          originalHashtags: youtubeMetadata.hashtags,
+          videoDuration: youtubeMetadata.duration,
+          thumbnail: youtubeMetadata.thumbnail
+        } : undefined
       }
 
       setAnalysisResult(analysisData)
