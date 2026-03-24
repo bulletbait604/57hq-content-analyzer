@@ -1,23 +1,5 @@
 // TikTok Metadata Extraction Service
-// Multiple methods for getting TikTok// YouTube metadata interface
-export interface YouTubeMetadata {
-  id: string
-  title: string
-  description: string
-  author: {
-    username: string
-    displayName: string
-  }
-  stats: {
-    views: number
-    likes: number
-    comments: number
-  }
-  hashtags: string[]
-  duration: string // ISO 8601 duration format
-  createTime: string
-  thumbnail: string
-}
+// Multiple methods for getting TikTok metadata
 
 // TikTok metadata interface
 export interface TikTokMetadata {
@@ -75,58 +57,6 @@ class TikTokMetadataService {
     return null
   }
 
-  // Format metadata from TikWM.com API
-  private formatMetadataTikWM(data: any): TikTokMetadata {
-    return {
-      id: data.id,
-      title: data.title || data.desc || 'Untitled Video',
-      description: Array.isArray(data.content_desc) ? data.content_desc.join(' ') : (data.desc || data.text || ''),
-      author: {
-        username: data.author?.unique_id || data.author?.name || '',
-        displayName: data.author?.nickname || data.author?.name || ''
-      },
-      stats: {
-        views: data.stats?.play_count || 0,
-        likes: data.stats?.digg_count || 0,
-        comments: data.stats?.comment_count || 0,
-        shares: data.stats?.share_count || 0
-      },
-      hashtags: data.hashtags?.map((tag: any) => tag.name) || data.hashtags_extra || [],
-      duration: data.duration || 0,
-      createTime: data.create_time || Date.now(),
-      music: data.music ? {
-        title: data.music.title || '',
-        author: data.music.author || ''
-      } : undefined
-    }
-  }
-
-  // Format metadata from scraping
-  private formatMetadata(data: any): TikTokMetadata {
-    return {
-      id: data.id,
-      title: data.title || 'Untitled Video',
-      description: data.description || '',
-      author: {
-        username: data.author?.unique_id || data.author?.name || '',
-        displayName: data.author?.nickname || data.author?.name || ''
-      },
-      stats: {
-        views: data.stats?.play_count || 0,
-        likes: data.stats?.digg_count || 0,
-        comments: data.stats?.comment_count || 0,
-        shares: data.stats?.share_count || 0
-      },
-      hashtags: data.hashtags?.map((tag: any) => tag.name) || [],
-      duration: data.duration || 0,
-      createTime: data.create_time || Date.now(),
-      music: data.music ? {
-        title: data.music.title || '',
-        author: data.music.author || ''
-      } : undefined
-    }
-  }
-
   // Method 1: Official TikTok API (requires developer account)
   async getMetadataOfficial(videoUrl: string): Promise<TikTokMetadata | null> {
     try {
@@ -142,33 +72,36 @@ class TikTokMetadataService {
         },
         body: JSON.stringify({
           filters: {
-            video_id: videoId
+            video_ids: [videoId]
           }
         })
       })
 
-      if (!response.ok) return null
+      if (!response.ok) {
+        console.error('TikTok Official API error:', response.status)
+        return null
+      }
 
       const data = await response.json()
-      return this.formatMetadata(data.data)
+      return this.formatMetadata(data)
     } catch (error) {
-      console.error('TikTok official API error:', error)
+      console.error('TikTok Official API error:', error)
       return null
     }
   }
 
-  // Method 2: Web scraping with proper headers
+  // Method 2: Web Scraping (Fallback)
   async getMetadataScraping(videoUrl: string): Promise<TikTokMetadata | null> {
     try {
-      const videoId = this.extractVideoId(videoUrl)
-      if (!videoId) return null
-
-      // TikTok's internal API endpoint
-      const apiUrl = `https://www.tiktok.com/api/video/detail/${videoId}`
-
-      const response = await fetch(apiUrl, {
+      // TikTok scraping with proper headers
+      const response = await fetch(videoUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
           'Referer': 'https://www.tiktok.com/',
           'Accept': 'application/json, text/plain, */*',
           'Accept-Language': 'en-US,en;q=0.9',
@@ -178,7 +111,7 @@ class TikTokMetadataService {
           'sec-fetch-site': 'same-origin',
           'sec-ch-ua': '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
           'sec-ch-ua-mobile': '?1',
-          'sec-ch-ua-platform': '"iOS"'
+          'sec-ch-ua-platform': '"Windows"'
         }
       })
 
@@ -195,10 +128,10 @@ class TikTokMetadataService {
   // Method 3: TikWM.com API (Free, No API Key Required, No CORS Issues)
   async getMetadataTikWM(videoUrl: string): Promise<TikTokMetadata | null> {
     try {
-      console.log('🎵 Attempting TikWM.com API for:', videoUrl)
-      
+      console.log(' Attempting TikWM.com API for:', videoUrl)
+
       // TikWM.com free API - no API key required, no CORS issues
-      const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}&hd=1`, {
+      const response = await fetch(`https://tikwm.com/api/?url=${encodeURIComponent(videoUrl)}&hd=1`, {
         method: 'GET',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -212,14 +145,14 @@ class TikTokMetadataService {
           'sec-fetch-site': 'same-site',
           'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
           'sec-ch-ua-mobile': '?1',
-          'sec-ch-ua-platform': '"iOS"'
+          'sec-ch-ua-platform': '"Windows"'
         }
       })
 
-      console.log('🎵 TikWM.com API response status:', response.status)
-      
+      console.log('TikWM.com API response status:', response.status)
+
       if (!response.ok) {
-        console.error('🎵 TikWM.com API error:', {
+        console.error('TikWM.com API error:', {
           status: response.status,
           statusText: response.statusText,
           url: videoUrl
@@ -228,22 +161,22 @@ class TikTokMetadataService {
       }
 
       const data = await response.json()
-      console.log('🎵 TikWM.com API full response:', {
+      console.log('TikWM.com API full response:', {
         success: data?.success,
         msg: data?.msg,
         dataKeys: data?.data ? Object.keys(data.data) : 'no data',
         hasData: !!data?.data,
         fullData: data?.data
       })
-      
+
       if (!data || !data.data) {
-        console.error('🎵 TikWM.com API returned invalid data:', data)
+        console.error('TikWM.com API returned invalid data:', data)
         return null
       }
 
       // TikWM API structure: data contains video info directly, not data.video
       const videoData = data.data
-      console.log('🎵 TikWM API video data:', {
+      console.log('TikWM API video data:', {
         title: videoData.title,
         desc: videoData.desc,
         content_desc: videoData.content_desc,
@@ -252,7 +185,7 @@ class TikTokMetadataService {
         author: videoData.author,
         stats: videoData.stats
       })
-      
+
       // Handle TikTok description - it can be in content_desc (array) or desc (string)
       let description = ''
       if (Array.isArray(videoData.content_desc)) {
@@ -262,7 +195,7 @@ class TikTokMetadataService {
       } else if (typeof videoData.text === 'string') {
         description = videoData.text
       }
-      
+
       return {
         id: videoData.id,
         title: videoData.title || videoData.desc || 'Untitled Video',
@@ -286,7 +219,7 @@ class TikTokMetadataService {
         } : undefined
       }
     } catch (error) {
-      console.error('🎵 TikWM.com API error:', error)
+      console.error('TikWM.com API error:', error)
       return null
     }
   }
@@ -312,6 +245,32 @@ class TikTokMetadataService {
     } catch (error) {
       console.error('TikSave API error:', error)
       return null
+    }
+  }
+
+  // Format metadata from TikWM.com API
+  private formatMetadataTikWM(data: any): TikTokMetadata {
+    return {
+      id: data.id,
+      title: data.title || data.desc || 'Untitled Video',
+      description: Array.isArray(data.content_desc) ? data.content_desc.join(' ') : (data.desc || data.text || ''),
+      author: {
+        username: data.author?.unique_id || data.author?.name || '',
+        displayName: data.author?.nickname || data.author?.name || ''
+      },
+      stats: {
+        views: data.stats?.play_count || 0,
+        likes: data.stats?.digg_count || 0,
+        comments: data.stats?.comment_count || 0,
+        shares: data.stats?.share_count || 0
+      },
+      hashtags: data.hashtags?.map((tag: any) => tag.name) || data.hashtags_extra || [],
+      duration: data.duration || 0,
+      createTime: data.create_time || Date.now(),
+      music: data.music ? {
+        title: data.music.title || '',
+        author: data.music.author || ''
+      } : undefined
     }
   }
 
@@ -341,6 +300,32 @@ class TikTokMetadataService {
     }
   }
 
+  // Format metadata from scraping/official API
+  private formatMetadata(data: any): TikTokMetadata {
+    return {
+      id: data.id,
+      title: data.title || 'Untitled Video',
+      description: data.description || '',
+      author: {
+        username: data.author?.unique_id || data.author?.name || '',
+        displayName: data.author?.nickname || data.author?.name || ''
+      },
+      stats: {
+        views: data.stats?.play_count || 0,
+        likes: data.stats?.digg_count || 0,
+        comments: data.stats?.comment_count || 0,
+        shares: data.stats?.share_count || 0
+      },
+      hashtags: data.hashtags?.map((tag: any) => tag.name) || [],
+      duration: data.duration || 0,
+      createTime: data.create_time || Date.now(),
+      music: data.music ? {
+        title: data.music.title || '',
+        author: data.music.author || ''
+      } : undefined
+    }
+  }
+
   // Try multiple methods in order of preference (TikWM.com First - No CORS Issues)
   async getMetadata(videoUrl: string): Promise<TikTokMetadata | null> {
     const methods = [
@@ -357,25 +342,7 @@ class TikTokMetadataService {
       } catch (error) {
         console.warn('Method failed, trying next:', error)
         continue
-}
-}
-
-// Method 3: TikWM.com API (Free, No API Key Required, No CORS Issues)
-async getMetadataTikWM(videoUrl: string): Promise<TikTokMetadata | null> {
-try {
-  console.log('🎵 Attempting TikWM.com API for:', videoUrl)
-  
-  // TikWM.com free API - no API key required, no CORS issues
-  const response = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}&hd=1`, {
-    method: 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'application/json, text/plain, */*',
-      'Accept-Language': 'en-US,en;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Referer': 'https://www.tikwm.com/',
-      'Origin': 'https://www.tikwm.com',
-      'sec-fetch-dest': 'empty',
+      }
       'sec-fetch-mode': 'cors',
       'sec-fetch-site': 'same-site',
       'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
