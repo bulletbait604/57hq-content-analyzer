@@ -25,6 +25,7 @@ import {
   Zap
 } from 'lucide-react'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
+import { analyzeContentWithDeepSeek } from '@/lib/deepseek'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
 import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
@@ -290,20 +291,20 @@ IMPORTANT: Focus on optimizing the provided content for ${platform} algorithm su
     try {
       // Analyze with DeepSeek using current metadata
       console.log('🧠 DeepSeek analyzing current content...')
-      const deepseekAnalysis = await analyzeWithDeepSeek(currentTitle, currentDescription, currentTags, platform)
+      const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
       
-      // Return DeepSeek suggestions
+      // Transform DeepSeek response to match expected structure
       const combinedResult = {
-        titleSuggestions: Array.isArray(deepseekAnalysis?.titleSuggestions) ? deepseekAnalysis.titleSuggestions : [],
-        descriptionSuggestions: Array.isArray(deepseekAnalysis?.descriptionSuggestions) ? deepseekAnalysis.descriptionSuggestions : [],
-        tagSuggestions: Array.isArray(deepseekAnalysis?.tagSuggestions) ? deepseekAnalysis.tagSuggestions : [],
-        editingTips: Array.isArray(deepseekAnalysis?.editingTips) ? deepseekAnalysis.editingTips : [],
-        algorithmInsights: Array.isArray(deepseekAnalysis?.algorithmInsights) ? deepseekAnalysis.algorithmInsights : [],
-        algorithmResearch: deepseekAnalysis?.algorithmResearch || '',
-        trendingOpportunities: deepseekAnalysis?.trendingOpportunities || '',
-        engagementTriggers: Array.isArray(deepseekAnalysis?.engagementTriggers) ? deepseekAnalysis.engagementTriggers : [],
-        performancePrediction: deepseekAnalysis?.performancePrediction || '',
-        gameAnalysis: deepseekAnalysis?.gameAnalysis || {
+        titleSuggestions: deepseekAnalysis?.title ? [deepseekAnalysis.title] : [],
+        descriptionSuggestions: deepseekAnalysis?.description ? [deepseekAnalysis.description] : [],
+        tagSuggestions: deepseekAnalysis?.tags || [],
+        editingTips: deepseekAnalysis?.recommendations || [],
+        algorithmInsights: deepseekAnalysis?.insights || [],
+        algorithmResearch: deepseekAnalysis?.factors?.join(', ') || '',
+        trendingOpportunities: `Algorithm Score: ${deepseekAnalysis?.algorithmScore || 0}/100`,
+        engagementTriggers: deepseekAnalysis?.tips || [],
+        performancePrediction: deepseekAnalysis?.algorithmScore && deepseekAnalysis.algorithmScore > 75 ? 'High potential for viral performance' : 'Moderate performance expected',
+        gameAnalysis: {
           gameName: 'Unknown Game',
           gameGenre: 'Unknown',
           gamingPlatform: 'Unknown',
@@ -315,8 +316,8 @@ IMPORTANT: Focus on optimizing the provided content for ${platform} algorithm su
           metadataUsed: true,
           deepSeekUsed: !!deepseekAnalysis,
           geminiUsed: false,
-          totalInsights: deepseekAnalysis?.algorithmInsights?.length || 0,
-          totalTagSuggestions: deepseekAnalysis?.tagSuggestions?.length || 0
+          totalInsights: deepseekAnalysis?.insights?.length || 0,
+          totalTagSuggestions: deepseekAnalysis?.tags?.length || 0
         }
       }
       
