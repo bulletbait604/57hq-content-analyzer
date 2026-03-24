@@ -260,6 +260,5 @@ class YouTubeMetadataService {
       return null
     }
   }
-}
 
 export default YouTubeMetadataService
