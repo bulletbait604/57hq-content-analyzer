@@ -47,7 +47,20 @@ class SubscribersManager {
 
   private saveSubscribers(): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.subscribers))
+      const dataToSave = JSON.stringify(this.subscribers)
+      console.log('💾 saveSubscribers called:', {
+        subscribers: this.subscribers,
+        dataToSave: dataToSave,
+        storageKey: this.STORAGE_KEY
+      })
+      localStorage.setItem(this.STORAGE_KEY, dataToSave)
+      
+      // Verify it was saved
+      const savedData = localStorage.getItem(this.STORAGE_KEY)
+      console.log('✅ localStorage verification:', {
+        savedData: savedData,
+        matches: savedData === dataToSave
+      })
     }
   }
 
@@ -70,26 +83,37 @@ class SubscribersManager {
   }
 
   addSubscriber(username: string, addedBy: string): boolean {
+    console.log('➕ SubscribersManager.addSubscriber called:', {
+      username,
+      addedBy,
+      currentSubscribers: this.subscribers
+    })
+    
     const existingIndex = this.subscribers.findIndex(
       sub => sub.username.toLowerCase() === username.toLowerCase()
     )
 
     if (existingIndex >= 0) {
       // Reactivate existing subscriber
+      console.log('🔄 Reactivating existing subscriber:', this.subscribers[existingIndex])
       this.subscribers[existingIndex].status = 'active'
       this.subscribers[existingIndex].addedBy = addedBy
       this.subscribers[existingIndex].addedAt = new Date()
     } else {
       // Add new subscriber
-      this.subscribers.push({
+      const newSubscriber = {
         username: username.toLowerCase(),
         addedAt: new Date(),
         addedBy: addedBy.toLowerCase(),
-        status: 'active'
-      })
+        status: 'active' as const
+      }
+      console.log('🆕 Adding new subscriber:', newSubscriber)
+      this.subscribers.push(newSubscriber)
     }
 
+    console.log('💾 Saving subscribers to localStorage:', this.subscribers)
     this.saveSubscribers()
+    console.log('✅ Subscriber added successfully')
     return true
   }
 

@@ -235,6 +235,12 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
       setNewSubscriber('')
       setSaveMessage(t('addSuccess'))
       setTimeout(() => setSaveMessage(''), 3000)
+      
+      // Trigger a re-check of the current user's premium status
+      // This will update the parent component's hasPremium state
+      window.dispatchEvent(new CustomEvent('subscriberListUpdated', {
+        detail: { subscribers: updatedSubscribers }
+      }))
     }
   }
 
@@ -243,9 +249,15 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
     
     const success = subscribersManager.removeSubscriber(username, kickUsername)
     if (success) {
-      setSubscribers(subscribersManager.getSubscribers())
+      const updatedSubscribers = subscribersManager.getSubscribers()
+      setSubscribers(updatedSubscribers)
       setSaveMessage(t('removeSuccess'))
       setTimeout(() => setSaveMessage(''), 3000)
+      
+      // Trigger a re-check of the current user's premium status
+      window.dispatchEvent(new CustomEvent('subscriberListUpdated', {
+        detail: { subscribers: updatedSubscribers }
+      }))
     }
   }
 

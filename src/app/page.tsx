@@ -44,6 +44,16 @@ export default function Home() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [language, setLanguage] = useState<'en' | 'es' | 'fr' | 'de' | 'ja'>('en')
 
+  const applyTheme = (newTheme: 'dark' | 'light') => {
+    if (newTheme === 'light') {
+      document.documentElement.classList.add('light')
+      document.documentElement.classList.remove('dark')
+    } else {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    }
+  }
+
   // Check for existing session on mount
   useEffect(() => {
     // Initialize premium access system
@@ -86,18 +96,53 @@ export default function Home() {
 
   // Apply theme to document
   useEffect(() => {
-    applyTheme(theme)
-  }, [theme])
-
-  const applyTheme = (newTheme: 'dark' | 'light') => {
-    if (newTheme === 'light') {
+    if (theme === 'light') {
       document.documentElement.classList.add('light')
       document.documentElement.classList.remove('dark')
     } else {
       document.documentElement.classList.add('dark')
       document.documentElement.classList.remove('light')
     }
-  }
+  }, [theme])
+
+  // Listen for subscriber list updates
+  useEffect(() => {
+    const handleSubscriberListUpdate = (event: CustomEvent) => {
+      console.log('🔄 Subscriber list updated, re-checking premium status...')
+      console.log('📋 Updated subscribers:', event.detail.subscribers)
+      
+      if (user) {
+        const subscribersManager = SubscribersManager.getInstance()
+        const isSub = subscribersManager.isSubscriber(user.username)
+        console.log('🔍 Updated premium status:', {
+          username: user.username,
+          isSubscriber: isSub,
+          subscribersList: event.detail.subscribers
+        })
+        setHasPremium(isSub)
+        
+        // Also check if the current user is the one who was just added/removed
+        const updatedSubscribers = event.detail.subscribers
+        const userInList = updatedSubscribers.some((sub: any) => 
+          sub.username.toLowerCase() === user.username.toLowerCase() && sub.status === 'active'
+        )
+        
+        console.log('👤 User verification:', {
+          username: user.username,
+          foundInList: userInList,
+          premiumStatus: isSub
+        })
+      }
+    }
+
+    // Add event listener
+    window.addEventListener('subscriberListUpdated', handleSubscriberListUpdate as EventListener)
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('subscriberListUpdated', handleSubscriberListUpdate as EventListener)
+    }
+  }, [user])
 
   const handleUserChange = (userData: any) => {
     console.log('👤 User change detected:', userData)
