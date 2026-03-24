@@ -131,11 +131,54 @@ class YouTubeMetadataService {
       envKeys: {
         NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.substring(0, 10) + '...' : 'Missing',
         NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? process.env.NEXT_PUBLIC_GOOGLE_API_KEY.substring(0, 10) + '...' : 'Missing'
-    try {
-      console.log('🎬 Attempting YouTube Data API v3 for:', videoUrl)
+      }
+    })
+    console.log('🎬 Attempting YouTube Data API v3 for:', videoUrl)
       
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey}`,
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      }
+    )
+
+    if (!response.ok) {
+      console.error('YouTube API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        videoId: videoId
+      })
+      return null
+    }
+
+    const data = await response.json()
+    console.log('🎬 YouTube API raw response:', {
+      videoId,
+      hasItems: !!data.items,
+      itemCount: data.items?.length || 0,
+      firstItemKeys: data.items?.[0] ? Object.keys(data.items[0]) : []
+    })
+
+    if (!data.items || data.items.length === 0) {
+      console.error('YouTube API: No video data found for video ID:', videoId)
+      return null
+    }
+
+    const video = data.items[0]
+    const snippet = video.snippet
+    const statistics = video.statistics
+    const contentDetails = video.contentDetails
+
+    // Get channel details
+    let channelUsername = snippet.channelId
+    let channelDisplayName = snippet.channelTitle
+
+    try {
+      const channelResponse = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${snippet.channelId}&key=${this.apiKey}`,
         {
           headers: {
             'Accept': 'application/json',
