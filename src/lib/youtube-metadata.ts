@@ -27,7 +27,8 @@ class YouTubeMetadataService {
   private constructor() {
     // Check for API keys on client-side only to avoid hydration issues
     if (typeof window !== 'undefined') {
-      this.apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || ''
+      // Prioritize the new YouTube API key, fall back to Google API key
+      this.apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY || ''
     } else {
       this.apiKey = ''
     }
@@ -107,11 +108,16 @@ class YouTubeMetadataService {
     if (!this.apiKey) {
       console.warn('YouTube API key not configured, falling back to scraping')
       console.log('Available API keys:', {
-        NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? 'Present' : 'Missing',
-        NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'
+        NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing',
+        NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? 'Present' : 'Missing'
       })
       return this.getMetadataFromScraping(videoUrl)
     }
+
+    console.log('🔑 Using YouTube API key:', {
+      usingKey: this.apiKey === process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'NEXT_PUBLIC_YOUTUBE_API_KEY' : 'NEXT_PUBLIC_GOOGLE_API_KEY',
+      keyPresent: !!this.apiKey
+    })
 
     try {
       // Get video details
