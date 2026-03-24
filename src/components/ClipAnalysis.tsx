@@ -25,7 +25,6 @@ import {
   Zap
 } from 'lucide-react'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
-import { PremiumAccess } from '@/lib/premium-access'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
 import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
@@ -128,9 +127,8 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
   ]
 
   // Check premium access and subscriber access
-  const isPremiumUser = hasPremium || PremiumAccess.getInstance().hasPremiumAccess(user?.username)
   const subscribersManager = SubscribersManager.getInstance()
-  const canAccessAnalysis = isPremiumUser || (user && subscribersManager.isSubscriber(user.username))
+  const canAccessAnalysis = hasPremium || (user && subscribersManager.isSubscriber(user.username))
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
