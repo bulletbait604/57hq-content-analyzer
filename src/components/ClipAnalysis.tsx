@@ -302,30 +302,6 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
       return null
     }
   }
-
-  const analyzeWithMetadataAndAI = async (content: string, platform: string, metadata: any) => {
-    console.log('🤖 Starting AI Analysis Flow:')
-    console.log('📊 Extracted Metadata:', metadata)
-    
-    try {
-      // Step 1: Analyze extracted metadata with Gemini
-      console.log('� Step 1: Gemini analyzing extracted metadata...')
-      const geminiAnalysis = await GeminiService.getInstance().analyzeContent(
-        'video',
-        platform,
-        metadata?.title || 'Unknown Title',
-        metadata?.description || 'Unknown Description',
-        content
-      )
-      
-      // Step 2: Analyze with DeepSeek for algorithm optimization
-      console.log('🧠 Step 2: DeepSeek algorithm analysis...')
-      const deepseekAnalysis = await analyzeWithDeepSeek(content, platform)
-      
-      // Combine results
-      const combinedResult = {
-        clipTitle: metadata?.title || deepseekAnalysis?.clipTitle || 'Untitled Video',
-        titleSuggestions: Array.isArray(deepseekAnalysis?.titleSuggestions) ? deepseekAnalysis.titleSuggestions : [],
         clipDescription: metadata?.description || deepseekAnalysis?.clipDescription || 'No description available',
         descriptionSuggestions: Array.isArray(deepseekAnalysis?.descriptionSuggestions) ? deepseekAnalysis.descriptionSuggestions : [],
         tags: metadata?.hashtags || [],
@@ -345,12 +321,20 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
           gamingPlatform: 'Unknown',
           streamingPlatform: 'Unknown',
           contentFocus: 'Unknown'
+        },
+        // Add AI Analysis Info
+        aiAnalysis: {
+          metadataUsed: !!metadata,
+          deepSeekUsed: !!deepseekAnalysis,
+          geminiUsed: !!geminiAnalysis,
+          totalInsights: (deepseekAnalysis?.algorithmInsights?.length || 0) + (geminiAnalysis?.insights?.length || 0),
+          totalTagSuggestions: deepseekAnalysis?.tagSuggestions?.length || 0
         }
       }
       
       console.log('✅ AI Analysis Complete:', {
         metadataUsed: !!metadata,
-        deepseekUsed: !!deepseekAnalysis,
+        deepSeekUsed: !!deepseekAnalysis,
         geminiUsed: !!geminiAnalysis,
         totalInsights: combinedResult.algorithmInsights.length,
         totalTagSuggestions: combinedResult.tagSuggestions.length
@@ -539,7 +523,7 @@ VIDEO METADATA EXTRACTION:
         performancePrediction: comprehensiveResult.performancePrediction || '',
         researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'), // Use consistent date for SSR
         // AI Analysis Info
-        aiAnalysis: comprehensiveResult.aiAnalysis ? {
+        aiAnalysis: (comprehensiveResult?.aiAnalysis) ? {
           metadataUsed: !!(youtubeMetadata || tiktokMetadata),
           deepSeekUsed: !!comprehensiveResult,
           geminiUsed: !!geminiAnalysis,
