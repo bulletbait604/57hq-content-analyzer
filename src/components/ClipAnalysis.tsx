@@ -28,7 +28,6 @@ import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
 import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
-import GeminiService from '@/lib/gemini'
 
 interface AnalysisResult {
   clipTitle: string
@@ -303,29 +302,16 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
     }
   }
 
-  const analyzeWithMetadataAndAI = async (content: string, platform: string, metadata: any) => {
-    console.log('🤖 Starting AI Analysis Flow:')
+  const analyzeWithDeepSeekOnly = async (content: string, platform: string, metadata: any) => {
+    console.log('🤖 Starting DeepSeek-Only AI Analysis Flow:')
     console.log('📊 Extracted Metadata:', metadata)
     
-    let geminiAnalysis = null
-    let deepseekAnalysis = null
-    
     try {
-      // Step 1: Analyze extracted metadata with Gemini
-      console.log('🟣 Step 1: Gemini analyzing extracted metadata...')
-      geminiAnalysis = await GeminiService.getInstance().analyzeContent(
-        'video',
-        platform,
-        metadata?.title || 'Unknown Title',
-        metadata?.description || 'Unknown Description',
-        content
-      )
+      // Analyze with DeepSeek for algorithm optimization using metadata
+      console.log('🧠 DeepSeek algorithm analysis with metadata...')
+      const deepseekAnalysis = await analyzeWithDeepSeek(content, platform)
       
-      // Step 2: Analyze with DeepSeek for algorithm optimization
-      console.log('🧠 Step 2: DeepSeek algorithm analysis...')
-      deepseekAnalysis = await analyzeWithDeepSeek(content, platform)
-      
-      // Combine results
+      // Combine results with metadata
       const combinedResult = {
         clipTitle: metadata?.title || deepseekAnalysis?.clipTitle || 'Untitled Video',
         titleSuggestions: Array.isArray(deepseekAnalysis?.titleSuggestions) ? deepseekAnalysis.titleSuggestions : [],
@@ -334,13 +320,10 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
         tags: metadata?.hashtags || [],
         tagSuggestions: Array.isArray(deepseekAnalysis?.tagSuggestions) ? deepseekAnalysis.tagSuggestions : [],
         editingTips: Array.isArray(deepseekAnalysis?.editingTips) ? deepseekAnalysis.editingTips : [],
-        algorithmInsights: [
-          ...(deepseekAnalysis?.algorithmInsights || []),
-          ...(geminiAnalysis?.insights || []).map(insight => `Gemini: ${insight}`)
-        ],
+        algorithmInsights: Array.isArray(deepseekAnalysis?.algorithmInsights) ? deepseekAnalysis.algorithmInsights : [],
         algorithmResearch: deepseekAnalysis?.algorithmResearch || '',
-        trendingOpportunities: geminiAnalysis?.trends?.join(', ') || '',
-        engagementTriggers: deepseekAnalysis?.engagementTriggers || [],
+        trendingOpportunities: deepseekAnalysis?.trendingOpportunities || '',
+        engagementTriggers: Array.isArray(deepseekAnalysis?.engagementTriggers) ? deepseekAnalysis.engagementTriggers : [],
         performancePrediction: deepseekAnalysis?.performancePrediction || '',
         gameAnalysis: deepseekAnalysis?.gameAnalysis || {
           gameName: 'Unknown Game',
@@ -353,23 +336,22 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
         aiAnalysis: {
           metadataUsed: !!metadata,
           deepSeekUsed: !!deepseekAnalysis,
-          geminiUsed: !!geminiAnalysis,
-          totalInsights: (deepseekAnalysis?.algorithmInsights?.length || 0) + (geminiAnalysis?.insights?.length || 0),
+          geminiUsed: false,
+          totalInsights: deepseekAnalysis?.algorithmInsights?.length || 0,
           totalTagSuggestions: deepseekAnalysis?.tagSuggestions?.length || 0
         }
       }
       
-      console.log('✅ AI Analysis Complete:', {
+      console.log('✅ DeepSeek Analysis Complete:', {
         metadataUsed: !!metadata,
         deepSeekUsed: !!deepseekAnalysis,
-        geminiUsed: !!geminiAnalysis,
         totalInsights: combinedResult.algorithmInsights.length,
         totalTagSuggestions: combinedResult.tagSuggestions.length
       })
       
       return combinedResult
     } catch (error) {
-      console.error('❌ AI Analysis failed:', error)
+      console.error('❌ DeepSeek Analysis failed:', error)
       return null
     }
   }
@@ -526,8 +508,8 @@ VIDEO METADATA EXTRACTION:
 - Generate relevant tags based on extracted information`
       }
 
-      // Analyze with metadata-first AI approach
-      const comprehensiveResult = await analyzeWithMetadataAndAI(content, selectedPlatform, youtubeMetadata || tiktokMetadata)
+      // Analyze with DeepSeek-only approach
+      const comprehensiveResult = await analyzeWithDeepSeekOnly(content, selectedPlatform, youtubeMetadata || tiktokMetadata)
       
       if (!comprehensiveResult) {
         throw new Error('Comprehensive AI analysis failed')
