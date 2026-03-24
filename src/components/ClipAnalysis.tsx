@@ -766,6 +766,13 @@ VIDEO METADATA EXTRACTION:
               </>
             )}
           </Button>
+          
+          {/* Processing Time Notice */}
+          <div className="text-center">
+            <p className="text-gray-400 text-xs">
+              This may take a minute as AI analyzes the video and cross references it with the appropriate algorithm
+            </p>
+          </div>
         </CardContent>
       </Card>
 
