@@ -550,10 +550,10 @@ VIDEO METADATA EXTRACTION:
         performancePrediction: comprehensiveResult.performancePrediction || '',
         researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'), // Use consistent date for SSR
         // AI Analysis Info
-        aiAnalysis: (comprehensiveResult?.aiAnalysis) ? {
+        aiAnalysis: comprehensiveResult?.aiAnalysis ? {
           metadataUsed: !!(youtubeMetadata || tiktokMetadata),
           deepSeekUsed: !!comprehensiveResult,
-          geminiUsed: !!geminiAnalysis,
+          geminiUsed: !!comprehensiveResult.aiAnalysis.geminiUsed,
           totalInsights: comprehensiveResult.algorithmInsights?.length || 0,
           totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
         } : {
