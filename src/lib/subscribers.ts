@@ -93,6 +93,19 @@ class SubscribersManager {
     return true
   }
 
+  // Add a method to manually check localStorage contents
+  debugStorage(): void {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(this.STORAGE_KEY)
+      console.log('📦 Subscribers Storage Debug:', {
+        storageKey: this.STORAGE_KEY,
+        rawData: stored,
+        parsedData: stored ? JSON.parse(stored) : null,
+        currentSubscribers: this.subscribers
+      })
+    }
+  }
+
   removeSubscriber(username: string, removedBy: string): boolean {
     const index = this.subscribers.findIndex(
       sub => sub.username.toLowerCase() === username.toLowerCase()
@@ -108,11 +121,11 @@ class SubscribersManager {
   }
 
   getSubscribers(): Subscriber[] {
-    return this.subscribers.filter(sub => sub.status === 'active')
+    return this.subscribers
   }
 
   getAllSubscribers(): Subscriber[] {
-    return [...this.subscribers]
+    return this.subscribers
   }
 
   canAccessClipAnalysis(username: string): boolean {

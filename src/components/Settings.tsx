@@ -198,6 +198,9 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
         isAdmin,
         isSubscriber
       })
+      
+      // Debug storage contents
+      subscribersManager.debugStorage()
     }
   }, [user, kickUsername, isAdmin, isSubscriber])
 
