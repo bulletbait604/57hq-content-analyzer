@@ -73,28 +73,26 @@ class YouTubeMetadataService {
 
   // Extract hashtags from description
   private extractHashtags(description: string): string[] {
-    // Extract hashtags with # symbol
-    const hashtagRegex = /#\w+/g
+    if (!description) return []
+    
+    console.log('🔍 Analyzing YouTube description for hashtags:', {
+      descriptionLength: description.length,
+      descriptionPreview: description.substring(0, 150) + '...'
+    })
+    
+    // Extract ONLY hashtags with # symbol (YouTube format)
+    const hashtagRegex = /#([a-zA-Z0-9_\u4e00-\u9fff]+)/g
     const hashtagMatches = description.match(hashtagRegex) || []
-    const hashtags = hashtagMatches.map(tag => tag.substring(1)) // Remove # symbol
+    const hashtags = hashtagMatches.map(tag => tag.replace('#', '').trim())
     
-    // Extract comma-separated tags and space-separated keywords
-    const commaTags = description.split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0 && tag.length < 50 && !tag.includes('http'))
-      .slice(0, 10) // Limit to first 10 comma-separated tags
+    console.log('🏷️ YouTube hashtag extraction results:', {
+      rawMatches: hashtagMatches,
+      cleanedHashtags: hashtags,
+      hashtagCount: hashtags.length
+    })
     
-    const spaceTags = description.split(' ')
-      .map(tag => tag.trim().replace(/[^\w\s]/g, ''))
-      .filter(tag => tag.length > 2 && tag.length < 30 && !tag.toLowerCase().includes('http'))
-      .slice(0, 15) // Limit to first 15 space-separated keywords
-    
-    // Combine and remove duplicates
-    const allTags = [...hashtags, ...commaTags, ...spaceTags]
-    const uniqueTags = [...new Set(allTags.map(tag => tag.toLowerCase()))]
-    
-    // Return top 20 most relevant tags
-    return uniqueTags.slice(0, 20)
+    // Return only the actual hashtags, no other processing
+    return hashtags.filter(tag => tag.length > 0)
   }
 
   // Method 1: YouTube Data API v3 (Primary)
