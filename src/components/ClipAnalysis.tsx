@@ -513,12 +513,14 @@ VIDEO METADATA EXTRACTION:
       
       // Process comprehensive AI results
       const analysisData = {
-        clipTitle: comprehensiveResult.clipTitle || youtubeMetadata?.title || tiktokMetadata?.title || 'Untitled Video',
-        titleSuggestions: Array.isArray(comprehensiveResult.titleSuggestions) ? comprehensiveResult.titleSuggestions : [],
-        clipDescription: comprehensiveResult.clipDescription || youtubeMetadata?.description || tiktokMetadata?.description || 'No description available',
-        descriptionSuggestions: Array.isArray(comprehensiveResult.descriptionSuggestions) ? comprehensiveResult.descriptionSuggestions : [],
-        // Use real tags from metadata, not AI-generated tags
+        // Display REAL extracted metadata as current content
+        clipTitle: youtubeMetadata?.title || tiktokMetadata?.title || 'Untitled Video',
+        clipDescription: youtubeMetadata?.description || tiktokMetadata?.description || 'No description available',
         tags: youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || [],
+        
+        // Display DeepSeek suggestions as optimizations
+        titleSuggestions: Array.isArray(comprehensiveResult.titleSuggestions) ? comprehensiveResult.titleSuggestions : [],
+        descriptionSuggestions: Array.isArray(comprehensiveResult.descriptionSuggestions) ? comprehensiveResult.descriptionSuggestions : [],
         tagSuggestions: Array.isArray(comprehensiveResult.tagSuggestions) ? comprehensiveResult.tagSuggestions : [],
         editingTips: Array.isArray(comprehensiveResult.editingTips) ? comprehensiveResult.editingTips : [],
         algorithmInsights: Array.isArray(comprehensiveResult.algorithmInsights) ? comprehensiveResult.algorithmInsights : [],
