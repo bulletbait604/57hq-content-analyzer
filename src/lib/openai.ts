@@ -1,9 +1,21 @@
 import OpenAI from 'openai'
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined'
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
+  apiKey: isBrowser ? process.env.NEXT_PUBLIC_OPENAI_API_KEY || '' : process.env.OPENAI_API_KEY || '',
   dangerouslyAllowBrowser: true, // Allow browser usage for client-side API calls
 })
+
+// Debug API key availability
+if (isBrowser) {
+  console.log('🔑 OpenAI API Key Debug:', {
+    keyPresent: !!process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+    keyPrefix: process.env.NEXT_PUBLIC_OPENAI_API_KEY ? process.env.NEXT_PUBLIC_OPENAI_API_KEY.substring(0, 10) + '...' : 'Missing',
+    envKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY ? 'Present' : 'Missing'
+  })
+}
 
 export interface AIAnalysis {
   tags: string[]

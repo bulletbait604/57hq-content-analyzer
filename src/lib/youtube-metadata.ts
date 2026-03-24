@@ -115,9 +115,14 @@ class YouTubeMetadataService {
     }
 
     console.log('🔑 Using YouTube API key:', {
-      usingKey: this.apiKey === process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'NEXT_PUBLIC_YOUTUBE_API_KEY' : 'NEXT_PUBLIC_GOOGLE_API_KEY',
+      usingKey: this.apiKey === process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'NEXT_PUBLIC_YOUTUBE_API_KEY' : 
+               this.apiKey === process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? 'NEXT_PUBLIC_GOOGLE_API_KEY' : 'Unknown',
       keyPresent: !!this.apiKey,
-      apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'none'
+      apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'none',
+      envKeys: {
+        NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.substring(0, 10) + '...' : 'Missing',
+        NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY ? process.env.NEXT_PUBLIC_GOOGLE_API_KEY.substring(0, 10) + '...' : 'Missing'
+      }
     })
 
     try {
