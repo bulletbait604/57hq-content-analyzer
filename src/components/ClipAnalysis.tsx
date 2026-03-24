@@ -539,12 +539,18 @@ VIDEO METADATA EXTRACTION:
         performancePrediction: comprehensiveResult.performancePrediction || '',
         researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'), // Use consistent date for SSR
         // AI Analysis Info
-        aiAnalysis: comprehensiveResult.aiAnalysis || {
+        aiAnalysis: comprehensiveResult.aiAnalysis ? {
           metadataUsed: !!(youtubeMetadata || tiktokMetadata),
           deepSeekUsed: !!comprehensiveResult,
           geminiUsed: !!geminiAnalysis,
           totalInsights: comprehensiveResult.algorithmInsights?.length || 0,
           totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
+        } : {
+          metadataUsed: false,
+          deepSeekUsed: false,
+          geminiUsed: false,
+          totalInsights: 0,
+          totalTagSuggestions: 0
         },
         // Game Analysis
         gameAnalysis: comprehensiveResult.gameAnalysis || {
@@ -882,7 +888,7 @@ VIDEO METADATA EXTRACTION:
 
           {/* Research Timestamp */}
           <div className="text-center text-xs text-gray-400">
-            <p>Analysis powered by DeepSeek AI & Google AI • {analysisResult.researchTimestamp.toLocaleString()}</p>
+            <p>Analysis powered by DeepSeek AI & Google AI</p>
             <p className="mt-1">Research includes VidIQ optimization strategies and current algorithm trends</p>
           </div>
         </div>
