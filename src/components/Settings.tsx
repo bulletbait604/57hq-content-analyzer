@@ -18,10 +18,6 @@ import {
   Trash2
 } from 'lucide-react'
 
-interface SettingsProps {
-  user: any
-}
-
 const translations = {
   en: {
     title: 'Settings',
@@ -170,12 +166,6 @@ const translations = {
     removeSuccess: '購読者が正常に削除されました！',
     adminOnly: '管理者のみ'
   }
-}
-
-interface SettingsProps {
-  user: any
-  language: 'en' | 'es' | 'fr' | 'de' | 'ja'
-  onLanguageChange: (newLanguage: 'en' | 'es' | 'fr' | 'de' | 'ja') => void
 }
 
 type Language = keyof typeof translations
@@ -351,13 +341,12 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
             <div>
               <Label className="text-green-400">{t('username')}</Label>
               <p className="text-white p-2 bg-black/50 rounded">{kickUsername}</p>
-              <p className="text-gray-400 text-xs mt-1">Kick API Username</p>
             </div>
             <div>
               <Label className="text-green-400">Subscription Status</Label>
               <div className="mt-2">
                 <Badge className={isSubscriber ? "bg-green-600/20 text-green-400 border-green-500" : "bg-gray-600/20 text-gray-400 border-gray-500"}>
-                  {isSubscriber ? 'Active Subscriber' : 'Not Subscribed'}
+                  {isSubscriber ? 'Active Subscriber' : 'Free User'}
                 </Badge>
                 {isAdmin && (
                   <Badge className="ml-2 bg-yellow-600/20 text-yellow-400 border-yellow-500">
@@ -366,11 +355,6 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
                 )}
               </div>
             </div>
-          </div>
-          <div className="mt-4 p-3 bg-black/50 rounded">
-            <p className="text-gray-300 text-sm">
-              <strong>Account Verification:</strong> Username verified through Kick API and cross-referenced with subscriber list.
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -476,6 +460,22 @@ export function Settings({ user, language, onLanguageChange }: SettingsProps) {
             {saveMessage}
           </p>
         </div>
+      )}
+
+      {/* Subscription Message for Free Users */}
+      {!isSubscriber && (
+        <Card className="bg-black border-red-500/30">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-2">
+              <p className="text-red-400 font-semibold">
+                Free User - Please Subscribe To Bulletbait604 to Unlock Premium Features
+              </p>
+              <p className="text-gray-400 text-sm">
+                ** Upgrades may take up to 48 hours to enable. Email: bulletbait604@gmail.com if there are any issues.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
