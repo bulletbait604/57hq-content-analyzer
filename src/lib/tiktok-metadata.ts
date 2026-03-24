@@ -176,25 +176,26 @@ class TikTokMetadataService {
       }
 
       const data = await response.json()
-      console.log('🎵 TikWM.com API response:', {
+      console.log('🎵 TikWM.com API full response:', {
         success: data?.success,
+        msg: data?.msg,
         dataKeys: data?.data ? Object.keys(data.data) : 'no data',
-        hasVideoData: !!data?.data?.video,
-        videoId: data?.data?.video?.id
+        hasData: !!data?.data,
+        fullData: data?.data
       })
       
-      if (!data.success || !data.data?.video) {
+      if (!data || !data.data) {
         console.error('🎵 TikWM.com API returned invalid data:', data)
         return null
       }
 
-      const videoData = data.data.video
-      console.log('🎵 TikWM API success:', {
+      // TikWM API structure: data contains video info directly, not data.video
+      const videoData = data.data
+      console.log('🎵 TikWM API video data:', {
         title: videoData.title,
         desc: videoData.desc,
         hashtags: videoData.hashtags,
         text: videoData.text,
-        hashtagsExtra: videoData.hashtags_extra,
         author: videoData.author,
         stats: videoData.stats
       })
