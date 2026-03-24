@@ -176,30 +176,30 @@ export function KickAuth({ onUserChange }: KickAuthProps) {
   if (user) {
     return (
       <Card className="bg-black border border-cyan-500">
-        <CardContent>
-          <div className="flex items-center gap-3">
+        <CardContent className="relative">
+          {/* Logout button in top right corner */}
+          <Button
+            onClick={handleLogout}
+            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm"
+            size="sm"
+          >
+            <LogOut className="w-3 h-3 mr-1" />
+            Logout
+          </Button>
+          
+          {/* User info centered */}
+          <div className="flex items-center gap-3 pr-20">
             <div className="text-center">
               <img 
                 src={user.profile_image_url || 'https://via.placeholder.com/40'} 
                 alt={user.display_name}
-                className="w-12 h-12 rounded-full mr-3"
+                className="w-12 h-12 rounded-full"
               />
             </div>
             <div>
               <div className="text-cyan-300 text-sm font-medium">Logged in as</div>
               <div className="text-white font-semibold">{user.display_name}</div>
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm"
-              size="sm"
-            >
-              <LogOut className="w-3 h-3 mr-1" />
-              Logout
-            </Button>
           </div>
         </CardContent>
       </Card>

@@ -736,7 +736,7 @@ VIDEO METADATA EXTRACTION:
           
           {/* Platform Selection */}
           <div>
-            <Label className="text-green-400">Platform</Label>
+            <Label className="text-green-400">Platform You're Posting To</Label>
             <select
               value={selectedPlatform}
               onChange={(e) => setSelectedPlatform(e.target.value)}
