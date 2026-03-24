@@ -28,7 +28,6 @@ import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
 import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
-import { analyzeContentWithAI } from '@/lib/openai'
 import GeminiService from '@/lib/gemini'
 
 interface AnalysisResult {
@@ -40,19 +39,10 @@ interface AnalysisResult {
   tagSuggestions: string[]
   editingTips: string[]
   algorithmInsights: string[]
-  researchTimestamp: Date
-  aiAnalysis?: {
-    deepSeekUsed: boolean
-    openaiUsed: boolean
-    geminiUsed: boolean
-    totalInsights: number
-  }
-  deepseekInsights?: {
-    algorithmResearch: string
-    trendingOpportunities: string
-    engagementTriggers: string[]
-    performancePrediction: string
-  }
+  algorithmResearch: string
+  trendingOpportunities: string
+  engagementTriggers: string[]
+  performancePrediction: string
   gameAnalysis?: {
     gameName: string
     gameGenre: string
@@ -60,6 +50,14 @@ interface AnalysisResult {
     streamingPlatform: string
     contentFocus: string
   }
+  aiAnalysis?: {
+    metadataUsed: boolean
+    deepSeekUsed: boolean
+    geminiUsed: boolean
+    totalInsights: number
+    totalTagSuggestions: number
+  }
+  researchTimestamp?: Date
   tiktokStats?: {
     viewCount: number
     likeCount: number
@@ -305,91 +303,63 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
     }
   }
 
-  const analyzeWithAllAI = async (content: string, platform: string) => {
-    console.log('🤖 Starting comprehensive AI analysis with DeepSeek, OpenAI, and Gemini...')
+  const analyzeWithMetadataAndAI = async (content: string, platform: string, metadata: any) => {
+    console.log('🤖 Starting AI Analysis Flow:')
+    console.log('📊 Extracted Metadata:', metadata)
     
     try {
-      // Primary analysis with DeepSeek
-      console.log('🧠 DeepSeek AI Analysis...')
-      const deepseekResult = await analyzeWithDeepSeek(content, platform)
+      // Step 1: Analyze extracted metadata with Gemini
+      console.log('� Step 1: Gemini analyzing extracted metadata...')
+      const geminiAnalysis = await GeminiService.getInstance().analyzeContent(
+        'video',
+        platform,
+        metadata?.title || 'Unknown Title',
+        metadata?.description || 'Unknown Description',
+        content
+      )
       
-      // Backup analysis with OpenAI
-      console.log('🔵 OpenAI Analysis...')
-      let openaiResult = null
-      try {
-        openaiResult = await analyzeContentWithAI(
-          'video',
-          platform,
-          deepseekResult?.clipTitle || 'Untitled',
-          deepseekResult?.clipDescription || '',
-          content
-        )
-      } catch (error) {
-        console.warn('OpenAI analysis failed:', error)
-      }
+      // Step 2: Analyze with DeepSeek for algorithm optimization
+      console.log('🧠 Step 2: DeepSeek algorithm analysis...')
+      const deepseekAnalysis = await analyzeWithDeepSeek(content, platform)
       
-      // Trend analysis with Gemini
-      console.log('🟣 Gemini Trend Analysis...')
-      let geminiResult = null
-      try {
-        const geminiService = GeminiService.getInstance()
-        geminiResult = await geminiService.analyzeContent(
-          'video',
-          platform,
-          deepseekResult?.clipTitle || 'Untitled',
-          deepseekResult?.clipDescription || '',
-          content
-        )
-      } catch (error) {
-        console.warn('Gemini analysis failed:', error)
-      }
-      
-      // Combine insights from all AI services
+      // Combine results
       const combinedResult = {
-        ...deepseekResult,
-        // Merge insights from all services
+        clipTitle: metadata?.title || deepseekAnalysis?.clipTitle || 'Untitled Video',
+        titleSuggestions: Array.isArray(deepseekAnalysis?.titleSuggestions) ? deepseekAnalysis.titleSuggestions : [],
+        clipDescription: metadata?.description || deepseekAnalysis?.clipDescription || 'No description available',
+        descriptionSuggestions: Array.isArray(deepseekAnalysis?.descriptionSuggestions) ? deepseekAnalysis.descriptionSuggestions : [],
+        tags: metadata?.hashtags || [],
+        tagSuggestions: Array.isArray(deepseekAnalysis?.tagSuggestions) ? deepseekAnalysis.tagSuggestions : [],
+        editingTips: Array.isArray(deepseekAnalysis?.editingTips) ? deepseekAnalysis.editingTips : [],
         algorithmInsights: [
-          ...(deepseekResult?.algorithmInsights || []),
-          ...(openaiResult?.insights || []).map(insight => `OpenAI: ${insight}`),
-          ...(geminiResult?.insights || []).map(insight => `Gemini: ${insight}`)
+          ...(deepseekAnalysis?.algorithmInsights || []),
+          ...(geminiAnalysis?.insights || []).map(insight => `Gemini: ${insight}`)
         ],
-        // Merge recommendations
-        editingTips: [
-          ...(deepseekResult?.editingTips || []),
-          ...(openaiResult?.recommendations || []).map(rec => `OpenAI: ${rec}`),
-          ...(geminiResult?.recommendations || []).map(rec => `Gemini: ${rec}`)
-        ],
-        // Merge tag suggestions
-        tagSuggestions: [
-          ...(deepseekResult?.tagSuggestions || []),
-          ...(openaiResult?.tags || []),
-          ...(geminiResult?.tags || []),
-          ...(geminiResult?.trends || [])
-        ].slice(0, 25), // Limit to top 25
-        // Add AI service info
-        aiAnalysis: {
-          deepSeekUsed: !!deepseekResult,
-          openaiUsed: !!openaiResult,
-          geminiUsed: !!geminiResult,
-          totalInsights: (deepseekResult?.algorithmInsights?.length || 0) + 
-                        (openaiResult?.insights?.length || 0) + 
-                        (geminiResult?.insights?.length || 0)
+        algorithmResearch: deepseekAnalysis?.algorithmResearch || '',
+        trendingOpportunities: geminiAnalysis?.trends?.join(', ') || '',
+        engagementTriggers: deepseekAnalysis?.engagementTriggers || [],
+        performancePrediction: deepseekAnalysis?.performancePrediction || '',
+        gameAnalysis: deepseekAnalysis?.gameAnalysis || {
+          gameName: 'Unknown Game',
+          gameGenre: 'Unknown',
+          gamingPlatform: 'Unknown',
+          streamingPlatform: 'Unknown',
+          contentFocus: 'Unknown'
         }
       }
       
-      console.log('✅ Comprehensive AI Analysis Complete:', {
-        deepSeek: !!deepseekResult,
-        openai: !!openaiResult,
-        gemini: !!geminiResult,
-        totalInsights: combinedResult.aiAnalysis.totalInsights,
+      console.log('✅ AI Analysis Complete:', {
+        metadataUsed: !!metadata,
+        deepseekUsed: !!deepseekAnalysis,
+        geminiUsed: !!geminiAnalysis,
+        totalInsights: combinedResult.algorithmInsights.length,
         totalTagSuggestions: combinedResult.tagSuggestions.length
       })
       
       return combinedResult
     } catch (error) {
-      console.error('❌ Comprehensive AI Analysis failed:', error)
-      // Fallback to DeepSeek only
-      return await analyzeWithDeepSeek(content, platform)
+      console.error('❌ AI Analysis failed:', error)
+      return null
     }
   }
 
@@ -545,8 +515,8 @@ VIDEO METADATA EXTRACTION:
 - Generate relevant tags based on extracted information`
       }
 
-      // Analyze with comprehensive AI system
-      const comprehensiveResult = await analyzeWithAllAI(content, selectedPlatform)
+      // Analyze with metadata-first AI approach
+      const comprehensiveResult = await analyzeWithMetadataAndAI(content, selectedPlatform, youtubeMetadata || tiktokMetadata)
       
       if (!comprehensiveResult) {
         throw new Error('Comprehensive AI analysis failed')
@@ -563,13 +533,18 @@ VIDEO METADATA EXTRACTION:
         tagSuggestions: Array.isArray(comprehensiveResult.tagSuggestions) ? comprehensiveResult.tagSuggestions : [],
         editingTips: Array.isArray(comprehensiveResult.editingTips) ? comprehensiveResult.editingTips : [],
         algorithmInsights: Array.isArray(comprehensiveResult.algorithmInsights) ? comprehensiveResult.algorithmInsights : [],
+        algorithmResearch: comprehensiveResult.algorithmResearch || '',
+        trendingOpportunities: comprehensiveResult.trendingOpportunities || '',
+        engagementTriggers: Array.isArray(comprehensiveResult.engagementTriggers) ? comprehensiveResult.engagementTriggers : [],
+        performancePrediction: comprehensiveResult.performancePrediction || '',
         researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'), // Use consistent date for SSR
-        // Additional AI insights from all services
+        // AI Analysis Info
         aiAnalysis: comprehensiveResult.aiAnalysis || {
-          deepSeekUsed: true,
-          openaiUsed: false,
-          geminiUsed: false,
-          totalInsights: comprehensiveResult.algorithmInsights?.length || 0
+          metadataUsed: !!(youtubeMetadata || tiktokMetadata),
+          deepSeekUsed: !!comprehensiveResult,
+          geminiUsed: !!geminiAnalysis,
+          totalInsights: comprehensiveResult.algorithmInsights?.length || 0,
+          totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
         },
         // Game Analysis
         gameAnalysis: comprehensiveResult.gameAnalysis || {
