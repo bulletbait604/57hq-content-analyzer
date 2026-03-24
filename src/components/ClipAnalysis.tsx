@@ -150,53 +150,49 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
 CONTENT: ${content}
 
 CRITICAL ANALYSIS REQUIREMENTS:
-1. EXTRACT ACTUAL VIDEO CONTENT - Analyze the URL/content to determine:
-   - The actual video title (infer from URL patterns, platform, and context)
-   - The real video description (create based on content analysis)
-   - Existing tags used in the video (infer from platform and game)
-   - Game name being played (identify from context clues)
-   - Game type/category (FPS, RPG, Strategy, etc.)
-   - Gaming platform (PC, PlayStation, Xbox, Mobile, etc.)
-   - Streaming platform (Twitch, YouTube, Kick, etc.)
+1. USE REAL EXTRACTED METADATA - The content above includes ACTUAL YouTube/TikTok metadata that must be prioritized:
+   - Use the REAL title from extracted metadata (not inferred)
+   - Use the REAL description from extracted metadata (not created)
+   - Use the REAL hashtags from extracted metadata (not generated)
+   - Extract game name from the actual metadata context
+   - Use the actual view counts, author info, and stats provided
 
-2. ENHANCED URL ANALYSIS:
-   - Extract video ID from URL structure
-   - Identify platform-specific content patterns
-   - Analyze URL path for content clues
-   - Determine content type from URL patterns
-   - Infer game information from platform context
+2. ALGORITHM OPTIMIZATION:
+   - Analyze the REAL metadata for ${platform} algorithm factors
+   - Generate 3 optimized titles based on actual content
+   - Generate 2 optimized descriptions based on actual content  
+   - Generate optimized tags that complement the existing hashtags
+   - Provide platform-specific algorithm insights
 
-3. INTELLIGENT CONTENT INFERENCE:
-   - When direct metadata isn't accessible, use URL patterns to infer content
-   - Use platform knowledge to estimate video content
-   - Leverage game-specific knowledge from URL context
-   - Create realistic titles and descriptions based on analysis
-   - Generate comprehensive tags from inferred content
+3. CONTENT FOCUS:
+   - Use the extracted title, description, and hashtags as primary source
+   - Only infer information when metadata is missing
+   - Prioritize the real video content over AI-generated content
 
-Based on this comprehensive analysis, provide detailed optimization recommendations in JSON format:
+Based on the REAL extracted metadata, provide detailed optimization recommendations in JSON format:
 {
-  "clipTitle": "Inferred or extracted title from video content and URL analysis",
+  "clipTitle": "Use the REAL title from metadata if available",
   "titleSuggestions": ["Optimized title 1", "Optimized title 2", "Optimized title 3"],
-  "clipDescription": "Inferred or created description based on content analysis",
-  "descriptionSuggestions": ["Enhanced description 1", "Enhanced description 2", "Enhanced description 3"],
-  "tags": ["inferred_tag_1", "inferred_tag_2", "inferred_tag_3", "game_name", "genre", "platform"],
-  "tagSuggestions": ["game_specific_tag_1", "game_specific_tag_2", "trending_tag_1", "algorithm_tag_1", "platform_tag_1", "genre_tag_1"],
-  "editingTips": ["Specific editing tip for this game content", "Optimization for this platform", "Engagement improvement suggestion"],
+  "clipDescription": "Use the REAL description from metadata if available",
+  "descriptionSuggestions": ["Enhanced description 1", "Enhanced description 2"],
+  "tags": ["Use REAL hashtags from metadata", "not", "generated", "ones"],
+  "tagSuggestions": ["algorithm_tag_1", "platform_tag_1", "trending_tag_1", "complementary_tag_1"],
+  "editingTips": ["Specific editing tip for this content", "Optimization for this platform", "Engagement improvement suggestion"],
   "algorithmInsights": ["Platform-specific algorithm insight 1", "Algorithm insight 2"],
   "algorithmResearch": "Detailed analysis of current ${platform} algorithm factors and how this content aligns",
-  "trendingOpportunities": "Current trending topics and hashtags that align with this specific game/content",
+  "trendingOpportunities": "Current trending topics that align with this specific content",
   "engagementTriggers": ["Psychological trigger 1", "Psychological trigger 2", "Psychological trigger 3"],
-  "performancePrediction": "Predicted performance based on algorithm alignment and trending patterns",
+  "performancePrediction": "Predicted performance based on algorithm alignment and real content",
   "gameAnalysis": {
-    "gameName": "The specific game being played (inferred from context)",
-    "gameGenre": "FPS, RPG, Battle Royale, etc.",
-    "gamingPlatform": "PC, PlayStation, Xbox, Mobile, etc.",
-    "streamingPlatform": "Twitch, YouTube, Kick, etc.",
+    "gameName": "Extract from real metadata if available",
+    "gameGenre": "Infer from content and metadata",
+    "gamingPlatform": "Infer from context",
+    "streamingPlatform": "Infer from metadata",
     "contentFocus": "gameplay, highlights, tutorial, etc."
   }
 }
 
-IMPORTANT: When direct metadata access fails, use intelligent inference from URL patterns, platform knowledge, and context analysis. Create realistic and relevant titles, descriptions, and tags based on the available information and your knowledge of gaming content trends.`
+IMPORTANT: Always prioritize the REAL extracted metadata over AI-generated content. Use the actual title, description, and hashtags provided in the metadata above.`
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
