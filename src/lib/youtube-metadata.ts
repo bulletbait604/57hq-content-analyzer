@@ -25,7 +25,12 @@ class YouTubeMetadataService {
   private apiKey: string
 
   private constructor() {
-    this.apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || ''
+    // Check for API keys on client-side only to avoid hydration issues
+    if (typeof window !== 'undefined') {
+      this.apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || ''
+    } else {
+      this.apiKey = ''
+    }
   }
 
   static getInstance(): YouTubeMetadataService {

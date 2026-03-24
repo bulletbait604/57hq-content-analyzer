@@ -16,13 +16,16 @@ class SubscribersManager {
   private constructor() {
     this.loadSubscribers()
     // Initialize with Bulletbait604 only if list is empty AND no data in localStorage
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(this.STORAGE_KEY)
-      if (!stored && this.subscribers.length === 0) {
-        console.log('🆕 Initializing empty subscriber list with bulletbait604')
-        this.addSubscriber('bulletbait604', 'system')
+    // Defer this to client-side to avoid hydration issues
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem(this.STORAGE_KEY)
+        if (!stored && this.subscribers.length === 0) {
+          console.log('🆕 Initializing empty subscriber list with bulletbait604')
+          this.addSubscriber('bulletbait604', 'system')
+        }
       }
-    }
+    }, 0)
   }
 
   static getInstance(): SubscribersManager {
@@ -33,6 +36,7 @@ class SubscribersManager {
   }
 
   private loadSubscribers(): void {
+    // Only load from localStorage on client-side to avoid hydration issues
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (stored) {
