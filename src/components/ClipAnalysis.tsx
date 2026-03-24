@@ -80,6 +80,43 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [inputMode, setInputMode] = useState<'file' | 'url'>('file')
+  const [loadingMessage, setLoadingMessage] = useState<string>('')
+
+  // Funny loading messages sequence
+  const loadingMessages = [
+    "Locating the best beef...",
+    "Beef acquired! 🥩",
+    "Obtaining burger bun...",
+    "Bun secured! 🍔",
+    "Locating vegetables...",
+    "Veggies found! 🥬",
+    "Completing cheeseburger...",
+    "Cheeseburger ready! 🧀",
+    "Adding secret sauce...",
+    "Sauce applied! 🍟",
+    "Final touches...",
+    "Almost done! 🍔"
+  ]
+
+  // Update loading message every 2 seconds
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    let messageIndex = 0
+
+    if (isAnalyzing) {
+      setLoadingMessage(loadingMessages[0])
+      interval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % loadingMessages.length
+        setLoadingMessage(loadingMessages[messageIndex])
+      }, 2000)
+    } else {
+      setLoadingMessage('')
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isAnalyzing])
 
   const platforms = [
     { value: 'youtube shorts', label: 'YouTube Shorts', icon: '⚡' },
@@ -722,12 +759,12 @@ VIDEO METADATA EXTRACTION:
             {isAnalyzing ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Analyzing with DeepSeek AI...
+                {loadingMessage || 'Analyzing...'}
               </>
             ) : (
               <>
-                <Search className="w-4 h-4 mr-2" />
-                Analyze Content
+                <Zap className="w-4 h-4 mr-2" />
+                Analyze with DeepSeek AI
               </>
             )}
           </Button>
