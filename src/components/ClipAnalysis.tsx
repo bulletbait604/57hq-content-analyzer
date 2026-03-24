@@ -57,6 +57,7 @@ interface AnalysisResult {
     totalTagSuggestions: number
   }
   researchTimestamp?: Date
+  isTikTok?: boolean
   tiktokStats?: {
     viewCount: number
     likeCount: number
@@ -64,7 +65,7 @@ interface AnalysisResult {
     shareCount: number
     originalAuthor: string
     originalHashtags: string[]
-    videoDuration: number
+    videoDuration: string | number
   }
   youtubeStats?: {
     viewCount: number
@@ -489,6 +490,9 @@ VIDEO METADATA EXTRACTION:
       const currentDescription = youtubeMetadata?.description || tiktokMetadata?.description || 'No description available'
       const currentTags = youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || []
       
+      // Detect if it's a TikTok URL for UI customization
+      const isTikTok = !!(tiktokMetadata) || (videoUrl && videoUrl.includes('tiktok.com'))
+      
       // Display current metadata immediately (before DeepSeek analysis)
       const analysisData = {
         // Display REAL extracted metadata as current content
@@ -542,7 +546,9 @@ VIDEO METADATA EXTRACTION:
           originalHashtags: youtubeMetadata.hashtags,
           videoDuration: youtubeMetadata.duration,
           thumbnail: youtubeMetadata.thumbnail
-        } : undefined
+        } : undefined,
+        // Add TikTok detection flag for UI
+        isTikTok: isTikTok
       }
       
       // Display current metadata immediately
@@ -585,7 +591,9 @@ VIDEO METADATA EXTRACTION:
             geminiUsed: false,
             totalInsights: 0,
             totalTagSuggestions: 0
-          }
+          },
+          // Preserve TikTok detection flag
+          isTikTok: isTikTok
         }
         
         // Update with DeepSeek results
@@ -760,34 +768,36 @@ VIDEO METADATA EXTRACTION:
       {/* Analysis Results */}
       {analysisResult && (
         <div className="space-y-6">
-          {/* Clip Title */}
-          <Card className="bg-black border-blue-500/30">
-            <CardHeader>
-              <CardTitle className="text-blue-400 flex items-center gap-2">
-                <Video className="w-5 h-5" />
-                Clip Title
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-blue-400">Current Title:</Label>
-                <p className="text-white p-3 bg-black/50 rounded">{analysisResult.clipTitle}</p>
-              </div>
-              {analysisResult.titleSuggestions.length > 0 && (
+          {/* Clip Title - Hide for TikTok */}
+          {!analysisResult.isTikTok && (
+            <Card className="bg-black border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="text-blue-400 flex items-center gap-2">
+                  <Video className="w-5 h-5" />
+                  Clip Title
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-blue-400">Algorithm-Optimized Titles:</Label>
-                  <div className="space-y-2">
-                    {analysisResult.titleSuggestions.map((title, index) => (
-                      <div key={index} className="flex items-start gap-2 p-3 bg-black/50 rounded-lg">
-                        <div className="text-blue-400 font-medium">{index + 1}.</div>
-                        <div className="text-white">{title}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <Label className="text-blue-400">Current Title:</Label>
+                  <p className="text-white p-3 bg-black/50 rounded">{analysisResult.clipTitle}</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                {analysisResult.titleSuggestions.length > 0 && (
+                  <div>
+                    <Label className="text-blue-400">Algorithm-Optimized Titles:</Label>
+                    <div className="space-y-2">
+                      {analysisResult.titleSuggestions.map((title, index) => (
+                        <div key={index} className="flex items-start gap-2 p-3 bg-black/50 rounded-lg">
+                          <div className="text-blue-400 font-medium">{index + 1}.</div>
+                          <div className="text-white">{title}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Clip Description */}
           <Card className="bg-black border-purple-500/30">
