@@ -13,6 +13,7 @@ import { Settings as SettingsComponent } from '@/components/Settings'
 import { Footer } from '@/components/Footer'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { PremiumAccess } from '@/lib/premium-access'
+import SubscribersManager from '@/lib/subscribers'
 import { 
   Upload, 
   Play, 
@@ -66,7 +67,9 @@ export default function Home() {
         try {
           const parsedUser = JSON.parse(storedUser)
           setUser(parsedUser)
-          setHasPremium(PremiumAccess.getInstance().hasPremiumAccess(parsedUser.username))
+          // Use SubscribersManager instead of PremiumAccess
+          const subscribersManager = SubscribersManager.getInstance()
+          setHasPremium(subscribersManager.isSubscriber(parsedUser.username))
         } catch (error) {
           console.error('Error parsing stored user:', error)
           localStorage.removeItem('kickUser')
@@ -94,7 +97,9 @@ export default function Home() {
     setUser(userData)
     if (userData) {
       localStorage.setItem('kickUser', JSON.stringify(userData))
-      setHasPremium(PremiumAccess.getInstance().hasPremiumAccess(userData.username))
+      // Use SubscribersManager instead of PremiumAccess
+      const subscribersManager = SubscribersManager.getInstance()
+      setHasPremium(subscribersManager.isSubscriber(userData.username))
     } else {
       localStorage.removeItem('kickUser')
       setHasPremium(false)
