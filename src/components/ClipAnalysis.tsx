@@ -144,55 +144,39 @@ export function ClipAnalysis({ user, hasPremium }: { user: any; hasPremium: bool
     }
   }
 
-  const analyzeWithDeepSeek = async (content: string, platform: string) => {
-    const deepseekPrompt = `You are a senior social media algorithm researcher and content analyst with access to the latest 2026 platform data. Analyze this content for ${platform} optimization with deep research insights.
+  const analyzeWithDeepSeek = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
+    const deepseekPrompt = `You are a senior social media algorithm researcher with expertise in 2026 platform best practices. Analyze this content for ${platform} optimization.
 
-CONTENT: ${content}
+CURRENT CONTENT TO ANALYZE:
+Title: "${currentTitle}"
+Description: "${currentDescription}"
+Tags: ${currentTags.join(', ')}
 
-CRITICAL ANALYSIS REQUIREMENTS:
-1. USE REAL EXTRACTED METADATA - The content above includes ACTUAL YouTube/TikTok metadata that must be prioritized:
-   - Use the REAL title from extracted metadata (not inferred)
-   - Use the REAL description from extracted metadata (not created)
-   - Use the REAL hashtags from extracted metadata (not generated)
-   - Extract game name from the actual metadata context
-   - Use the actual view counts, author info, and stats provided
+TARGET PLATFORM: ${platform}
 
-2. ALGORITHM OPTIMIZATION:
-   - Analyze the REAL metadata for ${platform} algorithm factors
-   - Generate 3 optimized titles based on actual content
-   - Generate 2 optimized descriptions based on actual content  
-   - Generate optimized tags that complement the existing hashtags
-   - Provide platform-specific algorithm insights
+TASK: Cross-reference this content with researched best practices for ${platform} and provide optimization recommendations.
 
-3. CONTENT FOCUS:
-   - Use the extracted title, description, and hashtags as primary source
-   - Only infer information when metadata is missing
-   - Prioritize the real video content over AI-generated content
-
-Based on the REAL extracted metadata, provide detailed optimization recommendations in JSON format:
+Provide detailed optimization recommendations in JSON format:
 {
-  "clipTitle": "Use the REAL title from metadata if available",
   "titleSuggestions": ["Optimized title 1", "Optimized title 2", "Optimized title 3"],
-  "clipDescription": "Use the REAL description from metadata if available",
   "descriptionSuggestions": ["Enhanced description 1", "Enhanced description 2"],
-  "tags": ["Use REAL hashtags from metadata", "not", "generated", "ones"],
   "tagSuggestions": ["algorithm_tag_1", "platform_tag_1", "trending_tag_1", "complementary_tag_1"],
   "editingTips": ["Specific editing tip for this content", "Optimization for this platform", "Engagement improvement suggestion"],
   "algorithmInsights": ["Platform-specific algorithm insight 1", "Algorithm insight 2"],
   "algorithmResearch": "Detailed analysis of current ${platform} algorithm factors and how this content aligns",
   "trendingOpportunities": "Current trending topics that align with this specific content",
   "engagementTriggers": ["Psychological trigger 1", "Psychological trigger 2", "Psychological trigger 3"],
-  "performancePrediction": "Predicted performance based on algorithm alignment and real content",
+  "performancePrediction": "Predicted performance based on algorithm alignment and content analysis",
   "gameAnalysis": {
-    "gameName": "Extract from real metadata if available",
-    "gameGenre": "Infer from content and metadata",
+    "gameName": "Extract from content if available",
+    "gameGenre": "Infer from content",
     "gamingPlatform": "Infer from context",
-    "streamingPlatform": "Infer from metadata",
+    "streamingPlatform": "Infer from content",
     "contentFocus": "gameplay, highlights, tutorial, etc."
   }
 }
 
-IMPORTANT: Always prioritize the REAL extracted metadata over AI-generated content. Use the actual title, description, and hashtags provided in the metadata above.`
+IMPORTANT: Focus on optimizing the provided content for ${platform} algorithm success. Use current 2026 best practices and trends.`
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
@@ -298,22 +282,19 @@ IMPORTANT: Always prioritize the REAL extracted metadata over AI-generated conte
     }
   }
 
-  const analyzeWithDeepSeekOnly = async (content: string, platform: string, metadata: any) => {
-    console.log('🤖 Starting DeepSeek-Only AI Analysis Flow:')
-    console.log('📊 Extracted Metadata:', metadata)
+  const analyzeWithDeepSeekOnly = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
+    console.log('🤖 Starting DeepSeek Analysis Flow:')
+    console.log('📊 Current Content:', { currentTitle, currentDescription, currentTags, platform })
     
     try {
-      // Analyze with DeepSeek for algorithm optimization using metadata
-      console.log('🧠 DeepSeek algorithm analysis with metadata...')
-      const deepseekAnalysis = await analyzeWithDeepSeek(content, platform)
+      // Analyze with DeepSeek using current metadata
+      console.log('🧠 DeepSeek analyzing current content...')
+      const deepseekAnalysis = await analyzeWithDeepSeek(currentTitle, currentDescription, currentTags, platform)
       
-      // Combine results with metadata
+      // Return DeepSeek suggestions
       const combinedResult = {
-        clipTitle: metadata?.title || deepseekAnalysis?.clipTitle || 'Untitled Video',
         titleSuggestions: Array.isArray(deepseekAnalysis?.titleSuggestions) ? deepseekAnalysis.titleSuggestions : [],
-        clipDescription: metadata?.description || deepseekAnalysis?.clipDescription || 'No description available',
         descriptionSuggestions: Array.isArray(deepseekAnalysis?.descriptionSuggestions) ? deepseekAnalysis.descriptionSuggestions : [],
-        tags: metadata?.hashtags || [],
         tagSuggestions: Array.isArray(deepseekAnalysis?.tagSuggestions) ? deepseekAnalysis.tagSuggestions : [],
         editingTips: Array.isArray(deepseekAnalysis?.editingTips) ? deepseekAnalysis.editingTips : [],
         algorithmInsights: Array.isArray(deepseekAnalysis?.algorithmInsights) ? deepseekAnalysis.algorithmInsights : [],
@@ -330,7 +311,7 @@ IMPORTANT: Always prioritize the REAL extracted metadata over AI-generated conte
         },
         // Add AI Analysis Info
         aiAnalysis: {
-          metadataUsed: !!metadata,
+          metadataUsed: true,
           deepSeekUsed: !!deepseekAnalysis,
           geminiUsed: false,
           totalInsights: deepseekAnalysis?.algorithmInsights?.length || 0,
@@ -339,7 +320,6 @@ IMPORTANT: Always prioritize the REAL extracted metadata over AI-generated conte
       }
       
       console.log('✅ DeepSeek Analysis Complete:', {
-        metadataUsed: !!metadata,
         deepSeekUsed: !!deepseekAnalysis,
         totalInsights: combinedResult.algorithmInsights.length,
         totalTagSuggestions: combinedResult.tagSuggestions.length
@@ -504,47 +484,39 @@ VIDEO METADATA EXTRACTION:
 - Generate relevant tags based on extracted information`
       }
 
-      // Analyze with DeepSeek-only approach
-      const comprehensiveResult = await analyzeWithDeepSeekOnly(content, selectedPlatform, youtubeMetadata || tiktokMetadata)
+      // Extract current metadata
+      const currentTitle = youtubeMetadata?.title || tiktokMetadata?.title || 'Untitled Video'
+      const currentDescription = youtubeMetadata?.description || tiktokMetadata?.description || 'No description available'
+      const currentTags = youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || []
       
-      if (!comprehensiveResult) {
-        throw new Error('Comprehensive AI analysis failed')
-      }
-      
-      // Process comprehensive AI results
+      // Display current metadata immediately (before DeepSeek analysis)
       const analysisData = {
         // Display REAL extracted metadata as current content
-        clipTitle: youtubeMetadata?.title || tiktokMetadata?.title || 'Untitled Video',
-        clipDescription: youtubeMetadata?.description || tiktokMetadata?.description || 'No description available',
-        tags: youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || [],
+        clipTitle: currentTitle,
+        clipDescription: currentDescription,
+        tags: currentTags,
         
-        // Display DeepSeek suggestions as optimizations
-        titleSuggestions: Array.isArray(comprehensiveResult.titleSuggestions) ? comprehensiveResult.titleSuggestions : [],
-        descriptionSuggestions: Array.isArray(comprehensiveResult.descriptionSuggestions) ? comprehensiveResult.descriptionSuggestions : [],
-        tagSuggestions: Array.isArray(comprehensiveResult.tagSuggestions) ? comprehensiveResult.tagSuggestions : [],
-        editingTips: Array.isArray(comprehensiveResult.editingTips) ? comprehensiveResult.editingTips : [],
-        algorithmInsights: Array.isArray(comprehensiveResult.algorithmInsights) ? comprehensiveResult.algorithmInsights : [],
-        algorithmResearch: comprehensiveResult.algorithmResearch || '',
-        trendingOpportunities: comprehensiveResult.trendingOpportunities || '',
-        engagementTriggers: Array.isArray(comprehensiveResult.engagementTriggers) ? comprehensiveResult.engagementTriggers : [],
-        performancePrediction: comprehensiveResult.performancePrediction || '',
-        researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'), // Use consistent date for SSR
+        // Initialize with empty suggestions (will be filled by DeepSeek)
+        titleSuggestions: [],
+        descriptionSuggestions: [],
+        tagSuggestions: [],
+        editingTips: [],
+        algorithmInsights: [],
+        algorithmResearch: '',
+        trendingOpportunities: '',
+        engagementTriggers: [],
+        performancePrediction: '',
+        researchTimestamp: typeof window !== 'undefined' ? new Date() : new Date('2026-01-01'),
         // AI Analysis Info
-        aiAnalysis: comprehensiveResult?.aiAnalysis ? {
-          metadataUsed: !!(youtubeMetadata || tiktokMetadata),
-          deepSeekUsed: !!comprehensiveResult,
-          geminiUsed: !!comprehensiveResult.aiAnalysis.geminiUsed,
-          totalInsights: comprehensiveResult.algorithmInsights?.length || 0,
-          totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
-        } : {
-          metadataUsed: false,
+        aiAnalysis: {
+          metadataUsed: true,
           deepSeekUsed: false,
           geminiUsed: false,
           totalInsights: 0,
           totalTagSuggestions: 0
         },
         // Game Analysis
-        gameAnalysis: comprehensiveResult.gameAnalysis || {
+        gameAnalysis: {
           gameName: 'Unknown Game',
           gameGenre: 'Unknown',
           gamingPlatform: 'Unknown',
@@ -572,8 +544,53 @@ VIDEO METADATA EXTRACTION:
           thumbnail: youtubeMetadata.thumbnail
         } : undefined
       }
-
+      
+      // Display current metadata immediately
       setAnalysisResult(analysisData)
+      
+      // Then analyze with DeepSeek using current metadata
+      console.log('🧠 DeepSeek analyzing displayed current content...')
+      const comprehensiveResult = await analyzeWithDeepSeekOnly(currentTitle, currentDescription, currentTags, selectedPlatform)
+      
+      if (comprehensiveResult) {
+        // Update with DeepSeek suggestions
+        const updatedAnalysisData = {
+          ...analysisData,
+          titleSuggestions: Array.isArray(comprehensiveResult.titleSuggestions) ? comprehensiveResult.titleSuggestions : [],
+          descriptionSuggestions: Array.isArray(comprehensiveResult.descriptionSuggestions) ? comprehensiveResult.descriptionSuggestions : [],
+          tagSuggestions: Array.isArray(comprehensiveResult.tagSuggestions) ? comprehensiveResult.tagSuggestions : [],
+          editingTips: Array.isArray(comprehensiveResult.editingTips) ? comprehensiveResult.editingTips : [],
+          algorithmInsights: Array.isArray(comprehensiveResult.algorithmInsights) ? comprehensiveResult.algorithmInsights : [],
+          algorithmResearch: comprehensiveResult.algorithmResearch || '',
+          trendingOpportunities: comprehensiveResult.trendingOpportunities || '',
+          engagementTriggers: Array.isArray(comprehensiveResult.engagementTriggers) ? comprehensiveResult.engagementTriggers : [],
+          performancePrediction: comprehensiveResult.performancePrediction || '',
+          gameAnalysis: comprehensiveResult.gameAnalysis || {
+            gameName: 'Unknown Game',
+            gameGenre: 'Unknown',
+            gamingPlatform: 'Unknown',
+            streamingPlatform: 'Unknown',
+            contentFocus: 'Unknown'
+          },
+          // Update AI Analysis Info
+          aiAnalysis: comprehensiveResult?.aiAnalysis ? {
+            metadataUsed: !!(youtubeMetadata || tiktokMetadata),
+            deepSeekUsed: !!comprehensiveResult,
+            geminiUsed: !!comprehensiveResult.aiAnalysis.geminiUsed,
+            totalInsights: comprehensiveResult.algorithmInsights?.length || 0,
+            totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
+          } : {
+            metadataUsed: false,
+            deepSeekUsed: false,
+            geminiUsed: false,
+            totalInsights: 0,
+            totalTagSuggestions: 0
+          }
+        }
+        
+        // Update with DeepSeek results
+        setAnalysisResult(updatedAnalysisData)
+      }
       
       // Debug logging for tags
       console.log('🏷️ Tag Extraction Debug:', {
