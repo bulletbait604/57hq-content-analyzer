@@ -116,7 +116,8 @@ class YouTubeMetadataService {
 
     console.log('🔑 Using YouTube API key:', {
       usingKey: this.apiKey === process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ? 'NEXT_PUBLIC_YOUTUBE_API_KEY' : 'NEXT_PUBLIC_GOOGLE_API_KEY',
-      keyPresent: !!this.apiKey
+      keyPresent: !!this.apiKey,
+      apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'none'
     })
 
     try {
@@ -124,6 +125,12 @@ class YouTubeMetadataService {
       const videoResponse = await fetch(
         `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey}`
       )
+
+      console.log('📡 YouTube API response:', {
+        status: videoResponse.status,
+        statusText: videoResponse.statusText,
+        url: `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${this.apiKey.substring(0, 10)}...`
+      })
 
       if (!videoResponse.ok) {
         console.error('YouTube API error:', videoResponse.status, 'Falling back to scraping method')
@@ -186,7 +193,13 @@ class YouTubeMetadataService {
         descriptionLength: metadata.description.length,
         hashtagsCount: metadata.hashtags.length,
         descriptionPreview: metadata.description.substring(0, 100) + '...',
-        extractedHashtags: metadata.hashtags.slice(0, 10)
+        extractedHashtags: metadata.hashtags.slice(0, 10),
+        fullDescription: metadata.description,
+        apiResponse: {
+          snippetTitle: snippet.title,
+          snippetDescriptionLength: snippet.description?.length || 0,
+          snippetDescriptionPreview: snippet.description?.substring(0, 100) + '...'
+        }
       })
       return metadata
 
