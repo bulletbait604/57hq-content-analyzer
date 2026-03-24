@@ -163,7 +163,7 @@ export class KickDeveloperAPI {
         
         return {
           id: userData.user_id?.toString() || 'unknown',
-          username: userData.email?.split('@')[0] || userData.name?.toLowerCase().replace(/\s+/g, '') || 'unknown',
+          username: userData.username || userData.name?.toLowerCase().replace(/\s+/g, '') || 'unknown',
           display_name: userData.name || 'Unknown User',
           profile_image_url: userData.profile_picture || ''
         }
