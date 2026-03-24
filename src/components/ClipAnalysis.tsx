@@ -571,11 +571,12 @@ VIDEO METADATA EXTRACTION:
       
       // Process DeepSeek results
       const analysisData = {
-        clipTitle: deepseekResult.clipTitle || 'Untitled Video',
+        clipTitle: deepseekResult.clipTitle || youtubeMetadata?.title || tiktokMetadata?.title || 'Untitled Video',
         titleSuggestions: Array.isArray(deepseekResult.titleSuggestions) ? deepseekResult.titleSuggestions : [],
-        clipDescription: deepseekResult.clipDescription || 'No description available',
+        clipDescription: deepseekResult.clipDescription || youtubeMetadata?.description || tiktokMetadata?.description || 'No description available',
         descriptionSuggestions: Array.isArray(deepseekResult.descriptionSuggestions) ? deepseekResult.descriptionSuggestions : [],
-        tags: Array.isArray(deepseekResult.tags) ? deepseekResult.tags : [],
+        // Use real tags from metadata, not AI-generated tags
+        tags: youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || [],
         tagSuggestions: Array.isArray(deepseekResult.tagSuggestions) ? deepseekResult.tagSuggestions : [],
         editingTips: Array.isArray(deepseekResult.editingTips) ? deepseekResult.editingTips : [],
         algorithmInsights: Array.isArray(deepseekResult.algorithmInsights) ? deepseekResult.algorithmInsights : [],
@@ -618,6 +619,14 @@ VIDEO METADATA EXTRACTION:
       }
 
       setAnalysisResult(analysisData)
+      
+      // Debug logging for tags
+      console.log('🏷️ Tag Extraction Debug:', {
+        youtubeTags: youtubeMetadata?.hashtags || [],
+        tiktokTags: tiktokMetadata?.hashtags || [],
+        finalTags: analysisData.tags,
+        deepseekTagSuggestions: analysisData.tagSuggestions
+      })
       
     } catch (error) {
       console.error('Analysis failed:', error)

@@ -115,7 +115,7 @@ class YouTubeMetadataService {
       )
 
       if (!videoResponse.ok) {
-        console.error('YouTube API error:', videoResponse.status)
+        console.error('YouTube API error:', videoResponse.status, 'Falling back to scraping method')
         return this.getMetadataFromScraping(videoUrl)
       }
 
