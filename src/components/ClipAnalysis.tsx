@@ -302,6 +302,33 @@ IMPORTANT: When direct metadata access fails, use intelligent inference from URL
       return null
     }
   }
+
+  const analyzeWithMetadataAndAI = async (content: string, platform: string, metadata: any) => {
+    console.log('🤖 Starting AI Analysis Flow:')
+    console.log('📊 Extracted Metadata:', metadata)
+    
+    let geminiAnalysis = null
+    let deepseekAnalysis = null
+    
+    try {
+      // Step 1: Analyze extracted metadata with Gemini
+      console.log('🟣 Step 1: Gemini analyzing extracted metadata...')
+      geminiAnalysis = await GeminiService.getInstance().analyzeContent(
+        'video',
+        platform,
+        metadata?.title || 'Unknown Title',
+        metadata?.description || 'Unknown Description',
+        content
+      )
+      
+      // Step 2: Analyze with DeepSeek for algorithm optimization
+      console.log('🧠 Step 2: DeepSeek algorithm analysis...')
+      deepseekAnalysis = await analyzeWithDeepSeek(content, platform)
+      
+      // Combine results
+      const combinedResult = {
+        clipTitle: metadata?.title || deepseekAnalysis?.clipTitle || 'Untitled Video',
+        titleSuggestions: Array.isArray(deepseekAnalysis?.titleSuggestions) ? deepseekAnalysis.titleSuggestions : [],
         clipDescription: metadata?.description || deepseekAnalysis?.clipDescription || 'No description available',
         descriptionSuggestions: Array.isArray(deepseekAnalysis?.descriptionSuggestions) ? deepseekAnalysis.descriptionSuggestions : [],
         tags: metadata?.hashtags || [],
