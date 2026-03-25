@@ -338,7 +338,7 @@ function ClipAnalysis() {
           }
         } else {
           console.log('📺 Extracting YouTube metadata...')
-          youtubeMetadata = await YouTubeMetadataService.extractMetadata(videoUrl)
+          youtubeMetadata = await YouTubeMetadataService.getInstance().getMetadata(videoUrl)
           console.log('📺 YouTube Metadata:', youtubeMetadata)
           
           if (youtubeMetadata) {
