@@ -597,20 +597,20 @@ function ClipAnalysis() {
                   <div className="space-y-2">
                     <div>
                       <Label className="text-gray-400 text-sm">Title</Label>
-                      <p className="text-white bg-gray-900 p-2 rounded">{analysisResult.clipTitle}</p>
+                      <p className="text-white bg-gray-900 p-2 rounded">{analysisResult.clipTitle || 'No title available'}</p>
                     </div>
                     <div>
                       <Label className="text-gray-400 text-sm">Description</Label>
                       <p className="text-white bg-gray-900 p-2 rounded text-sm max-h-20 overflow-y-auto">
-                        {analysisResult.clipDescription}
+                        {analysisResult.clipDescription || 'No description available'}
                       </p>
                     </div>
                     <div>
                       <Label className="text-gray-400 text-sm">Tags</Label>
                       <div className="flex flex-wrap gap-1">
-                        {analysisResult.tags.map((tag, index) => (
+                        {(analysisResult.tags || []).map((tag, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
-                            {tag}
+                            {tag || 'unknown tag'}
                           </Badge>
                         ))}
                       </div>

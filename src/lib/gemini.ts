@@ -115,7 +115,7 @@ Additional Context: ${additionalContext}
 Please analyze this content and provide optimization recommendations.`
 
       // Use official Google Gemini API with latest model
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -276,7 +276,7 @@ Target Platform: ${targetPlatform}
 Please provide comprehensive TikTok-to-${targetPlatform} optimization suggestions with detailed algorithm research and edit recommendations.`
 
       // Use official Google Gemini API with latest model
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -444,7 +444,7 @@ Target Platform: ${targetPlatform}
 Please provide comprehensive YouTube-to-${targetPlatform} optimization suggestions with detailed algorithm research and edit recommendations.`
 
       // Use official Google Gemini API with latest model
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
