@@ -11,6 +11,15 @@ export interface DeepSeekAnalysis {
   recommendations: string[]
   factors?: string[]
   tips?: string[]
+  titleSuggestions?: string[]
+  descriptionSuggestions?: string[]
+  tagSuggestions?: string[]
+  editingTips?: string[]
+  algorithmInsights?: string[]
+  algorithmResearch?: string
+  trendingOpportunities?: string
+  engagementTriggers?: string[]
+  performancePrediction?: string
 }
 
 export async function analyzeContentWithDeepSeek(
@@ -52,20 +61,34 @@ Instagram Reels Algorithm:
 
 Analyze the provided content and provide:
 1. Optimized tags (5-15 based on platform)
-2. Improved title suggestions
-3. Enhanced descriptions
+2. MULTIPLE title suggestions (3-5 variations)
+3. MULTIPLE description suggestions (3-5 variations)
 4. Algorithm insights
 5. Performance score (0-100)
 6. Specific recommendations
+7. Editing tips
+8. Algorithm research summary
+9. Trending opportunities
+10. Engagement triggers
+11. Performance prediction
 
 Format your response as JSON with this structure:
 {
   "tags": ["tag1", "tag2", ...],
-  "title": "optimized title",
-  "description": "enhanced description", 
+  "title": "best optimized title",
+  "description": "best enhanced description",
+  "titleSuggestions": ["title1", "title2", "title3", ...],
+  "descriptionSuggestions": ["desc1", "desc2", "desc3", ...],
+  "tagSuggestions": ["tag1", "tag2", ...],
   "insights": ["insight1", "insight2", ...],
   "algorithmScore": 85,
-  "recommendations": ["rec1", "rec2", ...]
+  "recommendations": ["rec1", "rec2", ...],
+  "editingTips": ["tip1", "tip2", ...],
+  "algorithmInsights": ["insight1", "insight2", ...],
+  "algorithmResearch": "detailed algorithm analysis",
+  "trendingOpportunities": "trending topics",
+  "engagementTriggers": ["trigger1", "trigger2", ...],
+  "performancePrediction": "performance forecast"
 }`
 
     const userPrompt = `Content Type: ${contentType}

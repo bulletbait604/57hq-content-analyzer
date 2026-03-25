@@ -223,14 +223,15 @@ class YouTubeMetadataService {
         title: metadata.title,
         descriptionLength: metadata.description.length,
         hashtagsCount: metadata.hashtags.length,
-        descriptionPreview: metadata.description.substring(0, 100) + '...',
+        descriptionPreview: metadata.description.substring(0, 200) + '...',
         extractedHashtags: metadata.hashtags.slice(0, 10),
         fullDescription: metadata.description,
         apiResponse: {
           snippetTitle: snippet.title,
           snippetDescription: snippet.description,
           contentDetailsTags: contentDetails.tags,
-          snippetTags: snippet.tags
+          snippetTags: snippet.tags,
+          contentDetailsDuration: contentDetails.duration
         }
       })
       

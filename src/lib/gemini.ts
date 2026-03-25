@@ -11,6 +11,16 @@ export interface GeminiAnalysis {
   trends: string[]
 }
 
+export interface TikTokGeminiAnalysis {
+  descriptionSuggestions: string[]
+  tagSuggestions: string[]
+  algorithmInsights: string[]
+  algorithmResearch: string
+  trendingOpportunities: string
+  engagementTriggers: string[]
+  performancePrediction: string
+}
+
 export class GeminiService {
   private static instance: GeminiService
   private apiKey: string
@@ -198,6 +208,138 @@ Return only a JSON array of trending topics like:
     } catch (error) {
       console.error('Gemini Trend Research Error:', error)
       return this.getFallbackTrends(platform)
+    }
+  }
+
+  async analyzeTikTokContent(
+    title: string,
+    description: string,
+    tags: string[],
+    targetPlatform: string
+  ): Promise<TikTokGeminiAnalysis> {
+    if (!this.apiKey) {
+      console.warn('Gemini API key not configured, returning fallback')
+      return this.getTikTokFallbackAnalysis(title, description, tags)
+    }
+
+    try {
+      const systemPrompt = `You are a TikTok content optimization expert specializing in 2026 TikTok algorithm analysis.
+
+TikTok 2026 Algorithm Focus:
+- Operates as a Search Engine - first caption line must match search intent
+- Prioritizes "Pattern Interrupts" (changes every 3 seconds)
+- High-contrast keyword text requirements
+- Rewards trending sounds and challenges
+- Engagement rate in first 1-2 hours critical
+- "For You" page optimization based on user behavior patterns
+
+Your task:
+1. Analyze the TikTok content provided
+2. Research the target platform's algorithm
+3. Cross-reference TikTok metadata with algorithm insights
+4. Generate 3 optimized description suggestions (up to 150 characters each)
+5. Generate up to 10 relevant hashtags
+6. Provide algorithm-specific insights and engagement triggers
+
+Requirements:
+- Each description should be engaging and under 150 characters
+- Hashtags should be mix of broad, niche, and trending tags
+- Include specific TikTok algorithm optimization tips
+- Focus on engagement triggers and pattern interrupts
+
+Format your response as JSON with this structure:
+{
+  "descriptionSuggestions": [
+    "Engaging description 1 with hooks",
+    "Engaging description 2 with call-to-action", 
+    "Engaging description 3 with trending elements"
+  ],
+  "tagSuggestions": ["hashtag1", "hashtag2", ..., "hashtag10"],
+  "algorithmInsights": [
+    "TikTok algorithm insight 1",
+    "TikTok algorithm insight 2",
+    "TikTok algorithm insight 3"
+  ],
+  "algorithmResearch": "Detailed analysis of TikTok algorithm and how it applies to this content",
+  "trendingOpportunities": "Current TikTok trends and how to leverage them",
+  "engagementTriggers": [
+    "Engagement trigger 1",
+    "Engagement trigger 2", 
+    "Engagement trigger 3"
+  ],
+  "performancePrediction": "Predicted performance based on algorithm analysis"
+}`
+
+      const userPrompt = `Analyze this TikTok content for optimization:
+
+Current Title: ${title}
+Current Description: ${description}
+Current Tags: ${tags.join(', ')}
+Target Platform: ${targetPlatform}
+
+Please provide TikTok-specific optimization suggestions based on 2026 algorithm requirements.`
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `${systemPrompt}\n\n${userPrompt}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.9,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 2048,
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const text = data.candidates[0]?.content?.parts?.[0]?.text || ''
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error('No JSON found in Gemini response')
+      }
+
+      return JSON.parse(jsonMatch[0]) as TikTokGeminiAnalysis
+    } catch (error) {
+      console.error('Gemini TikTok Analysis Error:', error)
+      return this.getTikTokFallbackAnalysis(title, description, tags)
+    }
+  }
+
+  private getTikTokFallbackAnalysis(title: string, description: string, tags: string[]): TikTokGeminiAnalysis {
+    return {
+      descriptionSuggestions: [
+        `${title} - Watch till the end! 🔥 #TikTok`,
+        `You won't believe what happened next! 😱 #Viral`,
+        `This is why you should... 🎯 #Trending`
+      ],
+      tagSuggestions: tags.slice(0, 8).concat(['viral', 'trending', 'fyp', 'tiktok', '2026']),
+      algorithmInsights: [
+        'First 3 seconds critical for retention',
+        'Hook in first line for search optimization',
+        'Pattern interrupts every 3 seconds recommended'
+      ],
+      algorithmResearch: 'TikTok 2026 algorithm prioritizes search intent matching and early engagement metrics',
+      trendingOpportunities: 'Current trending sounds and challenges can boost visibility',
+      engagementTriggers: [
+        'Use trending audio',
+        'Add text overlays for engagement',
+        'Include call-to-action in first line'
+      ],
+      performancePrediction: 'Moderate to high potential with proper optimization'
     }
   }
 

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { analyzeContentWithDeepSeek } from '@/lib/deepseek'
+import { GeminiService, TikTokGeminiAnalysis } from '@/lib/gemini'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
 import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
@@ -284,6 +285,72 @@ IMPORTANT: Focus on optimizing the provided content for ${platform} algorithm su
     }
   }
 
+  const analyzeTikTokWithGemini = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
+    console.log('🎵 Starting TikTok Analysis with Gemini AI:')
+    console.log('📊 TikTok Content:', { currentTitle, currentDescription, currentTags, platform })
+    
+    try {
+      // Try Gemini AI first
+      console.log('🤖 Gemini analyzing TikTok content...')
+      const geminiService = GeminiService.getInstance()
+      const geminiAnalysis = await geminiService.analyzeTikTokContent(currentTitle, currentDescription, currentTags, platform)
+      
+      // Enhanced logging for Gemini response debugging
+      console.log('🤖 GEMINI TIKTOK RESPONSE DEBUG:', {
+        geminiAnalysis: geminiAnalysis,
+        descriptionSuggestions: geminiAnalysis?.descriptionSuggestions,
+        tagSuggestions: geminiAnalysis?.tagSuggestions,
+        algorithmInsights: geminiAnalysis?.algorithmInsights,
+        hasMultipleSuggestions: {
+          descriptions: geminiAnalysis?.descriptionSuggestions?.length || 0,
+          tags: geminiAnalysis?.tagSuggestions?.length || 0
+        }
+      })
+      
+      return {
+        descriptionSuggestions: geminiAnalysis?.descriptionSuggestions || [],
+        tagSuggestions: geminiAnalysis?.tagSuggestions || [],
+        editingTips: geminiAnalysis?.algorithmInsights || [],
+        algorithmInsights: geminiAnalysis?.algorithmInsights || [],
+        algorithmResearch: geminiAnalysis?.algorithmResearch || '',
+        trendingOpportunities: geminiAnalysis?.trendingOpportunities || '',
+        engagementTriggers: geminiAnalysis?.engagementTriggers || [],
+        performancePrediction: geminiAnalysis?.performancePrediction || '',
+        aiUsed: 'gemini'
+      }
+    } catch (error) {
+      console.warn('🤖 Gemini failed, falling back to DeepSeek:', error)
+      
+      // Fallback to DeepSeek
+      try {
+        console.log('🧠 DeepSeek analyzing TikTok content as fallback...')
+        const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
+        
+        console.log('🧠 DEEPSEEK TIKTOK FALLBACK DEBUG:', {
+          deepseekAnalysis: deepseekAnalysis,
+          descriptionSuggestions: deepseekAnalysis?.descriptionSuggestions,
+          tagSuggestions: deepseekAnalysis?.tagSuggestions,
+          algorithmInsights: deepseekAnalysis?.algorithmInsights
+        })
+        
+        return {
+          descriptionSuggestions: deepseekAnalysis?.descriptionSuggestions || (deepseekAnalysis?.description ? [deepseekAnalysis.description] : []),
+          tagSuggestions: deepseekAnalysis?.tagSuggestions || deepseekAnalysis?.tags || [],
+          editingTips: deepseekAnalysis?.editingTips || deepseekAnalysis?.recommendations || [],
+          algorithmInsights: deepseekAnalysis?.algorithmInsights || deepseekAnalysis?.insights || [],
+          algorithmResearch: deepseekAnalysis?.algorithmResearch || deepseekAnalysis?.factors?.join(', ') || '',
+          trendingOpportunities: deepseekAnalysis?.trendingOpportunities || `Algorithm Score: ${deepseekAnalysis?.algorithmScore || 0}/100`,
+          engagementTriggers: deepseekAnalysis?.engagementTriggers || deepseekAnalysis?.tips || [],
+          performancePrediction: deepseekAnalysis?.performancePrediction || (deepseekAnalysis?.algorithmScore && deepseekAnalysis.algorithmScore > 75 ? 'High potential for viral performance' : 'Moderate performance expected'),
+          aiUsed: 'deepseek'
+        }
+      } catch (deepseekError) {
+        console.error('❌ Both Gemini and DeepSeek failed:', deepseekError)
+        return null
+      }
+    }
+  }
+
   const analyzeWithDeepSeekOnly = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
     console.log('🤖 Starting DeepSeek Analysis Flow:')
     console.log('📊 Current Content:', { currentTitle, currentDescription, currentTags, platform })
@@ -293,17 +360,33 @@ IMPORTANT: Focus on optimizing the provided content for ${platform} algorithm su
       console.log('🧠 DeepSeek analyzing current content...')
       const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
       
+      // Enhanced logging for DeepSeek response debugging
+      console.log('🤖 DEEPSEEK RESPONSE DEBUG:', {
+        deepseekAnalysis: deepseekAnalysis,
+        titleSuggestions: deepseekAnalysis?.titleSuggestions,
+        descriptionSuggestions: deepseekAnalysis?.descriptionSuggestions,
+        tagSuggestions: deepseekAnalysis?.tagSuggestions,
+        algorithmInsights: deepseekAnalysis?.algorithmInsights,
+        editingTips: deepseekAnalysis?.editingTips,
+        algorithmScore: deepseekAnalysis?.algorithmScore,
+        hasMultipleSuggestions: {
+          titles: deepseekAnalysis?.titleSuggestions?.length || 0,
+          descriptions: deepseekAnalysis?.descriptionSuggestions?.length || 0,
+          tags: deepseekAnalysis?.tagSuggestions?.length || 0
+        }
+      })
+      
       // Transform DeepSeek response to match expected structure
       const combinedResult = {
-        titleSuggestions: deepseekAnalysis?.title ? [deepseekAnalysis.title] : [],
-        descriptionSuggestions: deepseekAnalysis?.description ? [deepseekAnalysis.description] : [],
-        tagSuggestions: deepseekAnalysis?.tags || [],
-        editingTips: deepseekAnalysis?.recommendations || [],
-        algorithmInsights: deepseekAnalysis?.insights || [],
-        algorithmResearch: deepseekAnalysis?.factors?.join(', ') || '',
-        trendingOpportunities: `Algorithm Score: ${deepseekAnalysis?.algorithmScore || 0}/100`,
-        engagementTriggers: deepseekAnalysis?.tips || [],
-        performancePrediction: deepseekAnalysis?.algorithmScore && deepseekAnalysis.algorithmScore > 75 ? 'High potential for viral performance' : 'Moderate performance expected',
+        titleSuggestions: deepseekAnalysis?.titleSuggestions || (deepseekAnalysis?.title ? [deepseekAnalysis.title] : []),
+        descriptionSuggestions: deepseekAnalysis?.descriptionSuggestions || (deepseekAnalysis?.description ? [deepseekAnalysis.description] : []),
+        tagSuggestions: deepseekAnalysis?.tagSuggestions || deepseekAnalysis?.tags || [],
+        editingTips: deepseekAnalysis?.editingTips || deepseekAnalysis?.recommendations || [],
+        algorithmInsights: deepseekAnalysis?.algorithmInsights || deepseekAnalysis?.insights || [],
+        algorithmResearch: deepseekAnalysis?.algorithmResearch || deepseekAnalysis?.factors?.join(', ') || '',
+        trendingOpportunities: deepseekAnalysis?.trendingOpportunities || `Algorithm Score: ${deepseekAnalysis?.algorithmScore || 0}/100`,
+        engagementTriggers: deepseekAnalysis?.engagementTriggers || deepseekAnalysis?.tips || [],
+        performancePrediction: deepseekAnalysis?.performancePrediction || (deepseekAnalysis?.algorithmScore && deepseekAnalysis.algorithmScore > 75 ? 'High potential for viral performance' : 'Moderate performance expected'),
         gameAnalysis: {
           gameName: 'Unknown Game',
           gameGenre: 'Unknown',
@@ -491,6 +574,26 @@ VIDEO METADATA EXTRACTION:
       const currentDescription = youtubeMetadata?.description || tiktokMetadata?.description || 'No description available'
       const currentTags = youtubeMetadata?.hashtags || tiktokMetadata?.hashtags || []
       
+      // Enhanced logging for YouTube metadata debugging
+      console.log('📊 METADATA EXTRACTION DEBUG:', {
+        platform: videoUrl.includes('youtube.com') ? 'YouTube' : videoUrl.includes('tiktok.com') ? 'TikTok' : 'Unknown',
+        currentTitle: currentTitle,
+        currentDescriptionLength: currentDescription.length,
+        currentDescriptionPreview: currentDescription.substring(0, 150) + '...',
+        currentTagsCount: currentTags.length,
+        currentTagsPreview: currentTags.slice(0, 5),
+        youtubeMetadata: youtubeMetadata ? {
+          title: youtubeMetadata.title,
+          descriptionLength: youtubeMetadata.description.length,
+          hashtagsCount: youtubeMetadata.hashtags.length
+        } : null,
+        tiktokMetadata: tiktokMetadata ? {
+          title: tiktokMetadata.title,
+          descriptionLength: tiktokMetadata.description.length,
+          hashtagsCount: tiktokMetadata.hashtags.length
+        } : null
+      })
+      
       // Detect if it's a TikTok URL for UI customization
       const isTikTok = !!(tiktokMetadata) || !!(videoUrl && videoUrl.includes('tiktok.com'))
       
@@ -555,15 +658,24 @@ VIDEO METADATA EXTRACTION:
       // Display current metadata immediately
       setAnalysisResult(analysisData)
       
-      // Then analyze with DeepSeek using current metadata
-      console.log('🧠 DeepSeek analyzing displayed current content...')
-      const comprehensiveResult = await analyzeWithDeepSeekOnly(currentTitle, currentDescription, currentTags, selectedPlatform)
+      // Then analyze with appropriate AI based on platform
+      let comprehensiveResult = null
+      
+      if (isTikTok) {
+        // Use TikTok-specific analysis with Gemini as primary, DeepSeek as fallback
+        console.log('🎵 Using TikTok-specific analysis with Gemini AI...')
+        comprehensiveResult = await analyzeTikTokWithGemini(currentTitle, currentDescription, currentTags, selectedPlatform)
+      } else {
+        // Use regular DeepSeek analysis for YouTube and other platforms
+        console.log('🧠 Using DeepSeek analysis for non-TikTok content...')
+        comprehensiveResult = await analyzeWithDeepSeekOnly(currentTitle, currentDescription, currentTags, selectedPlatform)
+      }
       
       if (comprehensiveResult) {
-        // Update with DeepSeek suggestions
+        // Update with AI suggestions
         const updatedAnalysisData = {
           ...analysisData,
-          titleSuggestions: Array.isArray(comprehensiveResult.titleSuggestions) ? comprehensiveResult.titleSuggestions : [],
+          titleSuggestions: Array.isArray((comprehensiveResult as any).titleSuggestions) ? (comprehensiveResult as any).titleSuggestions : [],
           descriptionSuggestions: Array.isArray(comprehensiveResult.descriptionSuggestions) ? comprehensiveResult.descriptionSuggestions : [],
           tagSuggestions: Array.isArray(comprehensiveResult.tagSuggestions) ? comprehensiveResult.tagSuggestions : [],
           editingTips: Array.isArray(comprehensiveResult.editingTips) ? comprehensiveResult.editingTips : [],
@@ -572,7 +684,7 @@ VIDEO METADATA EXTRACTION:
           trendingOpportunities: comprehensiveResult.trendingOpportunities || '',
           engagementTriggers: Array.isArray(comprehensiveResult.engagementTriggers) ? comprehensiveResult.engagementTriggers : [],
           performancePrediction: comprehensiveResult.performancePrediction || '',
-          gameAnalysis: comprehensiveResult.gameAnalysis || {
+          gameAnalysis: {
             gameName: 'Unknown Game',
             gameGenre: 'Unknown',
             gamingPlatform: 'Unknown',
@@ -580,34 +692,20 @@ VIDEO METADATA EXTRACTION:
             contentFocus: 'Unknown'
           },
           // Update AI Analysis Info
-          aiAnalysis: comprehensiveResult?.aiAnalysis ? {
+          aiAnalysis: {
             metadataUsed: !!(youtubeMetadata || tiktokMetadata),
-            deepSeekUsed: !!comprehensiveResult,
-            geminiUsed: !!comprehensiveResult.aiAnalysis.geminiUsed,
+            deepSeekUsed: (comprehensiveResult as any)?.aiUsed === 'deepseek',
+            geminiUsed: (comprehensiveResult as any)?.aiUsed === 'gemini',
             totalInsights: comprehensiveResult.algorithmInsights?.length || 0,
             totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
-          } : {
-            metadataUsed: false,
-            deepSeekUsed: false,
-            geminiUsed: false,
-            totalInsights: 0,
-            totalTagSuggestions: 0
           },
           // Preserve TikTok detection flag
           isTikTok: isTikTok
         }
         
-        // Update with DeepSeek results
+        // Update with AI results
         setAnalysisResult(updatedAnalysisData)
       }
-      
-      // Debug logging for tags
-      console.log('🏷️ Tag Extraction Debug:', {
-        youtubeTags: youtubeMetadata?.hashtags || [],
-        tiktokTags: tiktokMetadata?.hashtags || [],
-        finalTags: analysisData.tags,
-        deepseekTagSuggestions: analysisData.tagSuggestions
-      })
       
     } catch (error) {
       console.error('Analysis failed:', error)
@@ -829,41 +927,43 @@ VIDEO METADATA EXTRACTION:
             </CardContent>
           </Card>
 
-          {/* Tags */}
-          <Card className="bg-black border-green-500/30">
-            <CardHeader>
-              <CardTitle className="text-green-400 flex items-center gap-2">
-                <Hash className="w-5 h-5" />
-                Tags & Suggestions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {analysisResult.tags.length > 0 && (
-                <div>
-                  <Label className="text-green-400">Current Tags:</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisResult.tags.map((tag, index) => (
-                      <Badge key={index} className="bg-green-600/20 text-green-400 border-green-500">
-                        #{tag}
-                      </Badge>
-                    ))}
+          {/* Tags - Hide for TikTok */}
+          {!analysisResult.isTikTok && (
+            <Card className="bg-black border-green-500/30">
+              <CardHeader>
+                <CardTitle className="text-green-400 flex items-center gap-2">
+                  <Hash className="w-5 h-5" />
+                  Tags & Suggestions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {analysisResult.tags.length > 0 && (
+                  <div>
+                    <Label className="text-green-400">Current Tags:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {analysisResult.tags.map((tag, index) => (
+                        <Badge key={index} className="bg-green-600/20 text-green-400 border-green-500">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {analysisResult.tagSuggestions.length > 0 && (
-                <div>
-                  <Label className="text-green-400">Algorithm-Optimized Tag Suggestions:</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {analysisResult.tagSuggestions.map((tag, index) => (
-                      <Badge key={index} className="bg-yellow-600/20 text-yellow-400 border-yellow-500">
-                        #{tag}
-                      </Badge>
-                    ))}
+                )}
+                {analysisResult.tagSuggestions.length > 0 && (
+                  <div>
+                    <Label className="text-green-400">Algorithm-Optimized Tag Suggestions:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {analysisResult.tagSuggestions.map((tag, index) => (
+                        <Badge key={index} className="bg-yellow-600/20 text-yellow-400 border-yellow-500">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Editing Tips */}
           <Card className="bg-black border-orange-500/30">
