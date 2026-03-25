@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { AlgorithmUpdater } from '@/lib/algorithm-updater'
 import { analyzeContentWithDeepSeek } from '@/lib/deepseek'
-import { GeminiService, TikTokGeminiAnalysis } from '@/lib/gemini'
+import { GeminiService } from '@/lib/gemini'
 import SubscribersManager from '@/lib/subscribers'
 import TikTokMetadataService from '@/lib/tiktok-metadata'
 import YouTubeMetadataService, { YouTubeMetadata } from '@/lib/youtube-metadata'
@@ -349,6 +349,8 @@ IMPORTANT: Focus on optimizing the provided content for ${platform} algorithm su
         return null
       }
     }
+  }
+
   }
 
   const analyzeWithDeepSeekOnly = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {

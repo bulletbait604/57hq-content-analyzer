@@ -27,8 +27,18 @@ export class GeminiService {
 
   private constructor() {
     // Use Google API key for Gemini (they're the same service)
-    this.apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || 
+    // Priority order: NEXT_PUBLIC_GEMINI_API_KEY (Gemini 3.1), then fallback to Google API keys
+    this.apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
                  process.env.NEXT_PUBLIC_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY || ''
+    
+    // Log which API key is being used for debugging
+    if (process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      console.log('🔑 Using Gemini 3.1 API Key (NEXT_PUBLIC_GEMINI_API_KEY)')
+    } else if (process.env.NEXT_PUBLIC_GOOGLE_API_KEY) {
+      console.log('🔑 Using Google API Key (NEXT_PUBLIC_GOOGLE_API_KEY)')
+    } else {
+      console.warn('⚠️ No Gemini API key found, using fallback analysis')
+    }
   }
 
   static getInstance(): GeminiService {
