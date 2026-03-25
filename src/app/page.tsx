@@ -235,7 +235,7 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="clip-analysis" className="mt-6">
-            <ClipAnalysis user={user} hasPremium={hasPremium} />
+            <ClipAnalysis />
           </TabsContent>
 
           <TabsContent value="tag-generator" className="mt-6">
