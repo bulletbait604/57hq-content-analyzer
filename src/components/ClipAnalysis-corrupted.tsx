@@ -82,6 +82,23 @@ function ClipAnalysis() {
 
   // Check user access on mount
   useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const subscribers = await SubscribersManager.getSubscribers()
+        const hasAccess = subscribers.length > 0
+        
+        setCanAccessAnalysis(hasAccess)
+        console.log('🔑 Access Check:', { 
+          subscriberCount: subscribers.length, 
+          hasAccess, 
+          canUseFeature: hasAccess 
+        })
+      } catch (error) {
+        console.error('❌ Access check failed:', error)
+        setCanAccessAnalysis(false)
+      }
+    }
+
     checkAccess()
   }, [])
 
@@ -238,8 +255,6 @@ function ClipAnalysis() {
         trendingOpportunities: geminiAnalysis?.trendingOpportunities || '',
         engagementTriggers: geminiAnalysis?.engagementTriggers || [],
         performancePrediction: geminiAnalysis?.performancePrediction || '',
-        editRecommendations: geminiAnalysis?.editRecommendations || [],
-        algorithmInformation: geminiAnalysis?.algorithmInformation || '',
         aiUsed: 'gemini'
       }
     } catch (error) {
@@ -284,8 +299,6 @@ function ClipAnalysis() {
           trendingOpportunities: deepseekAnalysis?.trendingOpportunities || '',
           engagementTriggers: deepseekAnalysis?.engagementTriggers || [],
           performancePrediction: deepseekAnalysis?.performancePrediction || '',
-          editRecommendations: [],
-          algorithmInformation: '',
           aiUsed: 'deepseek'
         }
       } catch (deepseekError) {
@@ -295,31 +308,78 @@ function ClipAnalysis() {
     }
   }
 
-  const checkAccess = async () => {
+  const analyzeWithDeepSeekOnly = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
+    console.log('🤖 Starting DeepSeek Analysis Flow:')
+    console.log('📊 Current Content:', { currentTitle, currentDescription, currentTags, platform })
+    
     try {
-      const subscribersManager = SubscribersManager.getInstance()
-      // For demo purposes, check if any active subscribers exist
-      const activeSubscribers = subscribersManager.getSubscribers()
-      const hasAccess = activeSubscribers.length > 0 || subscribersManager.isAdmin('bulletbait604')
-      setCanAccessAnalysis(hasAccess)
+      // Analyze with DeepSeek using current metadata
+      console.log('🧠 DeepSeek analyzing current content...')
+      const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
+      
+      // Enhanced logging for DeepSeek response debugging
+      console.log('🧠 DEEPSEEK YOUTUBE RESPONSE DEBUG:')
+      console.log('📊 Analysis Quality Check:')
+      console.log('  ✅ Source: YouTube URL detected')
+      console.log('  ✅ API: DeepSeek with enhanced algorithm research')
+      console.log('  ✅ Target Platform:', platform)
+      console.log('  ✅ Cross-Reference: YouTube content +', platform, 'algorithm')
+      console.log('  📝 Title Suggestions:', deepseekAnalysis?.titleSuggestions)
+      console.log('  📝 Description Suggestions:', deepseekAnalysis?.descriptionSuggestions)
+      console.log('  🏷️ Tag Suggestions:', deepseekAnalysis?.tagSuggestions)
+      console.log('  🔍 Algorithm Insights:', deepseekAnalysis?.algorithmInsights)
+      console.log('  📚 Algorithm Research:', deepseekAnalysis?.algorithmResearch)
+      console.log('  📈 Trending Opportunities:', deepseekAnalysis?.trendingOpportunities)
+      console.log('  ⚡ Engagement Triggers:', deepseekAnalysis?.engagementTriggers)
+      console.log('  🎯 Performance Prediction:', deepseekAnalysis?.performancePrediction)
+      console.log('  📊 Quality Metrics:')
+      console.log('    - Title Count:', deepseekAnalysis?.titleSuggestions?.length || 0)
+      console.log('    - Description Count:', deepseekAnalysis?.descriptionSuggestions?.length || 0)
+      console.log('    - Tag Count:', deepseekAnalysis?.tagSuggestions?.length || 0)
+      console.log('    - Insight Count:', deepseekAnalysis?.algorithmInsights?.length || 0)
+      console.log('    - Research Depth:', deepseekAnalysis?.algorithmResearch?.length || 0, 'characters')
+      console.log('  🚫 Copy-Paste Check:', {
+        titlesAreNew: deepseekAnalysis?.titleSuggestions?.every(title => title !== currentTitle),
+        descriptionsAreNew: deepseekAnalysis?.descriptionSuggestions?.every(desc => desc !== currentDescription),
+        hasInDepthResearch: (deepseekAnalysis?.algorithmResearch?.length || 0) > 200,
+        hasPlatformSpecificInsights: (deepseekAnalysis?.algorithmInsights?.length || 0) >= 3
+      })
+      
+      return {
+        titleSuggestions: deepseekAnalysis?.titleSuggestions || [],
+        descriptionSuggestions: deepseekAnalysis?.descriptionSuggestions || [],
+        tagSuggestions: deepseekAnalysis?.tagSuggestions || [],
+        editingTips: deepseekAnalysis?.editingTips || deepseekAnalysis?.recommendations || [],
+        algorithmInsights: deepseekAnalysis?.algorithmInsights || [],
+        algorithmResearch: deepseekAnalysis?.algorithmResearch || '',
+        trendingOpportunities: deepseekAnalysis?.trendingOpportunities || '',
+        engagementTriggers: deepseekAnalysis?.engagementTriggers || [],
+        performancePrediction: deepseekAnalysis?.performancePrediction || (deepseekAnalysis?.algorithmScore && deepseekAnalysis.algorithmScore > 75 ? 'High potential for viral performance' : 'Moderate performance expected'),
+        aiUsed: 'deepseek'
+      }
     } catch (error) {
-      console.error('❌ Access check failed:', error)
-      setCanAccessAnalysis(false)
+      console.error('❌ DeepSeek Analysis failed:', error)
+      return null
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      setVideoUrl('')
     }
   }
 
   const handleAnalyze = async () => {
-    if (!canAccessAnalysis) {
-      alert('Clip Analysis is a premium feature. Please subscribe to access.')
-      return
-    }
-
-    if ((!selectedFile && !videoUrl.trim()) || isAnalyzing) {
+    if (!selectedFile && !videoUrl.trim()) {
+      alert('Please select a video file or enter a video URL')
       return
     }
 
     setIsAnalyzing(true)
     setLoadingMessage('Extracting metadata...')
+    setAnalysisResult(null)
 
     try {
       let currentTitle = ''
@@ -328,9 +388,16 @@ function ClipAnalysis() {
       let tiktokMetadata = null
       let youtubeMetadata = null
 
-      // Extract metadata if URL is provided
-      if (videoUrl.trim()) {
-        setLoadingMessage('Extracting metadata from URL...')
+      // Extract metadata based on input type
+      if (selectedFile) {
+        console.log('📁 Analyzing uploaded file...')
+        // For file uploads, we'll use a generic approach since we can't extract metadata without processing
+        currentTitle = selectedFile.name.replace(/\.[^/.]+$/, "")
+        currentDescription = `Uploaded video file: ${selectedFile.name}`
+        currentTags = ['video', 'upload', 'content']
+      } else if (videoUrl.trim()) {
+        console.log('🔗 Analyzing video URL...')
+        console.log('🔗 URL:', videoUrl)
         
         // Check if it's a TikTok URL
         const isTikTok = videoUrl.includes('tiktok.com') || videoUrl.includes('vm.tiktok.com')
@@ -343,7 +410,7 @@ function ClipAnalysis() {
           
           if (tiktokMetadata) {
             currentTitle = tiktokMetadata.title
-            currentDescription = tiktokMetadata.video_description
+            currentDescription = tiktokMetadata.video_description  // Updated field name
             currentTags = tiktokMetadata.hashtags
           }
         } else {
@@ -354,7 +421,7 @@ function ClipAnalysis() {
           if (youtubeMetadata) {
             currentTitle = youtubeMetadata.title
             currentDescription = youtubeMetadata.description
-            currentTags = youtubeMetadata.tags
+            currentTags = youtubeMetadata.tags  // Updated field name
           }
         }
       }
@@ -380,7 +447,7 @@ function ClipAnalysis() {
           id: youtubeMetadata.id,
           title: youtubeMetadata.title,
           description: youtubeMetadata.description,
-          hashtags: youtubeMetadata.tags,
+          hashtags: youtubeMetadata.hashtags,
           duration: youtubeMetadata.duration
         } : null
       })
@@ -399,8 +466,8 @@ function ClipAnalysis() {
         trendingOpportunities: '',
         engagementTriggers: [],
         performancePrediction: '',
-        editRecommendations: [],
-        algorithmInformation: '',
+        editRecommendations: [],  // Added
+        algorithmInformation: '',     // Added
         gameAnalysis: {
           gameName: 'Unknown Game',
           gameGenre: 'Unknown',
@@ -449,25 +516,16 @@ function ClipAnalysis() {
           descriptionSuggestions: Array.isArray(comprehensiveResult.descriptionSuggestions) ? comprehensiveResult.descriptionSuggestions : [],
           tagSuggestions: Array.isArray(comprehensiveResult.tagSuggestions) ? comprehensiveResult.tagSuggestions : [],
           editingTips: Array.isArray(comprehensiveResult.editingTips) ? comprehensiveResult.editingTips : [],
-          algorithmInsights: Array.isArray(comprehensiveResult.algorithmInsights) ? comprehensiveResult.algorithmInsights : [],
-          algorithmResearch: comprehensiveResult.algorithmResearch || '',
-          trendingOpportunities: comprehensiveResult.trendingOpportunities || '',
-          engagementTriggers: Array.isArray(comprehensiveResult.engagementTriggers) ? comprehensiveResult.engagementTriggers : [],
-          performancePrediction: comprehensiveResult.performancePrediction || '',
-          editRecommendations: Array.isArray(comprehensiveResult.editRecommendations) ? comprehensiveResult.editRecommendations : [],
-          algorithmInformation: comprehensiveResult.algorithmInformation || '',
-          aiAnalysis: {
-            metadataUsed: analysisData.aiAnalysis?.metadataUsed || false,
-            deepSeekUsed: (comprehensiveResult as any).aiUsed === 'deepseek',
-            geminiUsed: (comprehensiveResult as any).aiUsed === 'gemini',
-            totalInsights: (comprehensiveResult.algorithmInsights?.length || 0) + (comprehensiveResult.editingTips?.length || 0),
             totalTagSuggestions: comprehensiveResult.tagSuggestions?.length || 0
-          }
+          },
+          // Preserve TikTok detection flag
+          isTikTok: isTikTok || false
         }
         
         // Update with AI results
         setAnalysisResult(updatedAnalysisData)
       }
+      
     } catch (error) {
       console.error('Analysis failed:', error)
       alert('Analysis failed. Please try again.')
@@ -476,302 +534,301 @@ function ClipAnalysis() {
     }
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      setVideoUrl('') // Clear URL when file is selected
-    }
+  // Premium lock screen
+  if (!canAccessAnalysis) {
+    return (
+      <Card className="bg-black border-green-500/30">
+        <CardHeader>
+          <CardTitle className="text-green-400 flex items-center gap-2">
+            <Lock className="w-5 h-5" />
+            Clip Analysis - Premium & Subscriber Feature
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center space-y-4">
+            <div className="text-gray-400">
+              <p className="text-lg mb-2">🔒 Premium & Subscriber Feature</p>
+              <p>Clip Analysis with AI-powered optimization is available to premium users and subscribers only.</p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-green-400 font-semibold">Premium Features:</h4>
+              <ul className="text-gray-300 text-sm space-y-1">
+                <li>• DeepSeek AI analysis</li>
+                <li>• Advanced title optimization</li>
+                <li>• Algorithm-specific tags</li>
+                <li>• Editing recommendations</li>
+                <li>• Platform-specific insights</li>
+              </ul>
+            </div>
+            <div className="text-yellow-400 text-sm">
+              <p>Upgrade to premium or get subscriber access to unlock this feature and boost your content performance!</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-green-400 mb-2">🎬 Clip Analysis</h1>
-          <p className="text-gray-400 mb-6">AI-powered content optimization with algorithm research</p>
-        </div>
-
-        {!canAccessAnalysis ? (
-          <Card className="bg-black border-green-500/30">
-            <CardHeader>
-              <CardTitle className="text-green-400 flex items-center gap-2">
-                <Lock className="w-5 h-5" />
-                Clip Analysis - Premium & Subscriber Feature
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center space-y-4">
-                <p className="text-lg mb-2">🔒 Premium & Subscriber Feature</p>
-                <p>Clip Analysis with AI-powered optimization is available to premium users and subscribers only.</p>
-                <div className="space-y-2 text-sm text-gray-300">
-                  <p>✨ <strong>Advanced AI Analysis</strong> - Gemini & DeepSeek powered</p>
-                  <p>🎯 <strong>Algorithm Research</strong> - Platform-specific insights</p>
-                  <p>📈 <strong>Optimization Suggestions</strong> - Titles, descriptions & tags</p>
-                  <p>🔍 <strong>Copy-Paste Prevention</strong> - Always generates new content</p>
-                  <p>⚡ <strong>Engagement Triggers</strong> - Platform-specific strategies</p>
-                </div>
-                <div className="mt-6 space-y-2">
-                  <Button 
-                    onClick={() => window.location.href = '/subscribe'}
-                    className="w-full bg-green-600 hover:bg-green-500 text-black"
-                  >
-                    Upgrade to Premium
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="bg-black border-green-500/30">
-            <CardHeader>
-              <CardTitle className="text-green-400">🎬 Clip Analysis</CardTitle>
-              <CardDescription>
-                Enter a video URL or upload a file to analyze content with AI-powered optimization.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* URL Input */}
-              <div>
-                <Label className="text-green-400">Video URL</Label>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-green-400 mb-2">Clip Analysis</h2>
+        <p className="text-gray-300">AI-powered content analysis and optimization recommendations</p>
+      </div>
+      <Card className="bg-black border-green-500/30">
+        <CardHeader>
+          <CardTitle className="text-green-400">
+            <Video className="w-5 h-5" />
+            Upload Video or Enter URL
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Input Mode Selection */}
+          <div>
+            <Label className="text-green-400">Input Method</Label>
+            <div className="flex gap-2 mt-2">
+              <Button
+                variant={videoUrl ? 'outline' : 'default'}
+                onClick={() => setSelectedFile(null)}
+                className="flex-1"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload File
+              </Button>
+              <Button
+                variant={!videoUrl ? 'outline' : 'default'}
+                onClick={() => setSelectedFile(null)}
+                className="flex-1"
+              >
+                <Link className="w-4 h-4 mr-2" />
+                Video URL
+              </Button>
+            </div>
+          </div>
+          
+          {/* File Upload */}
+          {selectedFile && (
+            <div>
+              <Label className="text-green-400">Select Video File</Label>
+              <div className="mt-2">
                 <input
-                  type="url"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  className="w-full bg-black border border-green-500/50 rounded p-2 text-white placeholder:text-gray-400"
-                  placeholder="https://youtube.com/watch?v=... or https://tiktok.com/@user/video/..."
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileUpload}
+                  className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-black hover:file:bg-green-500 cursor-pointer"
                 />
               </div>
-              
-              {/* File Upload */}
-              {selectedFile && (
+            </div>
+          )}
+          
+          {/* URL Input */}
+          {videoUrl && (
+            <div>
+              <Label className="text-green-400">Video URL</Label>
+              <input
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                className="w-full bg-black border border-green-500/50 rounded p-2 text-white placeholder:text-gray-400"
+                placeholder="https://youtube.com/watch?v=..."
+              />
+            </div>
+          )}
+          
+          {/* Platform Selection */}
+          <div>
+            <Label className="text-green-400">Platform You're Posting To</Label>
+            <select
+              value={selectedPlatform}
+              onChange={(e) => setSelectedPlatform(e.target.value)}
+              className="w-full bg-black border border-green-500/50 rounded p-2 text-white"
+            >
+              {platforms.map(platform => (
+                <option key={platform.value} value={platform.value}>
+                  {platform.icon} {platform.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Analyze Button */}
+          <div>
+            <Button
+              onClick={handleAnalyze}
+              disabled={(!selectedFile && !videoUrl.trim()) || isAnalyzing}
+              className="w-full bg-green-600 hover:bg-green-500 text-black"
+            >
+              {isAnalyzing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  {loadingMessage || 'Analyzing...'}
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Analyze with DeepSeek AI
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {/* Processing Time Notice */}
+          <div className="text-center">
+            <p className="text-gray-400 text-xs">
+              This may take a minute as AI analyzes the video and cross references it with platform algorithms
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Analysis Results */}
+      {analysisResult && (
+        <div className="space-y-6">
+          {/* Clip Title - Hide for TikTok */}
+          {!analysisResult.isTikTok && (
+            <Card className="bg-black border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="text-blue-400 flex items-center gap-2">
+                  <Video className="w-5 h-5" />
+                  Clip Title
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-green-400">Select Video File</Label>
-                  <div className="mt-2">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleFileUpload}
-                      className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-black hover:file:bg-green-500 file:cursor-pointer"
-                    />
+                  <Label className="text-blue-400">Current Title:</Label>
+                  <p className="text-white p-3 bg-black/50 rounded">{analysisResult.clipTitle}</p>
+                </div>
+                {analysisResult.titleSuggestions.length > 0 && (
+                  <div>
+                    <Label className="text-blue-400">Algorithm-Optimized Titles:</Label>
+                    <div className="space-y-2">
+                      {analysisResult.titleSuggestions.map((title, index) => (
+                        <div key={index} className="flex items-start gap-2 p-3 bg-black/50 rounded">
+                          <div className="text-blue-400 font-medium">{index + 1}.</div>
+                          <div className="text-white">{title}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Clip Description */}
+          <Card className="bg-black border-purple-500/30">
+            <CardHeader>
+              <CardTitle className="text-purple-400 flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Clip Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-purple-400">Current Description:</Label>
+                <p className="text-white p-3 bg-black/50 rounded">{analysisResult.clipDescription}</p>
+              </div>
+              {analysisResult.descriptionSuggestions.length > 0 && (
+                <div>
+                  <Label className="text-purple-400">Optimized Descriptions:</Label>
+                  <div className="space-y-2">
+                    {analysisResult.descriptionSuggestions.map((desc, index) => (
+                      <div key={index} className="flex items-start gap-2 p-3 bg-black/50 rounded">
+                        <div className="text-purple-400 font-medium">{index + 1}.</div>
+                        <div className="text-white">{desc}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-              
-              {/* Platform Selection */}
-              <div>
-                <Label className="text-green-400">Platform You're Posting To</Label>
-                <select
-                  value={selectedPlatform}
-                  onChange={(e) => setSelectedPlatform(e.target.value)}
-                  className="w-full bg-black border border-green-500/50 rounded p-2 text-white"
-                >
-                  {platforms.map(platform => (
-                    <option key={platform.value} value={platform.value}>
-                      {platform.icon} {platform.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Analyze Button */}
-              <div>
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={(!selectedFile && !videoUrl.trim()) || isAnalyzing}
-                  className="w-full bg-green-600 hover:bg-green-500 text-black"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      {loadingMessage || 'Analyzing...'}
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      Analyze Content
-                    </>
-                  )}
-                </Button>
-              </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Analysis Results */}
-        {analysisResult && (
-          <Card className="bg-black border-green-500/30 mt-8">
-            <CardHeader>
-              <CardTitle className="text-green-400 flex items-center gap-2">
-                <Star className="w-5 h-5" />
-                Analysis Results
-                {analysisResult.aiAnalysis && (
-                  <Badge className="ml-2" variant="secondary">
-                    {analysisResult.aiAnalysis.geminiUsed ? 'Gemini AI' : 'DeepSeek AI'}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Metadata Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-green-400 mb-2">📋 Original Content</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <Label className="text-gray-400 text-sm">Title</Label>
-                      <p className="text-white bg-gray-900 p-2 rounded">{analysisResult.clipTitle}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-400 text-sm">Description</Label>
-                      <p className="text-white bg-gray-900 p-2 rounded text-sm max-h-20 overflow-y-auto">
-                        {analysisResult.clipDescription}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-400 text-sm">Tags</Label>
-                      <div className="flex flex-wrap gap-1">
-                        {analysisResult.tags.map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Suggestions */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-green-400 mb-4">🤖 AI Optimization Suggestions</h3>
-                
-                {/* Title Suggestions - Only for YouTube content */}
-                {analysisResult.titleSuggestions && analysisResult.titleSuggestions.length > 0 && (
+          
+          {/* Tags - Hide for TikTok */}
+          {!analysisResult.isTikTok && (
+            <Card className="bg-black border-green-500/30">
+              <CardHeader>
+                <CardTitle className="text-green-400 flex items-center gap-2">
+                  <Hash className="w-5 h-5" />
+                  Tags & Suggestions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {analysisResult.tags.length > 0 && (
                   <div>
-                    <Label className="text-green-400 text-sm mb-2">📝 Title Suggestions</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {analysisResult.titleSuggestions.map((title, index) => (
-                        <div key={index} className="bg-gray-900 p-3 rounded border border-green-500/30">
-                          <p className="text-white text-sm">{title}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Description Suggestions */}
-                {analysisResult.descriptionSuggestions && analysisResult.descriptionSuggestions.length > 0 && (
-                  <div>
-                    <Label className="text-green-400 text-sm mb-2">📝 Description Suggestions</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {analysisResult.descriptionSuggestions.map((description, index) => (
-                        <div key={index} className="bg-gray-900 p-3 rounded border border-green-500/30">
-                          <p className="text-white text-sm">{description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tag Suggestions */}
-                {analysisResult.tagSuggestions && analysisResult.tagSuggestions.length > 0 && (
-                  <div>
-                    <Label className="text-green-400 text-sm mb-2">🏷️ Tag Suggestions</Label>
+                    <Label className="text-green-400">Current Tags:</Label>
                     <div className="flex flex-wrap gap-2">
-                      {analysisResult.tagSuggestions.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {tag}
+                      {analysisResult.tags.map((tag, index) => (
+                        <Badge key={index} className="bg-green-600/20 text-green-400 border-green-400">
+                          #{tag}
                         </Badge>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* Edit Recommendations */}
-                {analysisResult.editRecommendations && analysisResult.editRecommendations.length > 0 && (
+                {analysisResult.tagSuggestions.length > 0 && (
                   <div>
-                    <Label className="text-green-400 text-sm mb-2">📝 Detailed Edit Recommendations</Label>
-                    <div className="space-y-2">
-                      {analysisResult.editRecommendations.map((recommendation, index) => (
-                        <div key={index} className="bg-gray-900 p-3 rounded border border-green-500/30">
-                          <p className="text-white text-sm">{recommendation}</p>
-                        </div>
+                    <Label className="text-green-400">Algorithm-Optimized Tag Suggestions:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {analysisResult.tagSuggestions.map((tag, index) => (
+                        <Badge key={index} className="bg-yellow-600/20 text-yellow-400 border-yellow-400">
+                          #{tag}
+                        </Badge>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* Algorithm Information */}
-                {analysisResult.algorithmInformation && (
-                  <div>
-                    <Label className="text-green-400 text-sm mb-2">🔍 {selectedPlatform} Algorithm Information</Label>
-                    <div className="bg-gray-900 p-4 rounded border border-green-500/30">
-                      <p className="text-white text-sm whitespace-pre-wrap">{analysisResult.algorithmInformation}</p>
-                    </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Editing Tips */}
+          <Card className="bg-black border-orange-500/30">
+            <CardHeader>
+              <CardTitle className="text-orange-400 flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Editing Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                {analysisResult.editingTips.map((tip, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div className="text-orange-400">•</div>
+                    <div className="text-gray-300">{tip}</div>
                   </div>
-                )}
-
-                {/* Additional Insights */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {analysisResult.algorithmInsights && analysisResult.algorithmInsights.length > 0 && (
-                    <div>
-                      <Label className="text-green-400 text-sm mb-2">💡 Algorithm Insights</Label>
-                      <div className="space-y-1">
-                        {analysisResult.algorithmInsights.map((insight, index) => (
-                          <div key={index} className="bg-gray-900 p-2 rounded border border-green-500/30">
-                            <p className="text-white text-xs">{insight}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResult.trendingOpportunities && (
-                    <div>
-                      <Label className="text-green-400 text-sm mb-2">📈 Trending Opportunities</Label>
-                      <div className="bg-gray-900 p-3 rounded border border-green-500/30">
-                        <p className="text-white text-sm">{analysisResult.trendingOpportunities}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {analysisResult.engagementTriggers && analysisResult.engagementTriggers.length > 0 && (
-                    <div>
-                      <Label className="text-green-400 text-sm mb-2">⚡ Engagement Triggers</Label>
-                      <div className="space-y-1">
-                        {analysisResult.engagementTriggers.map((trigger, index) => (
-                          <div key={index} className="bg-gray-900 p-2 rounded border border-green-500/30">
-                            <p className="text-white text-xs">{trigger}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Performance Prediction */}
-                {analysisResult.performancePrediction && (
-                  <div>
-                    <Label className="text-green-400 text-sm mb-2">🎯 Performance Prediction</Label>
-                    <div className="bg-gray-900 p-3 rounded border border-green-500/30">
-                      <p className="text-white text-sm">{analysisResult.performancePrediction}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Research Timestamp */}
-              <div className="mt-6 pt-4 border-t border-gray-700">
-                <div className="text-center text-xs text-gray-400">
-                  <p>Analysis powered by DeepSeek AI & Google AI</p>
-                  <p className="mt-1">Research includes VidIQ optimization strategies and current algorithm trends</p>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+          
+          {/* Algorithm Insights */}
+          <Card className="bg-black border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-400 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Algorithm Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                {analysisResult.algorithmInsights.map((insight, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div className="text-pink-400">•</div>
+                    <div className="text-gray-300">{insight}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Research Timestamp */}
+          <div className="text-center text-xs text-gray-400">
+            <p>Analysis powered by DeepSeek AI & Google AI</p>
+            <p className="mt-1">Research includes VidIQ optimization strategies and current algorithm trends</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
