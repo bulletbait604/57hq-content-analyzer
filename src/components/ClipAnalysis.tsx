@@ -80,7 +80,6 @@ function ClipAnalysis() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [canAccessAnalysis, setCanAccessAnalysis] = useState(false)
 
-  // Check user access on mount
   useEffect(() => {
     checkAccess()
   }, [])
@@ -90,12 +89,10 @@ function ClipAnalysis() {
     console.log('📊 YouTube Content:', { currentTitle, currentDescription, currentTags, platform })
     
     try {
-      // Try Gemini AI first
       console.log('🤖 Gemini analyzing YouTube content...')
       const geminiService = GeminiService.getInstance()
       const geminiAnalysis = await geminiService.analyzeYouTubeContent(currentTitle, currentDescription, currentTags, platform)
       
-      // Enhanced logging for Gemini response debugging
       console.log('🤖 GEMINI YOUTUBE RESPONSE DEBUG:')
       console.log('📊 Analysis Quality Check:')
       console.log('  ✅ Source: YouTube URL detected')
@@ -140,7 +137,6 @@ function ClipAnalysis() {
     } catch (error) {
       console.warn('🤖 Gemini failed, falling back to DeepSeek:', error)
       
-      // Fallback to DeepSeek
       try {
         console.log('🧠 DeepSeek analyzing YouTube content as fallback...')
         const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
@@ -150,8 +146,8 @@ function ClipAnalysis() {
         console.log('  ⚠️ Fallback: Gemini failed, using DeepSeek')
         console.log('  ✅ Source: YouTube URL detected')
         console.log('  ✅ API: DeepSeek with enhanced algorithm research')
-        console.log('  ✅ Target Platform:', selectedPlatform)
-        console.log('  ✅ Cross-Reference: YouTube content +', selectedPlatform, 'algorithm')
+        console.log('  ✅ Target Platform:', platform)
+        console.log('  ✅ Cross-Reference: YouTube content +', platform, 'algorithm')
         console.log('  📝 Title Suggestions:', deepseekAnalysis?.titleSuggestions)
         console.log('  📝 Description Suggestions:', deepseekAnalysis?.descriptionSuggestions)
         console.log('  🏷️ Tag Suggestions:', deepseekAnalysis?.tagSuggestions)
@@ -199,12 +195,10 @@ function ClipAnalysis() {
     console.log('📊 TikTok Content:', { currentTitle, currentDescription, currentTags, platform })
     
     try {
-      // Try Gemini AI first
       console.log('🤖 Gemini analyzing TikTok content...')
       const geminiService = GeminiService.getInstance()
       const geminiAnalysis = await geminiService.analyzeTikTokContent(currentTitle, currentDescription, currentTags, platform)
       
-      // Enhanced logging for Gemini response debugging
       console.log('🤖 GEMINI TIKTOK RESPONSE DEBUG:')
       console.log('📊 Analysis Quality Check:')
       console.log('  ✅ Source: TikTok URL detected')
@@ -245,7 +239,6 @@ function ClipAnalysis() {
     } catch (error) {
       console.warn('🤖 Gemini failed, falling back to DeepSeek:', error)
       
-      // Fallback to DeepSeek
       try {
         console.log('🧠 DeepSeek analyzing TikTok content as fallback...')
         const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
@@ -255,8 +248,8 @@ function ClipAnalysis() {
         console.log('  ⚠️ Fallback: Gemini failed, using DeepSeek')
         console.log('  ✅ Source: TikTok URL detected')
         console.log('  ✅ API: DeepSeek with enhanced algorithm research')
-        console.log('  ✅ Target Platform:', selectedPlatform)
-        console.log('  ✅ Cross-Reference: TikTok content +', selectedPlatform, 'algorithm')
+        console.log('  ✅ Target Platform:', platform)
+        console.log('  ✅ Cross-Reference: TikTok content +', platform, 'algorithm')
         console.log('  📝 Description Suggestions:', deepseekAnalysis?.descriptionSuggestions)
         console.log('  🏷️ Tag Suggestions:', deepseekAnalysis?.tagSuggestions)
         console.log('  🔍 Algorithm Insights:', deepseekAnalysis?.algorithmInsights)
@@ -298,7 +291,6 @@ function ClipAnalysis() {
   const checkAccess = async () => {
     try {
       const subscribersManager = SubscribersManager.getInstance()
-      // For demo purposes, check if any active subscribers exist
       const activeSubscribers = subscribersManager.getSubscribers()
       const hasAccess = activeSubscribers.length > 0 || subscribersManager.isAdmin('bulletbait604')
       setCanAccessAnalysis(hasAccess)
@@ -328,11 +320,9 @@ function ClipAnalysis() {
       let tiktokMetadata = null
       let youtubeMetadata = null
 
-      // Extract metadata if URL is provided
       if (videoUrl.trim()) {
         setLoadingMessage('Extracting metadata from URL...')
         
-        // Check if it's a TikTok URL
         const isTikTok = videoUrl.includes('tiktok.com') || videoUrl.includes('vm.tiktok.com')
         console.log('🎵 TikTok Detection:', { isTikTok, url: videoUrl })
         
@@ -359,7 +349,6 @@ function ClipAnalysis() {
         }
       }
 
-      // Debug logging for metadata extraction
       console.log('🏷️ Metadata Extraction Debug:', {
         platform: isTikTok ? 'TikTok' : 'YouTube',
         title: currentTitle,
@@ -385,7 +374,6 @@ function ClipAnalysis() {
         } : null
       })
       
-      // Initialize analysis data with extracted metadata
       const analysisData: AnalysisResult = {
         clipTitle: currentTitle,
         titleSuggestions: [],
@@ -418,11 +406,9 @@ function ClipAnalysis() {
         isTikTok: isTikTok || false
       }
 
-      // Then analyze with appropriate AI based on source content
       let comprehensiveResult = null
       
       if (isTikTok) {
-        // Use TikTok-specific analysis with Gemini as primary, DeepSeek as fallback
         console.log('🎵 Using TikTok-specific analysis with Gemini AI...')
         console.log('🎵 TikTok Content Analysis Flow:')
         console.log('  1. Source: TikTok URL detected')
@@ -431,7 +417,6 @@ function ClipAnalysis() {
         console.log('  4. AI: Gemini analyzing TikTok content +', selectedPlatform, 'algorithm')
         comprehensiveResult = await analyzeTikTokWithGemini(currentTitle, currentDescription, currentTags, selectedPlatform)
       } else {
-        // Use Gemini for YouTube content analysis as requested
         console.log('📺 Using Gemini analysis for YouTube content...')
         console.log('📺 YouTube Content Analysis Flow:')
         console.log('  1. Source: YouTube URL detected')
@@ -442,7 +427,6 @@ function ClipAnalysis() {
       }
       
       if (comprehensiveResult) {
-        // Update with AI suggestions
         const updatedAnalysisData = {
           ...analysisData,
           titleSuggestions: Array.isArray((comprehensiveResult as any).titleSuggestions) ? (comprehensiveResult as any).titleSuggestions : [],
@@ -465,7 +449,6 @@ function ClipAnalysis() {
           }
         }
         
-        // Update with AI results
         setAnalysisResult(updatedAnalysisData)
       }
     } catch (error) {
@@ -480,7 +463,7 @@ function ClipAnalysis() {
     const file = event.target.files?.[0]
     if (file) {
       setSelectedFile(file)
-      setVideoUrl('') // Clear URL when file is selected
+      setVideoUrl('')
     }
   }
 
@@ -531,7 +514,6 @@ function ClipAnalysis() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* URL Input */}
               <div>
                 <Label className="text-green-400">Video URL</Label>
                 <input
@@ -543,7 +525,6 @@ function ClipAnalysis() {
                 />
               </div>
               
-              {/* File Upload */}
               {selectedFile && (
                 <div>
                   <Label className="text-green-400">Select Video File</Label>
@@ -558,7 +539,6 @@ function ClipAnalysis() {
                 </div>
               )}
               
-              {/* Platform Selection */}
               <div>
                 <Label className="text-green-400">Platform You're Posting To</Label>
                 <select
@@ -574,7 +554,6 @@ function ClipAnalysis() {
                 </select>
               </div>
               
-              {/* Analyze Button */}
               <div>
                 <Button
                   onClick={handleAnalyze}
@@ -598,7 +577,6 @@ function ClipAnalysis() {
           </Card>
         )}
 
-        {/* Analysis Results */}
         {analysisResult && (
           <Card className="bg-black border-green-500/30 mt-8">
             <CardHeader>
@@ -613,7 +591,6 @@ function ClipAnalysis() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Metadata Display */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <h3 className="text-lg font-semibold text-green-400 mb-2">📋 Original Content</h3>
@@ -642,11 +619,9 @@ function ClipAnalysis() {
                 </div>
               </div>
 
-              {/* AI Suggestions */}
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-green-400 mb-4">🤖 AI Optimization Suggestions</h3>
                 
-                {/* Title Suggestions - Only for YouTube content */}
                 {analysisResult.titleSuggestions && analysisResult.titleSuggestions.length > 0 && (
                   <div>
                     <Label className="text-green-400 text-sm mb-2">📝 Title Suggestions</Label>
@@ -660,7 +635,6 @@ function ClipAnalysis() {
                   </div>
                 )}
 
-                {/* Description Suggestions */}
                 {analysisResult.descriptionSuggestions && analysisResult.descriptionSuggestions.length > 0 && (
                   <div>
                     <Label className="text-green-400 text-sm mb-2">📝 Description Suggestions</Label>
@@ -674,7 +648,6 @@ function ClipAnalysis() {
                   </div>
                 )}
 
-                {/* Tag Suggestions */}
                 {analysisResult.tagSuggestions && analysisResult.tagSuggestions.length > 0 && (
                   <div>
                     <Label className="text-green-400 text-sm mb-2">🏷️ Tag Suggestions</Label>
@@ -688,7 +661,6 @@ function ClipAnalysis() {
                   </div>
                 )}
 
-                {/* Edit Recommendations */}
                 {analysisResult.editRecommendations && analysisResult.editRecommendations.length > 0 && (
                   <div>
                     <Label className="text-green-400 text-sm mb-2">📝 Detailed Edit Recommendations</Label>
@@ -702,7 +674,6 @@ function ClipAnalysis() {
                   </div>
                 )}
 
-                {/* Algorithm Information */}
                 {analysisResult.algorithmInformation && (
                   <div>
                     <Label className="text-green-400 text-sm mb-2">🔍 {selectedPlatform} Algorithm Information</Label>
@@ -712,7 +683,6 @@ function ClipAnalysis() {
                   </div>
                 )}
 
-                {/* Additional Insights */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {analysisResult.algorithmInsights && analysisResult.algorithmInsights.length > 0 && (
                     <div>
@@ -750,7 +720,6 @@ function ClipAnalysis() {
                   )}
                 </div>
 
-                {/* Performance Prediction */}
                 {analysisResult.performancePrediction && (
                   <div>
                     <Label className="text-green-400 text-sm mb-2">🎯 Performance Prediction</Label>
@@ -761,7 +730,6 @@ function ClipAnalysis() {
                 )}
               </div>
 
-              {/* Research Timestamp */}
               <div className="mt-6 pt-4 border-t border-gray-700">
                 <div className="text-center text-xs text-gray-400">
                   <p>Analysis powered by DeepSeek AI & Google AI</p>
