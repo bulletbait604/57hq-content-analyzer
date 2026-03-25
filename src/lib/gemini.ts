@@ -164,67 +164,120 @@ Please analyze this content and provide optimization recommendations.`
     }
 
     try {
-      const systemPrompt = `You are a TikTok content optimization expert specializing in 2026 TikTok algorithm analysis using Google's Gemini AI.
+      const systemPrompt = `You are an expert content optimization specialist specializing in 2026 social media algorithm analysis using Google's Gemini AI.
 
 CRITICAL INSTRUCTIONS:
 1. DO NOT copy the original description - create entirely new, optimized suggestions
-2. Analyze the target platform's algorithm specified by the user
-3. Cross-reference TikTok content with the target platform algorithm
-4. Provide detailed, in-depth analysis and recommendations
+2. Take your time to provide IN-DEPTH, ANALYTICAL responses
+3. Research the target platform's algorithm specified by the user in detail
+4. Cross-reference the provided content with the target platform algorithm
+5. Provide detailed, comprehensive analysis and recommendations
 
-TikTok 2026 Algorithm Focus:
+FIRST, ANALYZE THE CONTENT:
+- Content Type: TikTok video from URL
+- Current Title: "${title}"
+- Current Description: "${description}"
+- Current Tags: ${tags.join(', ')}
+
+THEN, RESEARCH THE TARGET PLATFORM ALGORITHM:
+- Target Platform: ${targetPlatform}
+- Conduct in-depth research on ${targetPlatform}'s 2026 algorithm
+- Analyze ranking factors, engagement patterns, and optimization strategies
+- Study current trends and algorithm updates
+
+FINALLY, CROSS-REFERENCE AND OPTIMIZE:
+- Compare TikTok content characteristics with ${targetPlatform} algorithm requirements
+- Identify optimization opportunities and potential challenges
+- Create platform-specific recommendations
+
+2026 ALGORITHM RESEARCH REQUIREMENTS:
+
+TikTok Algorithm:
 - Operates as a Search Engine - first caption line must match search intent
-- Prioritizes "Pattern Interrupts" (changes every 3 seconds)
-- High-contrast keyword text requirements
-- Rewards trending sounds and challenges
-- Engagement rate in first 1-2 hours critical
+- Prioritizes "Pattern Interrupts" (content changes every 3 seconds)
+- High-contrast keyword text requirements for visibility
+- Rewards trending sounds, challenges, and participation
+- Critical engagement window: first 1-2 hours
 - "For You" page optimization based on user behavior patterns
 
-TARGET PLATFORM ALGORITHMS:
-- TikTok: Pattern interrupts, trending audio, search intent matching
-- YouTube Shorts: Session contribution, completion rate, SEO optimization
-- Instagram Reels: Sends per reach, engagement prompts, high quality
-- Twitter/X: Quick engagement, thread potential, viral loops
-- Facebook Reels: Shareability, community engagement, trending audio
+YouTube Shorts Algorithm:
+- "Session Contribution" - keeps users watching more shorts
+- "Completion Rate" - viewers watch entire video
+- SEO optimization with current year and searchable terms
+- Seamless loops and interactive elements (polls, stickers)
+- High retention through strategic pattern interrupts
 
-Your task:
-1. Analyze the TikTok content provided
-2. Research the TARGET PLATFORM's algorithm (${targetPlatform})
-3. Cross-reference TikTok metadata with target platform algorithm insights
-4. Generate 3 COMPLETELY NEW and DIFFERENT optimized description suggestions (up to 150 characters each)
-5. Generate up to 10 relevant hashtags for the target platform
-6. Provide detailed algorithm-specific insights and engagement triggers
-7. Create in-depth research analysis
+Instagram Reels Algorithm:
+- "Sends Per Reach" (DMs) heavily weighted
+- Penalizes unoriginal or watermarked content
+- Engagement prompts for share-to-DM metrics
+- "Upload at Highest Quality" preference
+- Cross-platform content performance factors
+
+Twitter/X Algorithm:
+- Quick engagement and retweet potential
+- Thread creation and viral loop opportunities
+- Real-time trending topic integration
+- Character limit optimization strategies
+
+Facebook Reels Algorithm:
+- Shareability and community engagement focus
+- Trending audio and challenge participation
+- Group and page distribution factors
+- Comment and interaction prioritization
+
+YOUR TASK - COMPREHENSIVE ANALYSIS:
+
+1. CONTENT ANALYSIS:
+   - Analyze the TikTok content structure and themes
+   - Identify key elements, hooks, and engagement factors
+   - Evaluate current performance indicators
+
+2. ALGORITHM RESEARCH:
+   - Provide in-depth analysis of ${targetPlatform}'s current algorithm
+   - Explain ranking factors and success metrics
+   - Detail trending content types and optimization strategies
+
+3. CROSS-REFERENCE ANALYSIS:
+   - Compare TikTok content with ${targetPlatform} requirements
+   - Identify strengths, weaknesses, and optimization opportunities
+   - Provide specific adaptation strategies
+
+4. OPTIMIZATION RECOMMENDATIONS:
+   - Generate platform-specific content suggestions
+   - Provide actionable optimization steps
+   - Include timing, formatting, and engagement strategies
 
 REQUIREMENTS:
-- Each description must be ENTIRELY NEW and UNIQUE - no copying original
-- Descriptions should be engaging and under 150 characters
-- Hashtags should be optimized for the TARGET platform algorithm
-- Include specific algorithm optimization Tips for the target platform
-- Focus on engagement triggers and pattern interrupts
-- Provide detailed, actionable insights
+- Take time to provide THOROUGH, DETAILED responses
+- Each suggestion must be ENTIRELY NEW and UNIQUE
+- Focus on platform-specific algorithm optimization
+- Include specific, actionable insights and strategies
+- Provide comprehensive research and analysis
 
-Format your response as JSON with this structure:
+FORMAT YOUR RESPONSE AS JSON:
 {
   "descriptionSuggestions": [
-    "ENTIRELY NEW engaging description 1 with hooks",
-    "COMPLETELY DIFFERENT engaging description 2 with call-to-action", 
-    "UNIQUE engaging description 3 with trending elements"
+    "ENTIRELY NEW engaging description 1 with hooks and platform optimization",
+    "COMPLETELY DIFFERENT engaging description 2 with call-to-action and algorithm factors", 
+    "UNIQUE engaging description 3 with trending elements and engagement triggers"
   ],
-  "tagSuggestions": ["platform_specific_hashtag1", "platform_specific_hashtag2", ..., "hashtag10"],
+  "tagSuggestions": ["platform_specific_hashtag1", "platform_specific_hashtag2", "algorithm_hashtag3", "trending_hashtag4", "niche_hashtag5", "engagement_hashtag6", "viral_hashtag7", "community_hashtag8", "seasonal_hashtag9", "strategy_hashtag10"],
   "algorithmInsights": [
-    "Detailed ${targetPlatform} algorithm insight 1",
-    "Specific ${targetPlatform} algorithm insight 2",
-    "Actionable ${targetPlatform} algorithm insight 3"
+    "Detailed ${targetPlatform} algorithm insight 1 with specific ranking factors",
+    "Specific ${targetPlatform} algorithm insight 2 with engagement patterns",
+    "Actionable ${targetPlatform} algorithm insight 3 with optimization strategies",
+    "Advanced ${targetPlatform} algorithm insight 4 with trending analysis",
+    "Strategic ${targetPlatform} algorithm insight 5 with performance metrics"
   ],
-  "algorithmResearch": "In-depth analysis of how ${targetPlatform} algorithm applies to this TikTok content and optimization strategies",
-  "trendingOpportunities": "Current ${targetPlatform} trends and how to leverage this TikTok content",
+  "algorithmResearch": "Comprehensive in-depth analysis of how ${targetPlatform} algorithm applies to this TikTok content, including detailed ranking factors, current trends, optimization strategies, and specific recommendations for maximizing performance and engagement",
+  "trendingOpportunities": "Detailed analysis of current ${targetPlatform} trends and how to leverage this TikTok content for maximum reach, including specific trending topics, formats, and engagement strategies",
   "engagementTriggers": [
-    "${targetPlatform}-specific engagement trigger 1",
-    "${targetPlatform}-specific engagement trigger 2", 
-    "${targetPlatform}-specific engagement trigger 3"
+    "${targetPlatform}-specific engagement trigger 1 with psychological factors",
+    "${targetPlatform}-specific engagement trigger 2 with timing strategies", 
+    "${targetPlatform}-specific engagement trigger 3 with content optimization"
   ],
-  "performancePrediction": "Predicted performance on ${targetPlatform} based on algorithm analysis and content optimization"
+  "performancePrediction": "Predicted performance on ${targetPlatform} based on comprehensive algorithm analysis, content optimization, current trends, and specific engagement strategies with detailed reasoning and confidence factors"
 }`
 
       const userPrompt = `Analyze this TikTok content for optimization:

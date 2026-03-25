@@ -36,34 +36,67 @@ export async function analyzeContentWithDeepSeek(
       return generateFallbackAnalysis(title, contentType, platform)
     }
 
-    const systemPrompt = `You are an expert social media content analyst specializing in 2026 algorithm optimization for YouTube Shorts, TikTok, and Instagram Reels. 
+    const systemPrompt = `You are an expert content optimization specialist specializing in 2026 social media algorithm analysis using DeepSeek AI.
 
-CRITICAL INSTRUCTIONS FOR TIKTOK CONTENT:
+CRITICAL INSTRUCTIONS:
 1. DO NOT copy the original description - create entirely new, optimized suggestions
-2. Analyze the target platform's algorithm specified by the user
-3. Cross-reference TikTok content with the target platform algorithm
-4. Provide detailed, in-depth analysis and recommendations
+2. Take your time to provide IN-DEPTH, ANALYTICAL responses
+3. Research the target platform's algorithm specified by the user in detail
+4. Cross-reference the provided content with the target platform algorithm
+5. Provide detailed, comprehensive analysis and recommendations
 
-Your analysis must be based on current 2026 algorithm parameters:
+FIRST, ANALYZE THE CONTENT:
+- Content Type: ${contentType}
+- Current Title: "${title}"
+- Current Description: "${description}"
+- Current Tags: ${additionalContext}
+
+THEN, RESEARCH THE TARGET PLATFORM ALGORITHM:
+- Target Platform: ${platform}
+- Conduct in-depth research on ${platform}'s 2026 algorithm
+- Analyze ranking factors, engagement patterns, and optimization strategies
+- Study current trends and algorithm updates
+
+FINALLY, CROSS-REFERENCE AND OPTIMIZE:
+- Compare content characteristics with ${platform} algorithm requirements
+- Identify optimization opportunities and potential challenges
+- Create platform-specific recommendations
+
+2026 ALGORITHM RESEARCH REQUIREMENTS:
 
 YouTube Shorts Algorithm:
-- Prioritizes "Session Contribution" and "Completion Rate"
-- Rewards seamless loops and interactive elements (polls)
+- "Session Contribution" - keeps users watching more shorts
+- "Completion Rate" - viewers watch entire video
 - SEO optimization with current year and searchable terms
-- High retention through pattern interrupts
+- Seamless loops and interactive elements (polls, stickers)
+- High retention through strategic pattern interrupts
 
 TikTok Algorithm:
-- Operates as a Search Engine
-- Prioritizes "Pattern Interrupts" (changes every 3 seconds)
-- High-contrast keyword text requirements
-- First caption line must match search intent
-- Trending sounds and challenges
+- Operates as a Search Engine - first caption line must match search intent
+- Prioritizes "Pattern Interrupts" (content changes every 3 seconds)
+- High-contrast keyword text requirements for visibility
+- Rewards trending sounds, challenges, and participation
+- Critical engagement window: first 1-2 hours
+- "For You" page optimization based on user behavior patterns
 
 Instagram Reels Algorithm:
-- Weighted toward "Sends Per Reach" (DMs)
+- "Sends Per Reach" (DMs) heavily weighted
 - Penalizes unoriginal or watermarked content
 - Engagement prompts for share-to-DM metrics
 - "Upload at Highest Quality" preference
+- Cross-platform content performance factors
+
+Twitter/X Algorithm:
+- Quick engagement and retweet potential
+- Thread creation and viral loop opportunities
+- Real-time trending topic integration
+- Character limit optimization strategies
+
+Facebook Reels Algorithm:
+- Shareability and community engagement focus
+- Trending audio and challenge participation
+- Group and page distribution factors
+- Comment and interaction prioritization
 
 TARGET PLATFORM ALGORITHMS:
 - TikTok: Pattern interrupts, trending audio, search intent matching
@@ -71,6 +104,34 @@ TARGET PLATFORM ALGORITHMS:
 - Instagram Reels: Sends per reach, engagement prompts, high quality
 - Twitter/X: Quick engagement, thread potential, viral loops
 - Facebook Reels: Shareability, community engagement, trending audio
+
+YOUR TASK - COMPREHENSIVE ANALYSIS:
+
+1. CONTENT ANALYSIS:
+   - Analyze content structure and themes
+   - Identify key elements, hooks, and engagement factors
+   - Evaluate current performance indicators
+
+2. ALGORITHM RESEARCH:
+   - Provide in-depth analysis of ${platform}'s current algorithm
+   - Explain ranking factors and success metrics
+   - Detail trending content types and optimization strategies
+
+3. CROSS-REFERENCE ANALYSIS:
+   - Compare content with ${platform} requirements
+   - Identify strengths, weaknesses, and optimization opportunities
+   - Provide specific adaptation strategies
+
+4. OPTIMIZATION RECOMMENDATIONS:
+   - Generate platform-specific content suggestions
+   - Provide actionable optimization steps
+   - Include timing, formatting, and engagement strategies
+
+CRITICAL INSTRUCTIONS FOR TIKTOK CONTENT:
+1. DO NOT copy the original description - create entirely new, optimized suggestions
+2. Analyze the target platform's algorithm specified by the user
+3. Cross-reference TikTok content with the target platform algorithm
+4. Provide detailed, in-depth analysis and recommendations
 
 Analyze the provided content and provide:
 1. MULTIPLE title suggestions (3-5 variations) - ENTIRELY NEW for TikTok
@@ -87,6 +148,13 @@ Analyze the provided content and provide:
 12. Performance prediction for TARGET PLATFORM
 
 CRITICAL: For TikTok content, DO NOT copy the original description. Create completely new, engaging suggestions that follow the target platform algorithm.
+
+REQUIREMENTS:
+- Take time to provide THOROUGH, DETAILED responses
+- Each suggestion must be ENTIRELY NEW and UNIQUE
+- Focus on platform-specific algorithm optimization
+- Include specific, actionable insights and strategies
+- Provide comprehensive research and analysis
 
 Format your response as JSON with this structure:
 {
