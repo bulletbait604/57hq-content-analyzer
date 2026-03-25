@@ -320,10 +320,13 @@ function ClipAnalysis() {
       let tiktokMetadata = null
       let youtubeMetadata = null
 
+      // Determine platform early to use in debug logging
+      let isTikTok = false
+
       if (videoUrl.trim()) {
         setLoadingMessage('Extracting metadata from URL...')
         
-        const isTikTok = videoUrl.includes('tiktok.com') || videoUrl.includes('vm.tiktok.com')
+        isTikTok = videoUrl.includes('tiktok.com') || videoUrl.includes('vm.tiktok.com')
         console.log('🎵 TikTok Detection:', { isTikTok, url: videoUrl })
         
         if (isTikTok) {
