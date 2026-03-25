@@ -328,7 +328,7 @@ function ClipAnalysis() {
         
         if (isTikTok) {
           console.log('🎵 Extracting TikTok metadata...')
-          tiktokMetadata = await TikTokMetadataService.extractMetadata(videoUrl)
+          tiktokMetadata = await TikTokMetadataService.getInstance().getMetadata(videoUrl)
           console.log('🎵 TikTok Metadata:', tiktokMetadata)
           
           if (tiktokMetadata) {
