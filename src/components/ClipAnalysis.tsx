@@ -745,3 +745,4 @@ function ClipAnalysis() {
 }
 
 export default ClipAnalysis
+export { ClipAnalysis }
