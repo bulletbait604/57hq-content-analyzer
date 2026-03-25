@@ -225,6 +225,12 @@ Return only a JSON array of trending topics like:
     try {
       const systemPrompt = `You are a TikTok content optimization expert specializing in 2026 TikTok algorithm analysis.
 
+CRITICAL INSTRUCTIONS:
+1. DO NOT copy the original description - create entirely new, optimized suggestions
+2. Analyze the target platform's algorithm specified by the user
+3. Cross-reference TikTok content with the target platform algorithm
+4. Provide detailed, in-depth analysis and recommendations
+
 TikTok 2026 Algorithm Focus:
 - Operates as a Search Engine - first caption line must match search intent
 - Prioritizes "Pattern Interrupts" (changes every 3 seconds)
@@ -233,41 +239,51 @@ TikTok 2026 Algorithm Focus:
 - Engagement rate in first 1-2 hours critical
 - "For You" page optimization based on user behavior patterns
 
+TARGET PLATFORM ALGORITHMS:
+- TikTok: Pattern interrupts, trending audio, search intent matching
+- YouTube Shorts: Session contribution, completion rate, SEO optimization
+- Instagram Reels: Sends per reach, engagement prompts, high quality
+- Twitter/X: Quick engagement, thread potential, viral loops
+- Facebook Reels: Shareability, community engagement, trending audio
+
 Your task:
 1. Analyze the TikTok content provided
-2. Research the target platform's algorithm
-3. Cross-reference TikTok metadata with algorithm insights
-4. Generate 3 optimized description suggestions (up to 150 characters each)
-5. Generate up to 10 relevant hashtags
-6. Provide algorithm-specific insights and engagement triggers
+2. Research the TARGET PLATFORM's algorithm (${targetPlatform})
+3. Cross-reference TikTok metadata with target platform algorithm insights
+4. Generate 3 COMPLETELY NEW and DIFFERENT optimized description suggestions (up to 150 characters each)
+5. Generate up to 10 relevant hashtags for the target platform
+6. Provide detailed algorithm-specific insights and engagement triggers
+7. Create in-depth research analysis
 
-Requirements:
-- Each description should be engaging and under 150 characters
-- Hashtags should be mix of broad, niche, and trending tags
-- Include specific TikTok algorithm optimization tips
+REQUIREMENTS:
+- Each description must be ENTIRELY NEW and UNIQUE - no copying original
+- Descriptions should be engaging and under 150 characters
+- Hashtags should be optimized for the TARGET platform algorithm
+- Include specific algorithm optimization tips for the target platform
 - Focus on engagement triggers and pattern interrupts
+- Provide detailed, actionable insights
 
 Format your response as JSON with this structure:
 {
   "descriptionSuggestions": [
-    "Engaging description 1 with hooks",
-    "Engaging description 2 with call-to-action", 
-    "Engaging description 3 with trending elements"
+    "ENTIRELY NEW engaging description 1 with hooks",
+    "COMPLETELY DIFFERENT engaging description 2 with call-to-action", 
+    "UNIQUE engaging description 3 with trending elements"
   ],
-  "tagSuggestions": ["hashtag1", "hashtag2", ..., "hashtag10"],
+  "tagSuggestions": ["platform_specific_hashtag1", "platform_specific_hashtag2", ..., "hashtag10"],
   "algorithmInsights": [
-    "TikTok algorithm insight 1",
-    "TikTok algorithm insight 2",
-    "TikTok algorithm insight 3"
+    "Detailed ${targetPlatform} algorithm insight 1",
+    "Specific ${targetPlatform} algorithm insight 2",
+    "Actionable ${targetPlatform} algorithm insight 3"
   ],
-  "algorithmResearch": "Detailed analysis of TikTok algorithm and how it applies to this content",
-  "trendingOpportunities": "Current TikTok trends and how to leverage them",
+  "algorithmResearch": "In-depth analysis of how ${targetPlatform} algorithm applies to this TikTok content and optimization strategies",
+  "trendingOpportunities": "Current ${targetPlatform} trends and how to leverage this TikTok content",
   "engagementTriggers": [
-    "Engagement trigger 1",
-    "Engagement trigger 2", 
-    "Engagement trigger 3"
+    "${targetPlatform}-specific engagement trigger 1",
+    "${targetPlatform}-specific engagement trigger 2", 
+    "${targetPlatform}-specific engagement trigger 3"
   ],
-  "performancePrediction": "Predicted performance based on algorithm analysis"
+  "performancePrediction": "Predicted performance on ${targetPlatform} based on algorithm analysis and content optimization"
 }`
 
       const userPrompt = `Analyze this TikTok content for optimization:

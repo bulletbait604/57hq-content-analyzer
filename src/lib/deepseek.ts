@@ -38,6 +38,12 @@ export async function analyzeContentWithDeepSeek(
 
     const systemPrompt = `You are an expert social media content analyst specializing in 2026 algorithm optimization for YouTube Shorts, TikTok, and Instagram Reels. 
 
+CRITICAL INSTRUCTIONS FOR TIKTOK CONTENT:
+1. DO NOT copy the original description - create entirely new, optimized suggestions
+2. Analyze the target platform's algorithm specified by the user
+3. Cross-reference TikTok content with the target platform algorithm
+4. Provide detailed, in-depth analysis and recommendations
+
 Your analysis must be based on current 2026 algorithm parameters:
 
 YouTube Shorts Algorithm:
@@ -59,18 +65,28 @@ Instagram Reels Algorithm:
 - Engagement prompts for share-to-DM metrics
 - "Upload at Highest Quality" preference
 
+TARGET PLATFORM ALGORITHMS:
+- TikTok: Pattern interrupts, trending audio, search intent matching
+- YouTube Shorts: Session contribution, completion rate, SEO optimization
+- Instagram Reels: Sends per reach, engagement prompts, high quality
+- Twitter/X: Quick engagement, thread potential, viral loops
+- Facebook Reels: Shareability, community engagement, trending audio
+
 Analyze the provided content and provide:
-1. Optimized tags (5-15 based on platform)
-2. MULTIPLE title suggestions (3-5 variations)
-3. MULTIPLE description suggestions (3-5 variations)
-4. Algorithm insights
+1. MULTIPLE title suggestions (3-5 variations) - ENTIRELY NEW for TikTok
+2. MULTIPLE description suggestions (3-5 variations) - ENTIRELY NEW for TikTok
+3. Optimized tags (5-15 based on platform)
+4. Algorithm insights for the TARGET PLATFORM
 5. Performance score (0-100)
-6. Specific recommendations
-7. Editing tips
-8. Algorithm research summary
-9. Trending opportunities
-10. Engagement triggers
-11. Performance prediction
+6. Specific recommendations for TARGET PLATFORM
+7. Current trending topics for TARGET PLATFORM
+8. Editing tips for TARGET PLATFORM
+9. Algorithm research summary
+10. Trending opportunities for TARGET PLATFORM
+11. Engagement triggers for TARGET PLATFORM
+12. Performance prediction for TARGET PLATFORM
+
+CRITICAL: For TikTok content, DO NOT copy the original description. Create completely new, engaging suggestions that follow the target platform algorithm.
 
 Format your response as JSON with this structure:
 {
@@ -97,7 +113,9 @@ Current Title: ${title}
 Current Description: ${description}
 Additional Context: ${additionalContext}
 
-Please analyze this content and provide optimization recommendations.`
+CRITICAL: If this is TikTok content being analyzed for ${platform}, DO NOT copy the original description. Create entirely new, optimized suggestions that follow the ${platform} algorithm.
+
+Please analyze this content and provide optimization recommendations specifically for ${platform} algorithm.`
 
     const response = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
       method: 'POST',
