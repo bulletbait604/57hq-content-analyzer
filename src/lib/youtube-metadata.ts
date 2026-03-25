@@ -5,6 +5,15 @@ export interface YouTubeMetadata {
   id: string
   title: string
   description: string
+  tags: string[]
+  thumbnails: {
+    default: { url: string; width: number; height: number }
+    medium: { url: string; width: number; height: number }
+    high: { url: string; width: number; height: number }
+    standard: { url: string; width: number; height: number }
+    maxres: { url: string; width: number; height: number }
+  }
+  viewCount: number
   author: {
     username: string
     displayName: string
@@ -14,10 +23,8 @@ export interface YouTubeMetadata {
     likes: number
     comments: number
   }
-  hashtags: string[]
-  duration: string // ISO 8601 duration format
-  createTime: string
-  thumbnail: string
+  duration: string
+  publishedAt: string
 }
 
 class YouTubeMetadataService {
@@ -25,13 +32,8 @@ class YouTubeMetadataService {
   private apiKey: string
 
   private constructor() {
-    // Check for API keys on client-side only to avoid hydration issues
-    if (typeof window !== 'undefined') {
-      // Prioritize the new YouTube API key, fall back to Google API key
-      this.apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY || ''
-    } else {
-      this.apiKey = ''
-    }
+    // Use the specific YouTube API key you requested
+    this.apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || ''
   }
 
   static getInstance(): YouTubeMetadataService {
@@ -204,6 +206,15 @@ class YouTubeMetadataService {
         id: videoId,
         title: snippet.title,
         description: snippet.description,
+        tags: snippet.tags || [],
+        thumbnails: {
+          default: snippet.thumbnails?.default || { url: '', width: 0, height: 0 },
+          medium: snippet.thumbnails?.medium || { url: '', width: 0, height: 0 },
+          high: snippet.thumbnails?.high || { url: '', width: 0, height: 0 },
+          standard: snippet.thumbnails?.standard || { url: '', width: 0, height: 0 },
+          maxres: snippet.thumbnails?.maxres || { url: '', width: 0, height: 0 }
+        },
+        viewCount: parseInt(statistics.viewCount || '0', 10),
         author: {
           username: channelUsername,
           displayName: channelDisplayName
@@ -213,18 +224,16 @@ class YouTubeMetadataService {
           likes: parseInt(statistics.likeCount || '0'),
           comments: parseInt(statistics.commentCount || '0')
         },
-        hashtags: this.extractHashtags(snippet.description, contentDetails.tags, snippet.tags),
         duration: this.parseDuration(contentDetails.duration),
-        createTime: snippet.publishedAt,
-        thumbnail: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || ''
+        publishedAt: snippet.publishedAt
       }
 
       console.log('🎬 YouTube API success:', {
         title: metadata.title,
         descriptionLength: metadata.description.length,
-        hashtagsCount: metadata.hashtags.length,
+        tagsCount: metadata.tags.length,
         descriptionPreview: metadata.description.substring(0, 200) + '...',
-        extractedHashtags: metadata.hashtags.slice(0, 10),
+        extractedTags: metadata.tags.slice(0, 10),
         fullDescription: metadata.description,
         apiResponse: {
           snippetTitle: snippet.title,
@@ -265,6 +274,15 @@ class YouTubeMetadataService {
         id: videoId,
         title: oembedData.title || 'Untitled Video',
         description: '', // oembed doesn't provide description
+        tags: [],
+        thumbnails: {
+          default: { url: oembedData.thumbnail_url || '', width: 480, height: 360 },
+          medium: { url: oembedData.thumbnail_url || '', width: 480, height: 360 },
+          high: { url: oembedData.thumbnail_url || '', width: 480, height: 360 },
+          standard: { url: oembedData.thumbnail_url || '', width: 480, height: 360 },
+          maxres: { url: oembedData.thumbnail_url || '', width: 480, height: 360 }
+        },
+        viewCount: 0,
         author: {
           username: oembedData.author_name?.toLowerCase().replace(/\s+/g, '') || 'unknown',
           displayName: oembedData.author_name || 'Unknown Channel'
@@ -274,10 +292,8 @@ class YouTubeMetadataService {
           likes: 0,
           comments: 0
         },
-        hashtags: [],
         duration: '0:00',
-        createTime: new Date().toISOString(),
-        thumbnail: oembedData.thumbnail_url || ''
+        publishedAt: new Date().toISOString()
       }
 
       console.log('YouTube scraping success:', metadata.title)

@@ -1,11 +1,13 @@
 // TikTok Metadata Extraction Service
 // Multiple methods for getting TikTok metadata
 
-// TikTok metadata interface
+// TikTok metadata interface - Updated for specific requirements
 export interface TikTokMetadata {
   id: string
   title: string
-  description: string
+  video_description: string  // Changed from 'description' to 'video_description'
+  cover_image_url: string    // Added cover image URL
+  view_count: number         // Changed from 'views' to 'view_count'
   author: {
     username: string
     displayName: string
@@ -30,7 +32,7 @@ class TikTokMetadataService {
   private rapidApiKey: string
 
   private constructor() {
-    this.rapidApiKey = process.env.NEXT_PUBLIC_RAPIDAPI_KEY || ''
+    this.rapidApiKey = process.env.NEXT_PUBLIC_RAPIDAPI_TIKTOK_API_KEY || ''
   }
 
   static getInstance(): TikTokMetadataService {
@@ -196,7 +198,9 @@ class TikTokMetadataService {
       return {
         id: videoData.id,
         title: videoData.title || videoData.desc || 'Untitled Video',
-        description: description,
+        video_description: description,
+        cover_image_url: videoData.cover || videoData.thumbnail || videoData.origin_cover || '',
+        view_count: videoData.stats?.play_count || 0,
         author: {
           username: videoData.author?.unique_id || videoData.author?.name || '',
           displayName: videoData.author?.nickname || videoData.author?.name || ''
@@ -250,7 +254,9 @@ class TikTokMetadataService {
     return {
       id: data.id,
       title: data.title || data.desc || 'Untitled Video',
-      description: Array.isArray(data.content_desc) ? data.content_desc.join(' ') : (data.desc || data.text || ''),
+      video_description: Array.isArray(data.content_desc) ? data.content_desc.join(' ') : (data.desc || data.text || ''),
+      cover_image_url: data.cover || data.thumbnail || data.origin_cover || '',
+      view_count: data.stats?.play_count || 0,
       author: {
         username: data.author?.unique_id || data.author?.name || '',
         displayName: data.author?.nickname || data.author?.name || ''
@@ -276,7 +282,9 @@ class TikTokMetadataService {
     return {
       id: data.id,
       title: data.title,
-      description: data.description,
+      video_description: data.description,
+      cover_image_url: data.thumbnail || data.cover || '',
+      view_count: data.views || 0,
       author: {
         username: data.author?.unique_id || data.author?.name || '',
         displayName: data.author?.nickname || data.author?.name || ''
@@ -302,7 +310,9 @@ class TikTokMetadataService {
     return {
       id: data.id,
       title: data.title || 'Untitled Video',
-      description: data.description || '',
+      video_description: data.description || '',
+      cover_image_url: data.thumbnail || data.cover || '',
+      view_count: data.stats?.play_count || 0,
       author: {
         username: data.author?.unique_id || data.author?.name || '',
         displayName: data.author?.nickname || data.author?.name || ''

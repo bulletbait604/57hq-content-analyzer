@@ -100,6 +100,115 @@ export default function ClipAnalysis() {
     checkAccess()
   }, [])
 
+  const analyzeYouTubeWithGemini = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
+    console.log('📺 Starting YouTube Analysis with Gemini AI:')
+    console.log('📊 YouTube Content:', { currentTitle, currentDescription, currentTags, platform })
+    
+    try {
+      // Try Gemini AI first
+      console.log('🤖 Gemini analyzing YouTube content...')
+      const geminiService = GeminiService.getInstance()
+      const geminiAnalysis = await geminiService.analyzeYouTubeContent(currentTitle, currentDescription, currentTags, platform)
+      
+      // Enhanced logging for Gemini response debugging
+      console.log('🤖 GEMINI YOUTUBE RESPONSE DEBUG:')
+      console.log('📊 Analysis Quality Check:')
+      console.log('  ✅ Source: YouTube URL detected')
+      console.log('  ✅ API: Gemini 3.1 with enhanced algorithm research')
+      console.log('  ✅ Target Platform:', platform)
+      console.log('  ✅ Cross-Reference: YouTube content +', platform, 'algorithm')
+      console.log('  📝 Title Suggestions:', geminiAnalysis?.titleSuggestions)
+      console.log('  📝 Description Suggestions:', geminiAnalysis?.descriptionSuggestions)
+      console.log('  🏷️ Tag Suggestions:', geminiAnalysis?.tagSuggestions)
+      console.log('  🔍 Algorithm Insights:', geminiAnalysis?.algorithmInsights)
+      console.log('  📚 Algorithm Research:', geminiAnalysis?.algorithmResearch)
+      console.log('  📈 Trending Opportunities:', geminiAnalysis?.trendingOpportunities)
+      console.log('  ⚡ Engagement Triggers:', geminiAnalysis?.engagementTriggers)
+      console.log('  🎯 Performance Prediction:', geminiAnalysis?.performancePrediction)
+      console.log('  📊 Quality Metrics:')
+      console.log('    - Title Count:', geminiAnalysis?.titleSuggestions?.length || 0)
+      console.log('    - Description Count:', geminiAnalysis?.descriptionSuggestions?.length || 0)
+      console.log('    - Tag Count:', geminiAnalysis?.tagSuggestions?.length || 0)
+      console.log('    - Insight Count:', geminiAnalysis?.algorithmInsights?.length || 0)
+      console.log('    - Research Depth:', geminiAnalysis?.algorithmResearch?.length || 0, 'characters')
+      console.log('  🚫 Copy-Paste Check:', {
+        titlesAreNew: geminiAnalysis?.titleSuggestions?.every(title => title !== currentTitle),
+        descriptionsAreNew: geminiAnalysis?.descriptionSuggestions?.every(desc => desc !== currentDescription),
+        hasInDepthResearch: (geminiAnalysis?.algorithmResearch?.length || 0) > 200,
+        hasPlatformSpecificInsights: (geminiAnalysis?.algorithmInsights?.length || 0) >= 3
+      })
+      
+      return {
+        titleSuggestions: geminiAnalysis?.titleSuggestions || [],
+        descriptionSuggestions: geminiAnalysis?.descriptionSuggestions || [],
+        tagSuggestions: geminiAnalysis?.tagSuggestions || [],
+        editingTips: geminiAnalysis?.algorithmInsights || [],
+        algorithmInsights: geminiAnalysis?.algorithmInsights || [],
+        algorithmResearch: geminiAnalysis?.algorithmResearch || '',
+        trendingOpportunities: geminiAnalysis?.trendingOpportunities || '',
+        engagementTriggers: geminiAnalysis?.engagementTriggers || [],
+        performancePrediction: geminiAnalysis?.performancePrediction || '',
+        editRecommendations: geminiAnalysis?.editRecommendations || [],
+        algorithmInformation: geminiAnalysis?.algorithmInformation || '',
+        aiUsed: 'gemini'
+      }
+    } catch (error) {
+      console.warn('🤖 Gemini failed, falling back to DeepSeek:', error)
+      
+      // Fallback to DeepSeek
+      try {
+        console.log('🧠 DeepSeek analyzing YouTube content as fallback...')
+        const deepseekAnalysis = await analyzeContentWithDeepSeek('video', platform, currentTitle, currentDescription, `Current tags: ${currentTags.join(', ')}`)
+        
+        console.log('🧠 DEEPSEEK YOUTUBE FALLBACK DEBUG:')
+        console.log('📊 Analysis Quality Check:')
+        console.log('  ⚠️ Fallback: Gemini failed, using DeepSeek')
+        console.log('  ✅ Source: YouTube URL detected')
+        console.log('  ✅ API: DeepSeek with enhanced algorithm research')
+        console.log('  ✅ Target Platform:', selectedPlatform)
+        console.log('  ✅ Cross-Reference: YouTube content +', selectedPlatform, 'algorithm')
+        console.log('  📝 Title Suggestions:', deepseekAnalysis?.titleSuggestions)
+        console.log('  📝 Description Suggestions:', deepseekAnalysis?.descriptionSuggestions)
+        console.log('  🏷️ Tag Suggestions:', deepseekAnalysis?.tagSuggestions)
+        console.log('  🔍 Algorithm Insights:', deepseekAnalysis?.algorithmInsights)
+        console.log('  📚 Algorithm Research:', deepseekAnalysis?.algorithmResearch)
+        console.log('  📈 Trending Opportunities:', deepseekAnalysis?.trendingOpportunities)
+        console.log('  ⚡ Engagement Triggers:', deepseekAnalysis?.engagementTriggers)
+        console.log('  🎯 Performance Prediction:', deepseekAnalysis?.performancePrediction)
+        console.log('  📊 Quality Metrics:')
+        console.log('    - Title Count:', deepseekAnalysis?.titleSuggestions?.length || 0)
+        console.log('    - Description Count:', deepseekAnalysis?.descriptionSuggestions?.length || 0)
+        console.log('    - Tag Count:', deepseekAnalysis?.tagSuggestions?.length || 0)
+        console.log('    - Insight Count:', deepseekAnalysis?.algorithmInsights?.length || 0)
+        console.log('    - Research Depth:', deepseekAnalysis?.algorithmResearch?.length || 0, 'characters')
+        console.log('  🚫 Copy-Paste Check:', {
+          titlesAreNew: deepseekAnalysis?.titleSuggestions?.every(title => title !== currentTitle),
+          descriptionsAreNew: deepseekAnalysis?.descriptionSuggestions?.every(desc => desc !== currentDescription),
+          hasInDepthResearch: (deepseekAnalysis?.algorithmResearch?.length || 0) > 200,
+          hasPlatformSpecificInsights: (deepseekAnalysis?.algorithmInsights?.length || 0) >= 3
+        })
+        
+        return {
+          titleSuggestions: deepseekAnalysis?.titleSuggestions || [],
+          descriptionSuggestions: deepseekAnalysis?.descriptionSuggestions || [],
+          tagSuggestions: deepseekAnalysis?.tagSuggestions || [],
+          editingTips: deepseekAnalysis?.editingTips || deepseekAnalysis?.recommendations || [],
+          algorithmInsights: deepseekAnalysis?.algorithmInsights || [],
+          algorithmResearch: deepseekAnalysis?.algorithmResearch || '',
+          trendingOpportunities: deepseekAnalysis?.trendingOpportunities || '',
+          engagementTriggers: deepseekAnalysis?.engagementTriggers || [],
+          performancePrediction: deepseekAnalysis?.performancePrediction || '',
+          editRecommendations: [],
+          algorithmInformation: '',
+          aiUsed: 'deepseek'
+        }
+      } catch (deepseekError) {
+        console.error('❌ Both Gemini and DeepSeek failed:', deepseekError)
+        return null
+      }
+    }
+  }
+
   const analyzeTikTokWithGemini = async (currentTitle: string, currentDescription: string, currentTags: string[], platform: string) => {
     console.log('🎵 Starting TikTok Analysis with Gemini AI:')
     console.log('📊 TikTok Content:', { currentTitle, currentDescription, currentTags, platform })
@@ -299,7 +408,7 @@ export default function ClipAnalysis() {
           
           if (tiktokMetadata) {
             currentTitle = tiktokMetadata.title
-            currentDescription = tiktokMetadata.description
+            currentDescription = tiktokMetadata.video_description  // Updated field name
             currentTags = tiktokMetadata.hashtags
           }
         } else {
@@ -310,7 +419,7 @@ export default function ClipAnalysis() {
           if (youtubeMetadata) {
             currentTitle = youtubeMetadata.title
             currentDescription = youtubeMetadata.description
-            currentTags = youtubeMetadata.hashtags || []
+            currentTags = youtubeMetadata.tags  // Updated field name
           }
         }
       }
@@ -385,14 +494,14 @@ export default function ClipAnalysis() {
         console.log('  4. AI: Gemini analyzing TikTok content +', selectedPlatform, 'algorithm')
         comprehensiveResult = await analyzeTikTokWithGemini(currentTitle, currentDescription, currentTags, selectedPlatform)
       } else {
-        // Use regular DeepSeek analysis for YouTube and other platforms
-        console.log('🧠 Using DeepSeek analysis for YouTube content...')
+        // Use Gemini for YouTube content analysis as requested
+        console.log('📺 Using Gemini analysis for YouTube content...')
         console.log('📺 YouTube Content Analysis Flow:')
         console.log('  1. Source: YouTube URL detected')
         console.log('  2. Extracted: YouTube metadata via YouTube API')
         console.log('  3. Target Platform:', selectedPlatform)
-        console.log('  4. AI: DeepSeek analyzing YouTube content +', selectedPlatform, 'algorithm')
-        comprehensiveResult = await analyzeWithDeepSeekOnly(currentTitle, currentDescription, currentTags, selectedPlatform)
+        console.log('  4. AI: Gemini analyzing YouTube content +', selectedPlatform, 'algorithm')
+        comprehensiveResult = await analyzeYouTubeWithGemini(currentTitle, currentDescription, currentTags, selectedPlatform)
       }
       
       if (comprehensiveResult) {
