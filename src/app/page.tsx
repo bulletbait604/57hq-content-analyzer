@@ -110,7 +110,7 @@ export default function HomePage() {
     }
   }
 
-  const handleLanguageChange = (newLanguage: string) => {
+  const handleLanguageChange = (newLanguage: 'en' | 'es' | 'fr' | 'de' | 'ja') => {
     setLanguage(newLanguage)
     if (typeof window !== 'undefined') {
       localStorage.setItem('language', newLanguage)
