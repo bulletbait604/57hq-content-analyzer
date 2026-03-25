@@ -90,7 +90,8 @@ Format your response as JSON with this structure:
   "description": "enhanced description", 
   "insights": ["insight1", "insight2", ...],
   "algorithmScore": 85,
-  "recommendations": ["rec1", "rec2", ...]
+  "recommendations": ["rec1", "rec2", ...],
+  "trends": ["trend1", "trend2", ...]
 }`
 
       const userPrompt = `Content Type: ${contentType}
@@ -101,7 +102,7 @@ Additional Context: ${additionalContext}
 
 Please analyze this content and provide optimization recommendations.`
 
-      // Use official Google Gemini API with latest model
+      // Use official Google Gemini API
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
@@ -117,7 +118,7 @@ Please analyze this content and provide optimization recommendations.`
             temperature: 0.9,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 2048
+            maxOutputTokens: 2048,
           }
         })
       })
@@ -142,6 +143,70 @@ Please analyze this content and provide optimization recommendations.`
     }
   }
 
+  async researchAlgorithmTrends(platform: string): Promise<string[]> {
+    if (!this.apiKey) {
+      console.warn('Gemini API key not configured, returning fallback trends')
+      return this.getFallbackTrends(platform)
+    }
+
+    try {
+      const prompt = `Research the current trending topics and algorithm patterns for ${platform} as of March 2026.
+
+Focus on:
+1. Current trending hashtags and challenges
+2. Algorithm changes in the last 30 days
+3. Content formats performing well
+4. Engagement patterns
+5. Creator strategies gaining traction
+
+Return only a JSON array of trending topics like:
+["trend1", "trend2", "trend3", ...]`
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.8,
+              maxOutputTokens: 500,
+            }
+          })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Gemini API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+      if (!text) {
+        throw new Error('No response from Gemini')
+      }
+
+      // Extract JSON from response
+      const jsonMatch = text.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) {
+        throw new Error('No JSON array found in Gemini response')
+      }
+
+      return JSON.parse(jsonMatch[0]) as string[]
+    } catch (error) {
+      console.error('Gemini Trend Research Error:', error)
+      return this.getFallbackTrends(platform)
+    }
+  }
+
   async analyzeTikTokContent(
     title: string,
     description: string,
@@ -154,7 +219,7 @@ Please analyze this content and provide optimization recommendations.`
     }
 
     try {
-      const systemPrompt = `You are a TikTok content optimization expert specializing in 2026 TikTok algorithm analysis using Google's Gemini AI.
+      const systemPrompt = `You are a TikTok content optimization expert specializing in 2026 TikTok algorithm analysis.
 
 CRITICAL INSTRUCTIONS:
 1. DO NOT copy the original description - create entirely new, optimized suggestions
@@ -217,7 +282,7 @@ Format your response as JSON with this structure:
   "performancePrediction": "Predicted performance on ${targetPlatform} based on algorithm analysis and content optimization"
 }`
 
-      const userPrompt = `Analyze this TikTok content for optimization:
+    const userPrompt = `Analyze this TikTok content for optimization:
 
 Current Title: ${title}
 Current Description: ${description}
@@ -226,14 +291,24 @@ Target Platform: ${targetPlatform}
 
 Please provide TikTok-specific optimization suggestions based on 2026 algorithm requirements.`
 
-      // Use official Google Gemini API with latest model
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
+    // Use official Google Gemini API with latest model
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${this.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `${systemPrompt}\n\n${userPrompt}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.9,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        }
             parts: [{
               text: `${systemPrompt}\n\n${userPrompt}`
             }]
@@ -242,7 +317,7 @@ Please provide TikTok-specific optimization suggestions based on 2026 algorithm 
             temperature: 0.9,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 2048
+            maxOutputTokens: 2048,
           }
         })
       })
@@ -267,22 +342,10 @@ Please provide TikTok-specific optimization suggestions based on 2026 algorithm 
     }
   }
 
-  private getFallbackAnalysis(title: string, description: string): GeminiAnalysis {
-    return {
-      tags: ['content', '2026', 'trending', 'viral', 'gaming'],
-      title: title,
-      description: description || 'Content description',
-      insights: ['Gemini analysis temporarily unavailable'],
-      algorithmScore: 50,
-      recommendations: ['Try again later for AI-powered insights'],
-      trends: ['gaming', 'content', '2026']
-    }
-  }
-
   private getTikTokFallbackAnalysis(title: string, description: string, tags: string[]): TikTokGeminiAnalysis {
     return {
       descriptionSuggestions: [
-        `${title} - Watch till end! 🔥 #TikTok`,
+        `${title} - Watch till the end! 🔥 #TikTok`,
         `You won't believe what happened next! 😱 #Viral`,
         `This is why you should... 🎯 #Trending`
       ],
@@ -301,6 +364,30 @@ Please provide TikTok-specific optimization suggestions based on 2026 algorithm 
       ],
       performancePrediction: 'Moderate to high potential with proper optimization'
     }
+  }
+
+  private getFallbackAnalysis(title: string, description: string): GeminiAnalysis {
+    return {
+      tags: ['content', '2026', 'trending', 'viral', 'gaming'],
+      title: title,
+      description: description || 'Content description',
+      insights: ['Gemini analysis temporarily unavailable'],
+      algorithmScore: 50,
+      recommendations: ['Try again later for AI-powered insights'],
+      trends: ['gaming', 'content', '2026']
+    }
+  }
+
+  private getFallbackTrends(platform: string): string[] {
+    const fallbackTrends = {
+      'YouTube': ['gaming', 'shorts', 'trending', 'algorithm', '2026'],
+      'TikTok': ['viral', 'trending', 'challenge', 'dance', '2026'],
+      'Instagram': ['reels', 'trending', 'viral', 'content', '2026'],
+      'Twitter': ['trending', 'viral', 'threads', '2026', 'content'],
+      'Facebook': ['reels', 'viral', 'trending', 'content', '2026']
+    }
+    
+    return fallbackTrends[platform as keyof typeof fallbackTrends] || ['content', '2026', 'trending']
   }
 }
 
